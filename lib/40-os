@@ -1,0 +1,64 @@
+#!/bin/sh
+
+set_sysctl(){
+  # Set sysctl value(s) and persist them to /etc/sysctl.conf.
+  # $1..$N = sysctl values (as "name=value" strings)
+  while [ $# -gt 0 ]; do
+    sysctl "$1"
+    sed -i.bak "/^${1%%=*}=/{
+h
+s/=.*/=${1#*=}/
+}
+\${
+x
+/^\$/{
+s//${1}/
+H
+}
+x
+}" /etc/sysctl.conf
+    shift
+  done
+  rm -f /etc/sysctl.conf.bak
+}
+
+set_loader_conf(){
+  # Set the FreeBSD bootloader options in /boot/loader.conf.
+  # The host will be rebooted if the file is changed.
+  # $1..$N = bootloader options (as "name=value" strings)
+  [ "$BOXCONF_OS_FAMILY" = freebsd ] || bug 'set_loader_conf can only be used on FreeBSD'
+
+  while [ $# -gt 0 ]; do
+    grep -qxF "${1%%=*}=\"${1#*=}\"" /boot/loader.conf || BOXCONF_NEED_REBOOT=true
+    sed -i.bak "/^${1%%=*}=/{
+h
+s/=.*/=\"${1#*=}\"/
+}
+\${
+x
+/^\$/{
+s//${1%%=*}=\"${1#*=}\"/
+H
+}
+x
+}" /boot/loader.conf
+    shift
+  done
+  rm -f /boot/loader.conf.bak
+}
+
+load_kernel_module(){
+  # Ensure the given kernel modules are loaded.
+  # $1..$N = bootloader options (as "name=value" strings)
+  case $BOXCONF_OS_FAMILY in
+    freebsd)
+      while [ $# -gt 0 ]; do
+        kldstat -qn "$1" || kldload -v "$1"
+        shift
+      done
+      ;;
+    *)
+      die "load_kernel_module unimplemented for ${BOXCONF_OS_FAMILY}"
+      ;;
+  esac
+}

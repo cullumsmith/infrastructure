@@ -1,0 +1,14 @@
+#!/bin/sh
+
+join(){
+  # Join strings by a given delimiter.
+  # $1 = delimiter
+  # $2..$N = strings
+  _bcj_delim=$1; shift
+  _bcj_result=''
+  while [ $# -gt 0 ]; do
+    _bcj_result="${_bcj_result:+${_bcj_result}${_bcj_delim}}${1}"
+    shift
+  done
+  printf '%s' "$_bcj_result"
+}

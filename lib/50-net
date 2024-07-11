@@ -1,0 +1,37 @@
+#!/bin/sh
+
+_boxconf_ip2dec(){
+  # helper function for ip_in_subnet
+  while [ $# -gt 0 ]; do
+    echo "$1" | {
+      IFS=./ read -r _bcipd_a _bcipd_b _bcipd_c _bcipd_d _bcipd_e
+      [ -n "$_bcipd_e" ] || _bcipd_e=32
+      printf '%s %s ' "$((_bcipd_a<<24|_bcipd_b<<16|_bcipd_c<<8|_bcipd_d))" "$((-1<<(32-_bcipd_e)))"
+    }
+    shift
+  done
+}
+
+ip_in_subnet(){
+  # Check if an IP address is contained within a subnet.
+  # $1 = IPv4 address
+  # $2 = network cidr
+  _boxconf_ip2dec "$1" "$2" | {
+    read -r _bciis_a1 _bciis_m1 _bciis_a2 _bciis_m2 ||:
+    test "$(( (_bciis_a1 & _bciis_m2) == (_bciis_a2 & _bciis_m2) && _bciis_m1 >= _bciis_m2 ))" -eq 1
+  }
+}
+
+prefix2netmask(){
+  # Convert a network prefix to its netmask address.
+  # For example, 24 returns '255.255.255.0'
+  # $1 = network prefix value
+  _bcp2n_val=$(( 0xffffffff ^ ((1 << (32 - $1)) - 1) ))
+  echo "$(( (_bcp2n_val >> 24) & 0xff )).$(( (_bcp2n_val >> 16) & 0xff )).$(( (_bcp2n_val >> 8) & 0xff )).$(( _bcp2n_val & 0xff ))"
+}
+
+ip2rdns(){
+  # Convert an IPv4 address to its in-addr.arpa reverse DNS name.
+  # $1 = IPv4 address
+  echo "$1" | awk -F. '{print $4"."$3"."$2"."$1".in-addr.arpa"}'
+}

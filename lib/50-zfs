@@ -1,0 +1,15 @@
+#!/bin/sh
+
+dataset_exists(){
+  # Check if a ZFS dataset exists.
+  # $1 = dataset name
+  zfs list "$1" > /dev/null 2>&1
+}
+
+create_dataset(){
+  # Create a ZFS dataset if it doesn't already exists.
+  # All options are passed directly to `zfs create`. Assumes the dataset name is
+  # passed as the final argument.
+  eval "_bccd_dataset=\$$#"
+  dataset_exists "$_bccd_dataset" || zfs create -v "$@"
+}

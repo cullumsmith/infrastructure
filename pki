@@ -1,0 +1,358 @@
+#!/bin/sh
+#
+# Utility to manage an internal certificate authority using OpenSSL.
+
+set -eu
+
+PROGNAME=pki
+USAGE="<init|cert|client-cert|renew>"
+BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
+
+BOXCONF_CA_PASSWORD_FILE="${BOXCONF_ROOT}/.ca_password"
+CA_VALID_DAYS=3650
+DEFAULT_VALID_DAYS=3650
+EC_CURVE=prime256v1
+DIGEST=sha256
+CIPHER=aes256
+
+usage(){
+  printf 'usage: %s %s\n' "$PROGNAME" "$USAGE" 2>&1
+  exit 2
+}
+
+_pki_get_ca_password(){
+  # Acquire the CA password.
+  # If the BOXCONF_CA_PASSWORD environment variable is set, use that.
+  # Next, try reading the password from the .ca_password file.
+  # If all else fails, prompt interactively.
+  if [ -n "${BOXCONF_CA_PASSWORD:-}" ]; then
+    return
+  elif [ -f "$BOXCONF_CA_PASSWORD_FILE" ]; then
+    BOXCONF_CA_PASSWORD=$(cat "$BOXCONF_CA_PASSWORD_FILE")
+  else
+    _boxconf_read_password 'Enter CA password: ' BOXCONF_CA_PASSWORD
+  fi
+}
+
+_pki_dn2cnf() {
+  # Convert an LDAP DN to its OpenSSL .cnf file representation.
+  echo "$1" \
+    | tr ',' '\n' \
+    | awk '{a[i++]=$0} END {for (j=i-1; j>=0;) print a[j--] }' \
+    | sed                                        \
+      -e 's/^[Cc][Nn]=/commonName=/'             \
+      -e 's/^[Oo]=/organizationName=/'           \
+      -e 's/^[Oo][Uu]=/organizationalUnitName=/' \
+      -e 's/^[Dd][Cc]=/domainComponent=/'        \
+      -e 's/^[Cc]=/countryName=/'                \
+      -e 's/^[Ss][Tt]=/stateOrProvinceName=/'    \
+      -e 's/^[Ll]=/locality=/'                   \
+      -e 's/^[Ss][Nn]=/surName=/'                \
+      -e 's/^[Gg][Nn]=/givenName=/'              \
+      -e 's/^[Uu][Ii][Dd]=/userId=/'             \
+    | awk '{print NR-1 "." $0}'
+}
+
+_pki_postsign(){
+  # Create symlinks and delete temp files after signing a certificate.
+  # $1 = certificate path
+
+  # Create symlink with human-readable name.
+  serial=$(awk 'END{print $3}' "${BOXCONF_CA_DIR}/index.txt")
+  ln -sf "../certs/${serial}.pem" "${BOXCONF_CA_DIR}/${1}.crt"
+
+  # Create fullchain certificate.
+  cat "${BOXCONF_CA_DIR}/${1}.crt" "${BOXCONF_CA_DIR}/ca.crt" > "${BOXCONF_CA_DIR}/${1}.fullchain.crt"
+
+  # Delete useless files.
+  rm -f                             \
+    "${BOXCONF_CA_DIR}/index.txt.old"      \
+    "${BOXCONF_CA_DIR}/index.txt.attr.old" \
+    "${BOXCONF_CA_DIR}/serial.old"
+}
+
+_pki_sign(){
+  # Given an OpenSSL config file, generate a signed certificate keypair.
+  # $1 = certificate path
+  # $2 = validity time (days)
+
+  # Generate encrypted private key for the server certificate.
+  PASS="$BOXCONF_VAULT_PASSWORD" openssl genpkey     \
+    -algorithm ec                            \
+    -pkeyopt "ec_paramgen_curve:${EC_CURVE}" \
+    "-${CIPHER}"                             \
+    -pass env:PASS                           \
+    -out "${BOXCONF_CA_DIR}/${1}.key"
+
+  # Generate the CSR.
+  PASS="$BOXCONF_VAULT_PASSWORD" openssl req -new \
+    -key "${BOXCONF_CA_DIR}/${1}.key"         \
+    "-${DIGEST}"                          \
+    -passin env:PASS                      \
+    -config "${BOXCONF_CA_DIR}/${1}.cnf"      \
+    -out "${BOXCONF_CA_DIR}/${1}.csr"
+
+  # Sign the certificate.
+  PASS="$BOXCONF_CA_PASSWORD" openssl ca -batch \
+    -config "${BOXCONF_CA_DIR}/ca.cnf"         \
+    -passin env:PASS                    \
+    ${2:+-days $2}                \
+    -notext                             \
+    -out /dev/null                      \
+    -outdir "${BOXCONF_CA_DIR}/certs"          \
+    -infiles "${BOXCONF_CA_DIR}/${1}.csr"
+
+  _pki_postsign "$1"
+}
+
+_pki_renew(){
+  # Re-sign an existing certificate.
+  # $1 = certificate path
+  # $2 = validity time (time)
+  _pki_get_ca_password
+
+  # Sign the certificate.
+  PASS="$BOXCONF_CA_PASSWORD" openssl ca -batch \
+    -config "${BOXCONF_CA_DIR}/ca.cnf"         \
+    -passin env:PASS                    \
+    ${2:+-days $2}                \
+    -notext                             \
+    -out /dev/null                      \
+    -outdir "${BOXCONF_CA_DIR}/certs"          \
+    -infiles "${BOXCONF_CA_DIR}/${1}.csr"
+
+  _pki_postsign "$1"
+}
+
+pki_init(){
+  # Initialize the CA. Create CA cert, private key, and OpenSSL configuration.
+  USAGE='init [-c CONSTRAINT]... DOMAIN'
+
+  constraints=''
+  while getopts :c: opt; do
+    case $opt in
+      c) constraints="${constraints}, permitted;${OPTARG}" ;;
+      :) usage ;;
+      ?) usage ;;
+    esac
+  done
+  shift $((OPTIND - 1 ))
+
+  [ $# -eq 1 ] || usage
+  domain=$1
+
+  [ -d "$BOXCONF_CA_DIR" ] && die 'CA already exists'
+  _pki_get_ca_password
+  mkdir -p "${BOXCONF_CA_DIR}/certs"
+
+  # Generate encrypted private key for CA.
+  PASS="$BOXCONF_CA_PASSWORD" openssl genpkey        \
+    -algorithm ec                            \
+    -pkeyopt "ec_paramgen_curve:${EC_CURVE}" \
+    "-${CIPHER}"                             \
+    -pass env:PASS                           \
+    -out "${BOXCONF_CA_DIR}/ca.key"
+
+  # Create a config file for the CA certificate.
+  cat > "${BOXCONF_CA_DIR}/ca.cnf" <<EOF
+[ req ]
+x509_extensions = v3_req
+distinguished_name = req_distinguished_name
+prompt = no
+
+[ v3_req ]
+basicConstraints = critical, CA:TRUE, pathlen:0
+keyUsage = critical, keyCertSign, cRLSign
+nameConstraints = permitted;DNS:${domain}, permitted;DNS:.${domain}, permitted;email:.${domain}${constraints}
+
+[ req_distinguished_name ]
+O = ${domain}
+CN = Certificate Authority
+
+[ ca ]
+preserve   = yes
+default_ca = CA_own
+
+[ CA_own ]
+dir              = .${BOXCONF_CA_DIR#${BOXCONF_ROOT}}
+new_certs_dir    = \$dir/certs
+database         = \$dir/index.txt
+rand_serial      = yes
+unique_subject   = no
+certificate      = \$dir/ca.crt
+private_key      = \$dir/ca.key
+default_days     = ${DEFAULT_VALID_DAYS}
+default_crl_days = 30
+default_md       = ${DIGEST}
+preserve         = yes
+policy           = policy_anything
+copy_extensions  = copy
+x509_extensions  = v3
+
+[ v3 ]
+basicConstraints = critical, CA:FALSE
+
+[ policy_anything ]
+countryName            = optional
+stateOrProvinceName    = optional
+localityName           = optional
+organizationName       = optional
+organizationalUnitName = optional
+commonName             = optional
+emailAddress           = optional
+EOF
+
+  # Self-sign the CA certificate.
+  PASS="$BOXCONF_CA_PASSWORD" openssl req -new -x509 \
+    -days "$CA_VALID_DAYS"                               \
+    "-${DIGEST}"                             \
+    -passin env:PASS                         \
+    -config "${BOXCONF_CA_DIR}/ca.cnf"              \
+    -key "${BOXCONF_CA_DIR}/ca.key"                 \
+    -out "${BOXCONF_CA_DIR}/ca.crt"
+
+  # Create empty index db.
+  [ -f "${BOXCONF_CA_DIR}/index.txt" ] || touch "${BOXCONF_CA_DIR}/index.txt"
+}
+
+pki_server(){
+  # Create a server certificate keypair.
+  USAGE='server-cert [-d DAYS] HOSTNAME CERTNAME SAN...'
+
+  while getopts :d: opt; do
+    case $opt in
+      d)   days=$OPTARG ;;
+      :|?) usage ;;
+    esac
+  done
+  shift $((OPTIND - 1 ))
+
+  [ $# -ge 3 ] || usage
+  hostname=$1; certname=$2; cn=${3#*:}
+  shift 2
+
+  [ -e "${BOXCONF_CA_DIR}/${hostname}/${certname}.cnf" ] && die "certificate already exists: ${hostname}/${certname}"
+
+  _pki_get_ca_password
+  _boxconf_get_vault_password
+
+  # Generate the SAN list. If the arg contains a ':', pass along as-is.
+  # If no ':' is present, assume type 'DNS:'.
+  while [ $# -gt 0 ]; do
+    if [ "${1#*:}" = "$1" ]; then
+      sans="${sans:+${sans},}DNS:${1}"
+    else
+      sans="${sans:+${sans},}${1}"
+    fi
+    shift
+  done
+
+  # Create host directory.
+  mkdir -p "${BOXCONF_CA_DIR}/${hostname}"
+
+  # Create a config file for the server certificate.
+  cat > "${BOXCONF_CA_DIR}/${hostname}/${certname}.cnf" <<EOF
+[ req ]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+prompt = no
+
+[ v3_req ]
+basicConstraints = critical,CA:FALSE
+extendedKeyUsage = serverAuth
+subjectAltName = ${sans}
+
+[ req_distinguished_name ]
+CN = ${cn}
+EOF
+
+  # Generate and sign the certificate.
+  _pki_sign "${hostname}/${certname}" "${days:-}"
+}
+
+pki_client(){
+  # Create a client certificate keypair.
+  USAGE='client-cert HOSTNAME CERTNAME DN [SAN...]'
+
+  while getopts :d: opt; do
+    case $opt in
+      d)   days=$OPTARG ;;
+      :|?) usage ;;
+    esac
+  done
+  shift $((OPTIND - 1 ))
+
+  [ $# -ge 3 ] || usage
+  hostname=$1; certname=$2; dn=$3
+  shift 3
+
+  [ -e "${BOXCONF_CA_DIR}/${hostname}/${certname}.cnf" ] && die "certificate already exists: ${hostname}/${certname}"
+
+  _pki_get_ca_password
+  _boxconf_get_vault_password
+
+  # Generate the SAN list.
+  if [ $# -gt 0 ]; then
+    sans=$1; shift
+    while [ $# -gt 0 ]; do
+      sans="${sans}, ${1}"
+      shift
+    done
+  fi
+
+  # Create host directory.
+  mkdir -p "${BOXCONF_CA_DIR}/${hostname}"
+
+  # Create a config file for the client certificate.
+  cat > "${BOXCONF_CA_DIR}/${hostname}/${certname}.cnf" <<EOF
+[ req ]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+prompt = no
+
+[ v3_req ]
+basicConstraints = critical,CA:FALSE
+extendedKeyUsage = clientAuth
+${sans:+subjectAltName = $sans}
+
+[ req_distinguished_name ]
+$(_pki_dn2cnf "$dn")
+EOF
+
+  # Generate and sign the certificate.
+  _pki_sign "${hostname}/${certname}" "${days:-}"
+}
+
+
+pki_renew(){
+  # Renew an existing certificate.
+  USAGE='renew [-d DAYS] HOSTNAME CERTNAME'
+
+  while getopts :d: opt; do
+    case $opt in
+      d)   days=$OPTARG ;;
+      :|?) usage ;;
+    esac
+  done
+  shift $((OPTIND - 1 ))
+  [ $# -eq 2 ] || usage
+
+  [ -f "${BOXCONF_CA_DIR}/${1}/${2}.csr" ] || die "CSR does not exist: ${1}/${2}.csr"
+
+  _pki_renew "${1}/${2}" "${days:-}"
+}
+
+[ $# -ge 1 ] || usage
+action=$1; shift
+
+for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
+  . "$_bc_lib"
+done
+
+case $action in
+  init)                    pki_init "$@" ;;
+  server-cert|server|cert) pki_server "$@" ;;
+  client-cert|client)      pki_client "$@" ;;
+  renew)                   pki_renew "$@" ;;
+  *)                       usage ;;
+esac

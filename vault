@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# Utility to manage encrypted files using OpenSSL's pbkdf2.
+
+set -eu
+
+PROGNAME=vault
+USAGE="${PROGNAME} <check|create|decrypt|edit|encrypt|reencrypt|> FILE..."
+BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
+
+usage(){
+  printf 'usage: %s\n' "$USAGE" 2>&1
+  exit 2
+}
+
+vault_check(){
+  while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+      warn "file does not exist: ${1}"
+    elif _boxconf_is_encrypted "$1"; then
+      echo "${1} is encrypted"
+    else
+      echo "${1} is not encrypted"
+    fi
+    shift
+  done
+}
+
+vault_create(){
+  _boxconf_get_vault_password
+  if [ -e "$1" ]; then
+    die "file already exists: ${1}"
+  else
+    "$EDITOR" "$TMPFILE"
+    PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$TMPFILE" -out "$1" -e "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+  fi
+}
+
+vault_decrypt(){
+  _boxconf_get_vault_password
+  while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+      warn "file does not exist: ${1}"
+    elif ! _boxconf_is_encrypted "$1"; then
+      warn "file is not encrypted: ${1}"
+    else
+      PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -d "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+    fi
+    shift
+  done
+}
+
+vault_edit(){
+  _boxconf_get_vault_password
+  while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+      warn "file does not exist: ${1}"
+    elif ! _boxconf_is_encrypted "$1"; then
+      warn "file is not encrypted: ${1}"
+    else
+      PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -out "$TMPFILE" -d "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+      "$EDITOR" "$TMPFILE"
+      PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$TMPFILE" -out "$1" -e "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+    fi
+    shift
+  done
+}
+
+vault_encrypt(){
+  _boxconf_get_vault_password
+  while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+      warn "file does not exist: ${1}"
+    elif _boxconf_is_encrypted "$1"; then
+      warn "file is already encrypted, refusing: ${1}"
+    else
+      PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -out "$TMPFILE" -e "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+      cp "$TMPFILE" "$1"
+    fi
+    shift
+  done
+}
+
+vault_reencrypt(){
+  _boxconf_get_vault_password
+
+  [ -n "${VAULT_NEW_PASSWORD:-}" ] \
+    || _boxconf_read_password 'Enter new vault password: ' VAULT_NEW_PASSWORD
+
+  while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+      warn "file does not exist: ${1}"
+    elif ! _boxconf_is_encrypted "$1"; then
+      warn "file is not encrypted: ${1}"
+    else
+      PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -out "$TMPFILE" -d "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+      PASS=$VAULT_NEW_PASSWORD openssl enc -in "$TMPFILE" -out "$1" -e "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+    fi
+    shift
+  done
+}
+
+[ $# -gt 1 ] || usage
+action=$1; shift
+
+for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
+  . "$_bc_lib"
+done
+
+TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE"' HUP INT QUIT TERM EXIT
+
+case $action in
+  check)     vault_check "$@" ;;
+  create)    vault_create "$@" ;;
+  decrypt)   vault_decrypt "$@" ;;
+  edit)      vault_edit "$@" ;;
+  encrypt)   vault_encrypt "$@" ;;
+  reencrypt) vault_reencrypt "$@" ;;
+  *)         usage ;;
+esac

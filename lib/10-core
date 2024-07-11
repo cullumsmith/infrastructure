@@ -1,0 +1,340 @@
+#!/bin/sh
+
+BOXCONF_REMOTE_PATH=/root/boxconf
+BOXCONF_SSH_ARGS='-l root -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ControlPath=~/.ssh/%r@%h:%p -o ControlMaster=auto -o ControlPersist=10m'
+BOXCONF_SUPPORTED_OS='linux freebsd'
+BOXCONF_SUPPORTED_DISTROS='debian'
+BOXCONF_SCRIPT_DIR="${BOXCONF_ROOT}/scripts"
+BOXCONF_VAR_DIR="${BOXCONF_ROOT}/vars"
+BOXCONF_FILE_DIR="${BOXCONF_ROOT}/files"
+BOXCONF_SITE_VAR_DIR="${BOXCONF_ROOT}/site/vars"
+BOXCONF_SITE_FILE_DIR="${BOXCONF_ROOT}/site/files"
+BOXCONF_SITE_SCRIPT_DIR="${BOXCONF_ROOT}/site/scripts"
+BOXCONF_CA_DIR="${BOXCONF_ROOT}/site/ca"
+BOXCONF_VAULT_PASSWORD_FILE="${BOXCONF_ROOT}/.vault_password"
+BOXCONF_VAULT_CIPHER=aes256
+
+log(){
+  printf '%s: %s\n' "$PROGNAME" "$1"
+}
+
+debug(){
+  printf '%s: DEBUG: %s\n' "$PROGNAME" "$1" 1>&2
+}
+
+warn(){
+  printf '%s: WARNING: %s\n' "$PROGNAME" "$1" 1>&2
+}
+
+die(){
+  printf '%s: ERROR: %s\n' "$PROGNAME" "$1" 1>&2
+  exit "${2:-1}"
+}
+
+bug(){
+  printf '%s: BUG: %s\n' "$PROGNAME" "$1" 1>&2
+  exit 255
+}
+
+_boxconf_read_password(){
+  # Read a password from stdin with TTY echo disabled.
+  # $1 = prompt
+  # $2 = upvar
+  if [ -t 0 ]; then
+    _bcrp_stty=$(stty -g)
+    stty -echo
+  fi
+
+  printf '%s ' "$1" 1>&2
+  read -r "$2"
+
+  if [ -t 0 ]; then
+    stty "$_bcrp_stty"
+    echo
+  fi
+}
+
+_boxconf_get_vault_password(){
+  # Acquire the vault password.
+  # If the BOXCONF_VAULT_PASSWORD environment variable is set, use that.
+  # Next, try reading the password from the .vault_password file.
+  # If all else fails, prompt interactively.
+  if [ -z "${BOXCONF_VAULT_PASSWORD:-}" ]; then
+    if [ -f "${BOXCONF_VAULT_PASSWORD_FILE}" ]; then
+      BOXCONF_VAULT_PASSWORD=$(cat "${BOXCONF_VAULT_PASSWORD_FILE}")
+    else
+      _boxconf_read_password 'Enter vault password:' BOXCONF_VAULT_PASSWORD
+    fi
+  fi
+}
+
+_boxconf_decrypt(){
+  # Decrypt a file using the vault password.
+  # $1 = encrypted file
+  # $2 = plaintext output file (or stdout if unset)
+  _boxconf_get_vault_password
+
+  if [ $# -gt 1 ]; then
+    PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -out "$2" -d "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+  else
+    PASS=$BOXCONF_VAULT_PASSWORD openssl enc -in "$1" -d "-${BOXCONF_VAULT_CIPHER}" -pass env:PASS -pbkdf2
+  fi
+}
+
+_boxconf_is_encrypted(){
+  # Check if a given file is encrypted.
+  head -n1 "$1" | grep -q '^Salted__'
+}
+
+_boxconf_include(){
+  # Source the script (or scripts) at the given path.
+  # If the path is a directory, source all its files in glob order.
+  # $1 = path
+  while [ $# -gt 0 ]; do
+    if [ -f "$1" ]; then
+      log "sourcing ${1#${BOXCONF_ROOT}/}"
+      BOXCONF_SOURCE=$1
+      . "$BOXCONF_SOURCE"
+    elif [ -d "$1" ]; then
+      for _bci_file in "$1"/*; do
+        if [ -f "$_bci_file" ]; then
+          log "sourcing ${1#${BOXCONF_ROOT}/}"
+          BOXCONF_SOURCE=$_bci_file
+          . "$BOXCONF_SOURCE"
+        fi
+      done
+    fi
+    shift
+  done
+}
+
+_boxconf_get_hostclass(){
+  # For a given hostname, find its hostclass and store it in $BOXCONF_HOSTCLASS.
+  # Hostclass regexes are specified in the hostclasses file.
+  # If no hostclass matches, the hostclass is 'undefined'.
+  # $1 = hostname
+  BOXCONF_HOSTCLASS=undefined
+  while read -r _bcc_hostclass _bcc_regex; do
+    if printf '%s\n' "$1" | grep -Eq "$_bcc_regex"; then
+      BOXCONF_HOSTCLASS=$_bcc_hostclass
+      break
+    fi
+  done < "${BOXCONF_ROOT}/hostclasses"
+  log "using hostclass ${BOXCONF_HOSTCLASS}"
+}
+
+_boxconf_stage(){
+  # Construct a directory tree containing all files required to configure a host.
+  # Encrypted files will be copied in plaintext.
+  # $1 = target hostnmae
+  # $2 = staging directory path
+  _bcs_hostname=$1
+  _bcs_stagedir=$2
+  log "generating configuration tarball for ${_bcs_hostname} at ${_bcs_stagedir}"
+  _boxconf_get_hostclass "$_bcs_hostname"
+
+  cp -RpL                         \
+    "${BOXCONF_ROOT}/boxconf"     \
+    "${BOXCONF_ROOT}/hostclasses" \
+    "${BOXCONF_ROOT}/lib"         \
+    "$_bcs_stagedir"
+
+  # Compex find expression to only copy files necessary for the target host. 
+  # This avoids leaking site-wide secrets to hosts that don't require them.
+  _bcs_relevant_files=$(find "${BOXCONF_ROOT}" -type f -and \( \
+    -path "${BOXCONF_CA_DIR}/${_bcs_hostname}" \
+    -or -path "${BOXCONF_VAR_DIR}/common" \
+    -or -path "${BOXCONF_VAR_DIR}/common/*" \
+    -or -path "${BOXCONF_VAR_DIR}/os/*" \
+    -or -path "${BOXCONF_VAR_DIR}/distro/*" \
+    -or -path "${BOXCONF_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}/*" \
+    -or -path "${BOXCONF_VAR_DIR}/hostname/${_bcs_hostname}" \
+    -or -path "${BOXCONF_VAR_DIR}/hostname/${_bcs_hostname}/*" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/common" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/common/*" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/os/*" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/distro/*" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}/*" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/hostname/${_bcs_hostname}" \
+    -or -path "${BOXCONF_SITE_VAR_DIR}/hostname/${_bcs_hostname}/*" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/common" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/common/*" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/os/*" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/distro/*" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}/*" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/hostname/${_bcs_hostname}" \
+    -or -path "${BOXCONF_SCRIPT_DIR}/hostname/${_bcs_hostname}/*" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/common" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/common/*" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/os/*" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/distro/*" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}/*" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/hostname/${_bcs_hostname}" \
+    -or -path "${BOXCONF_SITE_SCRIPT_DIR}/hostname/${_bcs_hostname}/*" \
+    -or -path "${BOXCONF_FILE_DIR}/*.common" \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.%s " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.%s " ${BOXCONF_SUPPORTED_DISTROS}) \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.${BOXCONF_HOSTCLASS}.%s " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.%s.${BOXCONF_HOSTCLASS} " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.${BOXCONF_HOSTCLASS}.%s " ${BOXCONF_SUPPORTED_DISTROS}) \
+    $(printf -- "-or -path ${BOXCONF_FILE_DIR}/*.%s.${BOXCONF_HOSTCLASS} " ${BOXCONF_SUPPORTED_DISTROS}) \
+    -or -path "${BOXCONF_FILE_DIR}/*.${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_FILE_DIR}/*.${_bcs_hostname}" \
+    -or -path "${BOXCONF_SITE_FILE_DIR}/*.common" \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.%s " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.%s " ${BOXCONF_SUPPORTED_DISTROS}) \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.${BOXCONF_HOSTCLASS}.%s " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.%s.${BOXCONF_HOSTCLASS} " ${BOXCONF_SUPPORTED_OS}) \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.${BOXCONF_HOSTCLASS}.%s " ${BOXCONF_SUPPORTED_DISTROS}) \
+    $(printf -- "-or -path ${BOXCONF_SITE_FILE_DIR}/*.%s.${BOXCONF_HOSTCLASS} " ${BOXCONF_SUPPORTED_DISTROS}) \
+    -or -path "${BOXCONF_SITE_FILE_DIR}/*.${BOXCONF_HOSTCLASS}" \
+    -or -path "${BOXCONF_SITE_FILE_DIR}/*.${_bcs_hostname}" \
+    \) )
+
+  OIFS=$IFS; IFS=$'\n'
+  set -- $_bcs_relevant_files
+  IFS=$OIFS
+
+  for _bc_stage_fullpath; do
+    # Calculate the file's path relative to the BOXCONF_ROOT.
+    _bc_stage_relpath=${_bc_stage_fullpath#${BOXCONF_ROOT}/}
+
+    # Create the file's parent directories (if any) in the stage dir.
+    mkdir -p "${_bcs_stagedir}/$(dirname "$_bc_stage_relpath")"
+
+    # Copy the file to the stage dir, decrypting if necessary.
+    if _boxconf_is_encrypted "$_bc_stage_fullpath"; then
+      _boxconf_decrypt "$_bc_stage_fullpath" "${_bcs_stagedir}/${_bc_stage_relpath}"
+    else
+      cp -p "$_bc_stage_fullpath" "${_bcs_stagedir}/${_bc_stage_relpath}"
+    fi
+  done
+}
+
+_boxconf_deploy(){
+  # Build a configuration tarball and SCP it to a host, then extract and run it.
+  # $1 = target hostname/IP
+  # $2 = hostname used for configuration
+  # $3..$N = original boxconf CLI args
+  _bc_deploy_target=$1; shift
+  _bc_deploy_hostname=$2; shift
+
+  _bc_stagedir=$(mktemp -d -t "boxconf-${_bc_deploy_hostname}")
+  trap 'rm -rf -- "$_bc_stagedir"' HUP INT QUIT TERM ABRT EXIT
+
+  _boxconf_stage "$_bc_deploy_hostname" "$_bc_stagedir"
+
+  log "deploying tarball for ${_bc_deploy_hostname} to ${_bc_deploy_target}:${BOXCONF_REMOTE_PATH}"
+
+  # Create the boxconf directory with mode 700 on the target host.
+  ssh ${BOXCONF_SSH_ARGS} "$_bc_deploy_target" -- rm -rf "$BOXCONF_REMOTE_PATH" '&&' install -d -m 700 "$BOXCONF_REMOTE_PATH"
+
+  # Send the boxconf tarball to the target host, and extract it.
+  tar -C "$_bc_stagedir" -czf - ./ \
+    | ssh ${BOXCONF_SSH_ARGS} "$_bc_deploy_target" -- tar -xzf - -C "$BOXCONF_REMOTE_PATH"
+
+  # Re-exec boxconf on the target host.
+  ssh ${BOXCONF_SSH_ARGS} "$_bc_deploy_target" -- "${BOXCONF_REMOTE_PATH}/boxconf" -X "$@"
+}
+
+_boxconf_run(){
+  # This is the main entry point for boxconf when running on the target host.
+  # Gather basic info about the target system, then source all the vars and scripts
+  # files, in order of lowest to highest precedence.
+
+  log "now running on target host (current hostname: $(hostname -s))"
+
+  # Determine OS family.
+  case "$(uname)" in
+    Linux)   BOXCONF_OS=linux ;;
+    FreeBSD) BOXCONF_OS=freebsd ;;
+    *)       die "unsupported os family: $(uname)" ;;
+  esac
+  log "detected os ${BOXCONF_OS}"
+
+  # Determine default interface and IPv4 address.
+  case $BOXCONF_OS in
+    freebsd)
+      BOXCONF_DEFAULT_INTERFACE=$(route -4n get default | awk '$1 == "interface:" { print $2 }')
+      BOXCONF_DEFAULT_IPV4=$(ifconfig "$BOXCONF_DEFAULT_INTERFACE" | awk '$1 == "inet" { print $2 }')
+      ;;
+    linux)
+      BOXCONF_DEFAULT_INTERFACE=$(ip -4 -o route get to 1 | awk '{print $5}')
+      BOXCONF_DEFAULT_IPV4=$(ip -4 -o route get to 1 | awk '{print $7}')
+      ;;
+  esac
+  log "detected default interface ${BOXCONF_DEFAULT_INTERFACE}"
+  log "detected default ip ${BOXCONF_DEFAULT_IPV4}"
+
+  # Determine OS distribution.
+  if [ -f /etc/os-release ]; then
+    BOXCONF_DISTRO=$(. /etc/os-release; printf '%s' "$ID")
+    BOXCONF_OS_VERSION=$(. /etc/os-release; printf '%s' "$VERSION_ID")
+  else
+    die 'unknown os distribution'
+  fi
+  log "detected distro ${BOXCONF_DISTRO}"
+  log "detected os version ${BOXCONF_OS_VERSION}"
+
+  case $BOXCONF_DISTRO in
+    freebsd|debian) : ;; # supported
+    *) die "unsupported os distribution: ${BOXCONF_DISTRO}" ;;
+  esac
+
+  # Determine virtualization type.
+  BOXCONF_VIRTUALIZATION_TYPE=none
+  case $BOXCONF_OS in
+    linux)
+      grep -q '^flags.* hypervisor' /proc/cpuinfo && BOXCONF_VIRTUALIZATION_TYPE=vm
+      ;;
+    freebsd)
+      if [ "$(sysctl -n security.jail.jailed)" = 1 ]; then
+        BOXCONF_VIRTUALIZATION_TYPE=jail
+      elif [ -n "$(sysctl -n hw.hv_vendor)" ]; then
+        BOXCONF_VIRTUALIZATION_TYPE=vm
+      fi
+      ;;
+  esac
+  log "detected virtualization type ${BOXCONF_VIRTUALIZATION_TYPE}"
+
+  # Determine hostname.
+  : "${BOXCONF_HOSTNAME:=$(hostname -s)}"
+  log "using hostname ${BOXCONF_HOSTNAME}"
+
+  # Determine hostclass.
+  _boxconf_get_hostclass "$BOXCONF_HOSTNAME"
+  [ "$BOXCONF_HOSTCLASS" = undefined ] && warn 'unable to determine hostclass'
+
+  # Source vars, then scripts, each in order of lowest to highest precedence.
+  _boxconf_include \
+    "${BOXCONF_VAR_DIR}/common" \
+    "${BOXCONF_SITE_VAR_DIR}/common" \
+    "${BOXCONF_VAR_DIR}/os/${BOXCONF_OS}" \
+    "${BOXCONF_SITE_VAR_DIR}/os/${BOXCONF_OS}" \
+    "${BOXCONF_VAR_DIR}/distro/${BOXCONF_DISTRO}" \
+    "${BOXCONF_SITE_VAR_DIR}/distro/${BOXCONF_DISTRO}" \
+    "${BOXCONF_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SITE_VAR_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_VAR_DIR}/hostname/${BOXCONF_HOSTNAME}" \
+    "${BOXCONF_SITE_VAR_DIR}/hostname/${BOXCONF_HOSTNAME}" \
+    "${BOXCONF_SCRIPT_DIR}/common" \
+    "${BOXCONF_SITE_SCRIPT_DIR}/common" \
+    "${BOXCONF_SCRIPT_DIR}/os/${BOXCONF_OS}" \
+    "${BOXCONF_SITE_SCRIPT_DIR}/os/${BOXCONF_OS}" \
+    "${BOXCONF_SCRIPT_DIR}/distro/${BOXCONF_DISTRO}" \
+    "${BOXCONF_SITE_SCRIPT_DIR}/distro/${BOXCONF_DISTRO}" \
+    "${BOXCONF_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SITE_SCRIPT_DIR}/hostclass/${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SCRIPT_DIR}/hostname/${BOXCONF_HOSTNAME}" \
+    "${BOXCONF_SITE_SCRIPT_DIR}/hostname/${BOXCONF_HOSTNAME}"
+
+  # Reboot the target host if requested.
+  if [ "${BOXCONF_NEED_REBOOT:-}" = true ]; then
+    log '$BOXCONF_NEED_REBOOT was set. Rebooting host...'
+    reboot
+  fi
+}

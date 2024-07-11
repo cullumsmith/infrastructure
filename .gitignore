@@ -1,0 +1,6 @@
+.ca_password
+.vault_password
+*.swp
+*.swo
+.nfs*
+site

@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Shell-based configuration management framework for unix-like systems.
+
+set -eu
+
+PROGNAME=boxconf
+USAGE="${PROGNAME} [-d] [-e VAR=VALUE]... [-o HOSTNAME] TARGET"
+BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
+
+usage(){
+  [ $# -gt 0 ] && printf '%s\n' "$1" 2>&1
+  printf 'usage: %s\n' "$USAGE" 2>&1
+  exit 2
+}
+
+while getopts :hde:o:X _bc_opt; do
+  case $_bc_opt in
+    h) usage ;;
+    d) set -x ;;
+    e) eval "$OPTARG" ;;
+    o) BOXCONF_HOSTNAME=$OPTARG ;;
+    X) _bc_run=1 ;;
+    :) usage "missing option value: -${OPTARG}" ;;
+    ?) usage "unknown option: -${OPTARG}" ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+[ $# -eq 1 ] || usage
+
+for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
+  . "$_bc_lib"
+done
+
+if [ -n "${_bc_run:-}" ]; then
+  _boxconf_run
+else
+  _boxconf_deploy "$1" "${BOXCONF_HOSTNAME:-$1}" "$@"
+fi
