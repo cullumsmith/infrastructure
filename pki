@@ -65,8 +65,8 @@ _pki_postsign(){
   cat "${BOXCONF_CA_DIR}/${1}.crt" "${BOXCONF_CA_DIR}/ca.crt" > "${BOXCONF_CA_DIR}/${1}.fullchain.crt"
 
   # Delete useless files.
-  rm -f                             \
-    "${BOXCONF_CA_DIR}/index.txt.old"      \
+  rm -f \
+    "${BOXCONF_CA_DIR}/index.txt.old" \
     "${BOXCONF_CA_DIR}/index.txt.attr.old" \
     "${BOXCONF_CA_DIR}/serial.old"
 }
@@ -77,29 +77,29 @@ _pki_sign(){
   # $2 = validity time (days)
 
   # Generate encrypted private key for the server certificate.
-  PASS="$BOXCONF_VAULT_PASSWORD" openssl genpkey     \
-    -algorithm ec                            \
+  PASS="$BOXCONF_VAULT_PASSWORD" openssl genpkey \
+    -algorithm ec \
     -pkeyopt "ec_paramgen_curve:${EC_CURVE}" \
-    "-${CIPHER}"                             \
-    -pass env:PASS                           \
+    "-${CIPHER}" \
+    -pass env:PASS \
     -out "${BOXCONF_CA_DIR}/${1}.key"
 
   # Generate the CSR.
   PASS="$BOXCONF_VAULT_PASSWORD" openssl req -new \
-    -key "${BOXCONF_CA_DIR}/${1}.key"         \
-    "-${DIGEST}"                          \
-    -passin env:PASS                      \
-    -config "${BOXCONF_CA_DIR}/${1}.cnf"      \
+    -key "${BOXCONF_CA_DIR}/${1}.key" \
+    "-${DIGEST}" \
+    -passin env:PASS \
+    -config "${BOXCONF_CA_DIR}/${1}.cnf" \
     -out "${BOXCONF_CA_DIR}/${1}.csr"
 
   # Sign the certificate.
   PASS="$BOXCONF_CA_PASSWORD" openssl ca -batch \
-    -config "${BOXCONF_CA_DIR}/ca.cnf"         \
-    -passin env:PASS                    \
-    ${2:+-days $2}                \
-    -notext                             \
-    -out /dev/null                      \
-    -outdir "${BOXCONF_CA_DIR}/certs"          \
+    -config "${BOXCONF_CA_DIR}/ca.cnf" \
+    -passin env:PASS \
+    ${2:+-days $2} \
+    -notext \
+    -out /dev/null \
+    -outdir "${BOXCONF_CA_DIR}/certs" \
     -infiles "${BOXCONF_CA_DIR}/${1}.csr"
 
   _pki_postsign "$1"
@@ -113,12 +113,12 @@ _pki_renew(){
 
   # Sign the certificate.
   PASS="$BOXCONF_CA_PASSWORD" openssl ca -batch \
-    -config "${BOXCONF_CA_DIR}/ca.cnf"         \
-    -passin env:PASS                    \
-    ${2:+-days $2}                \
-    -notext                             \
-    -out /dev/null                      \
-    -outdir "${BOXCONF_CA_DIR}/certs"          \
+    -config "${BOXCONF_CA_DIR}/ca.cnf" \
+    -passin env:PASS \
+    ${2:+-days $2} \
+    -notext \
+    -out /dev/null \
+    -outdir "${BOXCONF_CA_DIR}/certs" \
     -infiles "${BOXCONF_CA_DIR}/${1}.csr"
 
   _pki_postsign "$1"
@@ -146,11 +146,11 @@ pki_init(){
   mkdir -p "${BOXCONF_CA_DIR}/certs"
 
   # Generate encrypted private key for CA.
-  PASS="$BOXCONF_CA_PASSWORD" openssl genpkey        \
-    -algorithm ec                            \
+  PASS="$BOXCONF_CA_PASSWORD" openssl genpkey \
+    -algorithm ec \
     -pkeyopt "ec_paramgen_curve:${EC_CURVE}" \
-    "-${CIPHER}"                             \
-    -pass env:PASS                           \
+    "-${CIPHER}" \
+    -pass env:PASS \
     -out "${BOXCONF_CA_DIR}/ca.key"
 
   # Create a config file for the CA certificate.
@@ -204,11 +204,11 @@ EOF
 
   # Self-sign the CA certificate.
   PASS="$BOXCONF_CA_PASSWORD" openssl req -new -x509 \
-    -days "$CA_VALID_DAYS"                               \
-    "-${DIGEST}"                             \
-    -passin env:PASS                         \
-    -config "${BOXCONF_CA_DIR}/ca.cnf"              \
-    -key "${BOXCONF_CA_DIR}/ca.key"                 \
+    -days "$CA_VALID_DAYS" \
+    "-${DIGEST}" \
+    -passin env:PASS \
+    -config "${BOXCONF_CA_DIR}/ca.cnf" \
+    -key "${BOXCONF_CA_DIR}/ca.key" \
     -out "${BOXCONF_CA_DIR}/ca.crt"
 
   # Create empty index db.
