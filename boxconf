@@ -5,7 +5,7 @@
 set -eu
 
 PROGNAME=boxconf
-USAGE="${PROGNAME} [-d] [-e VAR=VALUE]... [-s SSH_HOST] HOSTNAME"
+USAGE="${PROGNAME} [-d] [-s SSH_HOST] [-e VAR=VALUE]... HOSTNAME"
 BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
 
 usage(){
