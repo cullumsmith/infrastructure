@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Disable motd.
+sysrc -v update_motd=NO
+rm -f /var/run/motd

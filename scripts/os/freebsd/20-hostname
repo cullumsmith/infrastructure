@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Set the fully qualified hostname.
+sysrc -v hostname="${BOXCONF_HOSTNAME}.${domain}"
+hostname "${BOXCONF_HOSTNAME}.${domain}"
+install_template -m 0644 /etc/hosts

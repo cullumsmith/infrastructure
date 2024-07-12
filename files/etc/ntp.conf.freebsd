@@ -1,0 +1,18 @@
+interface ignore wildcard
+interface listen ${BOXCONF_DEFAULT_IPV4}
+
+tos minclock 3 maxclock 6
+
+$(if [ -n "${ntp_servers:-}" ]; then
+   printf 'server %s iburst\n' $ntp_servers
+  elif [ -n "${ntp_pools:-}" ]; then
+    printf 'pool %s iburst\n' $ntp_pools
+  fi)
+
+restrict default limited kod nomodify notrap noquery nopeer
+restrict source  limited kod nomodify notrap noquery
+
+restrict 127.0.0.1
+restrict ::1
+
+leapfile "/var/db/ntpd.leap-seconds.list"

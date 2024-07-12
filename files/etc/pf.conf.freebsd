@@ -1,0 +1,37 @@
+egress = "${BOXCONF_DEFAULT_INTERFACE}"
+allowed_tcp_ports = "{ $(join ', ' ${allowed_tcp_ports:-}) }"
+allowed_udp_ports = "{ $(join ', ' ${allowed_udp_ports:-}) }"
+acme_standalone_port = ${acme_standalone_port}
+acme_standalone_user = ${acme_uid}
+nfscbd_port = ${nfscbd_port}
+
+set block-policy return
+set skip on lo
+scrub in on \$egress all fragment reassemble no-df
+
+$([ "${acme_standalone:-}" = true ] && echo \
+  'rdr on $egress inet proto tcp to port http -> ($egress) port $acme_standalone_port'
+
+[ -n "${redirect_tcp_ports:-}" ] && printf \
+  'rdr on $egress inet proto tcp to port %s -> ($egress) port %s\n' $redirect_tcp_ports
+
+[ -n "${redirect_udp_ports:-}" ] && printf \
+  'rdr on $egress inet proto udp to port %s -> ($egress) port %s\n' $redirect_udp_ports)
+
+antispoof quick for \$egress
+
+block all
+pass out quick on \$egress inet
+pass in quick on \$egress inet proto icmp all icmp-type { echoreq, unreach }
+
+$([ "${acme_standalone:-}" = true ] && echo \
+  'pass in quick on $egress inet proto tcp to port $acme_standalone_port user $acme_standalone_user'
+
+[ -n "${allowed_tcp_ports:-}" ] && echo \
+  'pass in quick on $egress inet proto tcp to port $allowed_tcp_ports'
+
+[ -n "${allowed_udp_ports:-}" ] && echo \
+  'pass in quick on $egress inet proto udp to port $allowed_udp_ports'
+
+[ "$BOXCONF_VIRTUALIZATION_TYPE" == jail ] || echo \
+  'pass in quick on $egress inet proto { tcp, udp } to port $nfscbd_port')

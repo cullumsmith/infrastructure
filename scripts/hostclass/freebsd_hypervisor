@@ -1,0 +1,80 @@
+#!/bin/sh
+
+: ${hypervisor_trunk_interface:='lagg0'}
+: ${hypervisor_default_vlan:='1'}
+: ${hypervisor_default_prefix:='24'}
+: ${hypervisor_default_os_quota:='24G'}
+: ${hypervisor_default_data_quota:='8G'}
+
+: ${hypervisor_vm_home:='/usr/local/bhyve'}
+: ${hypervisor_vm_dataset:='tank/bhyve'}
+: ${hypervisor_vm_default_cpus:='2'}
+: ${hypervisor_vm_default_mem:='4G'}
+: ${hypervisor_vm_template_size:='10G'}
+: ${hypervisor_vm_default_autostart_delay:='2'}
+: ${hypervisor_vm_default_zfs_opts:='-o primarycache=metadata -o compress=off'}
+: ${hypervisor_vm_zfs_volblocksize:='64k'}
+
+: ${hypervisor_jail_home:='/usr/local/jails'}
+: ${hypervisor_jail_dataset:='tank/jails'}
+: ${hypervisor_jail_default_zfs_opts:='-o compress=lz4'}
+
+hypervisor_jail_bpf_ruleset=1000
+
+# Required for vnet jails.
+set_sysctl net.link.tap.up_on_open=1
+
+# https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=262189
+set_sysctl vfs.zfs.vol.mode=2
+
+# Load required kernel modules.
+load_kernel_module vmm nmdm linux linux64
+set_loader_conf \
+  vmm_load=YES \
+  nmdm_load=YES \
+  linux_load=YES \
+  linux64_load=YES \
+  kern.racct.enable=1
+
+# Install vm/jail management dependencies.
+pkg install -y \
+  bhyve-firmware \
+  cdrkit-genisoimage \
+  qemu-tools
+
+# Create bhyve VM dataset.
+create_dataset -o "mountpoint=${hypervisor_vm_home}" "$hypervisor_vm_dataset"
+
+# Create dataset for bhyve templates.
+create_dataset -o volmode=none -o mountpoint=none "${hypervisor_vm_dataset}/templates"
+
+# Create jails dataset.
+create_dataset -o mountpoint="${hypervisor_jail_home}" "$hypervisor_jail_dataset"
+
+# Create dataset for jail templates.
+create_dataset -o mountpoint="${hypervisor_jail_home}/templates" "${hypervisor_jail_dataset}/templates"
+
+# Lock down permissions on the VM and jail directories.
+chmod 700 "$hypervisor_vm_home" "$hypervisor_jail_home"
+
+# Create directory for VM ISO files.
+install_directory -m 0755 "${hypervisor_vm_home}/isos"
+
+# Copy jail/bhyve management scripts.
+install_directory -m 0755 /usr/local/etc/rc.d
+
+install_file -m 0555 \
+  /usr/local/sbin/jailctl \
+  /usr/local/sbin/vmctl \
+  /usr/local/etc/rc.d/vmctl
+
+install_template -m 0644 \
+  /usr/local/etc/jailctl.conf \
+  /usr/local/etc/vmctl.conf
+
+install_template -m 0644 /etc/devfs.rules
+
+# Enable jails/bhyve to start on boot.
+sysrc -v \
+  vmctl_enable=YES \
+  jail_enable=YES

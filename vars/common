@@ -1,0 +1,18 @@
+#!/bin/sh
+
+domain=idm.example.com
+email_domain=example.com
+locale=en_US.UTF-8
+ntp_pools='pool.ntp.org'
+root_password=changeme
+root_authorized_keys='ssh-ed25519 changeme
+ssh-ed25519 changeme'
+root_mail_alias="you@${email_domain}"
+smtp_host_ip=1.2.3.4
+timezone=America/New_York
+
+
+allowed_tcp_ports=ssh
+bootstrap_resolvers='8.8.8.8  8.8.4.4'
+smtp_host="smtp.${domain}"
+tcp_buffer_size=2097152  # suitable for 1 GigE

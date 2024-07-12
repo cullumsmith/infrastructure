@@ -1,0 +1,1198 @@
+#!/bin/sh
+#
+# Bhyve management utility.
+
+set -eu -o pipefail
+
+. /usr/local/etc/vmctl.conf
+
+cmd::main(){
+  local usage="COMMAND [ARGS]...
+FreeBSD bhyve management utility.
+Commands:
+  create             Create a new VM
+  create-snapshot    Take a snapshot of a VM
+  create-template    Create a template from a VM disk image
+  console            Connect to a VM's serial console
+  destroy            Destroy a VM and its dataset
+  destroy-iso        Delete an ISO
+  destroy-snapshot   Delete a VM snapshot
+  destroy-template   Delete a VM template
+  download-iso       Download an ISO
+  download-template  Download a disk image
+  edit               Edit a VM's configuration
+  list               List VMs
+  list-isos          List available ISOs
+  list-snapshots     List VM snapshots
+  list-templates     List VM templates
+  reprovision        Wipe and reprovision an OS disk from a template
+  restart            Restart a VM
+  rollback           Rollback a VM to a given snapshot
+  show               Show VM configuration
+  start              Start a VM
+  status             Show VM status
+  stop               Stop a VM"
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -ge 1 ] || cmd::usage 'no comand specified'
+  local cmd=$1; shift
+
+  case $cmd in
+    console)                       cmd::console "$@" ;;
+    create)                        cmd::create "$@" ;;
+    create-snapshot|snapshot|snap) cmd::create_snapshot "$@" ;;
+    create-template)               cmd::create_template "$@" ;;
+    destroy|rm)                    cmd::destroy "$@" ;;
+    destroy-iso|rmi)               cmd::destroy_iso "$@" ;;
+    destroy-snapshot|rms)          cmd::destroy_snapshot "$@" ;;
+    destroy-template|rmt)          cmd::destroy_template "$@" ;;
+    download-iso|dli)              cmd::download_iso "$@" ;;
+    download-template|dlt)         cmd::download_template "$@" ;;
+    edit)                          cmd::edit "$@" ;;
+    list|ls)                       cmd::list "$@" ;;
+    list-isos|lsi)                 cmd::list_isos "$@" ;;
+    list-snapshots|lss)            cmd::list_snapshots "$@" ;;
+    list-templates|lst)            cmd::list_templates "$@" ;;
+    reprovision)                   cmd::reprovision "$@" ;;
+    restart|reboot)                cmd::restart "$@" ;;
+    rollback)                      cmd::rollback "$@" ;;
+    show)                          cmd::show "$@" ;;
+    start|boot)                    cmd::start "$@" ;;
+    status)                        cmd::status "$@" ;;
+    stop|shutdown)                 cmd::stop "$@" ;;
+    # The following commands are internal and should not be invoked manually.
+    _start-all)                    cmd::_start_all "$@" ;;
+    _stop-all)                     cmd::_stop_all "$@" ;;
+    *)                             cmd::usage "unknown command: ${cmd}" ;;
+  esac
+}
+
+
+################################################################################
+# Standard helper functions.
+################################################################################
+die(){
+  printf '%s: %s\n' vmctl "$*" 1>&2
+  exit 1
+}
+
+
+################################################################################
+# CLI-related functions.
+################################################################################
+cmd::help(){
+  printf 'Usage: %s %s\n' vmctl "$usage"
+  [ -n "${help:-}" ] && printf '%s\n' "$help"
+  exit 0
+}
+
+cmd::usage(){
+  [ $# -gt 0 ] && printf '%s: %s\n' "vmctl" "$1" 1>&2
+  printf 'Usage: %s %s\n' vmctl "${usage}" 1>&2
+  exit 2
+}
+
+cmd::getopt_help(){
+  local opt
+  while getopts :h opt; do
+    case $opt in
+      h) cmd::help ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+}
+
+cmd::console(){
+  local usage='console VM'
+  local help='Connect to serial console.
+Notes:
+  Type ~. to return to your shell.
+  See `man 1 cu` for additional escape codes.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm"  || die "no such vm: ${vm}"
+  vm::running "$vm" || die "vm not running: ${vm}"
+
+  exec cu -l "/dev/nmdm_${vm}B" -s 9600
+}
+
+cmd::create(){
+  local usage='create [-A] [-a IP] [-c CORES] [-d DOMAIN] [-g GATEWAY] [-i ISO] [-k SSHKEY]
+       [-m MEM] [-p PREFIXLEN] [-q DATA_SIZE] [-Q OS_SIZE] [-r NAMESERVER]
+       [-s SEARCHDOMAIN] [-v VLANID] NAME [TEMPLATE]'
+  local help="Create a new VM.
+Options:
+  -A               Don't autostart on boot
+  -a IP            IPv4 address (cloud-init)
+  -c CORES         Number of CPU cores
+  -d DOMAIN        Host domain name (cloud-init)
+  -g GATEWAY       Default IPv4 gateway (cloud-init)
+  -i ISO           Boot from an ISO
+  -k SSHKEY        Path to SSH pubkey for root's authorized_keys (cloud-init)
+  -m MEM           Size of memory (RAM)
+  -p PREFIXLEN     IPv4 network prefix length (cloud-init)
+  -q DATA_SIZE     Size of data disk
+  -Q OS_SIZE       Size of OS disk
+  -r NAMESERVER    DNS resolver (cloud-init)
+  -s SEARCHDOMAIN  DNS search domain (cloud-init)
+  -v VLANID        VLAN ID number"
+
+  local \
+    autostart=true \
+    cpus=$DEFAULT_CPUS \
+    data_size=$DEFAULT_DATA_SIZE \
+    domain=$DEFAULT_DOMAIN \
+    gateway \
+    ip \
+    memory=$DEFAULT_MEMORY \
+    nameservers \
+    prefixlen=$DEFAULT_PREFIXLEN \
+    os_size=$DEFAULT_OS_SIZE \
+    searchdomains \
+    vlan=$DEFAULT_VLAN \
+    ssh_key_files \
+    ssh_keys \
+    iso \
+    opt
+
+  while getopts :Aa:c:d:g:hi:k:m:p:q:Q:r:s:v: opt; do
+    case $opt in
+      A) autostart=false ;;
+      a) ip=${OPTARG} ;;
+      c) cpus=$OPTARG ;;
+      d) domain=$OPTARG ;;
+      g) gateway=$OPTARG ;;
+      h) cmd::help ;;
+      i) iso=$OPTARG ;;
+      k) ssh_key_files="${ssh_key_files:-} ${OPTARG}" ;;
+      m) memory=$OPTARG ;;
+      p) prefixlen=$OPTARG ;;
+      q) data_size=$OPTARG ;;
+      Q) os_size=$OPTARG ;;
+      r) nameservers="${nameservers:-}${OPTARG}," ;;
+      s) searchdomains="${searchdomains:-}${OPTARG}," ;;
+      v) vlan=$OPTARG ;;
+      :) cmd::usage "missing option value: -${OPTARG}" ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'NAME not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local name=$1 template=${2:-}
+
+  vm::exists "$name" && die "vm name already in use: ${name}"
+
+  if [ -n "$template" ]; then
+    template::exists "$template" || die "no such template: ${template}"
+  fi
+
+  if [ -n "${iso:-}" ]; then
+    iso::exists "$iso" || die "no such iso: ${iso}"
+  fi
+
+  local ssh_keys key
+  for key in ${ssh_key_files:-}; do
+    [ -f "${key}" ] || die "no such ssh key: ${key}"
+    ssh_keys="${ssh_keys:-}  - $(cat "$key")
+"
+  done
+
+  interface::exists "bridge${vlan}" || interface::add_vlan "$vlan"
+
+  # Create the parent dataset.
+  zfs create -v "${VM_DATASET}/${name}"
+
+  if [ -n "$template" ]; then
+    # Clone the OS zvol from template.
+    zfs::ensure_snapshot snapshot "${VM_DATASET}/templates/${template}"
+    zfs clone $ZFS_OPTS -o volmode=dev "$snapshot" "${VM_DATASET}/${name}/os"
+  else
+    # Create a new OS zvol.
+    zfs create -v -o volblocksize="$ZFS_VOLBLOCKSIZE" $ZFS_OPTS -o volmode=dev -V "$os_size" "${VM_DATASET}/${name}/os"
+  fi
+
+  # Create a data zvol.
+  zfs create -v -o volblocksize="$ZFS_VOLBLOCKSIZE" $ZFS_OPTS -o volmode=dev -V "$data_size" "${VM_DATASET}/${name}/data"
+
+  local macaddr uuid
+  macaddr=$(interface::derive_mac "$TRUNK_INTERFACE" "$name")
+  uuid=$(uuidgen)
+
+  # Generate bhyve config file.
+  cat <<EOF > "${VM_HOME}/${name}/bhyve.conf"
+name=${name}
+uuid=${uuid}
+cpus=${cpus}
+memory.size=${memory}
+acpi_tables=true
+destroy_on_poweroff=true
+keyboard.layout=us_unix
+rtc.use_localtime=false
+x86.strictmsr=true
+x86.vmexit_on_hlt=true
+x86.vmexit_on_pause=true
+pci.0.0.0.device=hostbridge
+pci.0.1.0.device=lpc
+pci.0.2.0.device=virtio-net
+pci.0.2.0.backend=$(interface::tap::derive_name "$name")
+pci.0.2.0.mac=${macaddr}
+pci.0.3.0.device=nvme
+pci.0.3.0.path=/dev/zvol/${VM_DATASET}/%(name)/os
+pci.0.4.0.device=nvme
+pci.0.4.0.path=/dev/zvol/${VM_DATASET}/%(name)/data
+pci.0.5.0.device=ahci
+pci.0.5.0.port.0.type=cd
+pci.0.5.0.port.0.path=${VM_HOME}/%(name)/seed.iso
+pci.0.5.0.port.0.ro=true
+lpc.com1.path=/dev/nmdm_%(name)A
+lpc.bootrom=/usr/local/share/uefi-firmware/BHYVE_UEFI.fd
+lpc.bootvars=${VM_HOME}/${name}/uefi-vars.fd
+vmctl.vlan=${vlan}
+EOF
+
+  # Generate cloud-init network configuration.
+  if [ -z "${ip:-}" ]; then
+    cat <<EOF > "${VM_HOME}/${name}/network-config"
+version: 2
+ethernets:
+  id0:
+    match:
+      macaddress: '${macaddr}'
+    dhcp4: True
+    dhcp6: False
+EOF
+  else
+    cat <<EOF > "${VM_HOME}/${name}/network-config"
+version: 2
+ethernets:
+  id0:
+    match:
+      macaddress: '${macaddr}'
+    addresses: [${ip}/${prefixlen}]
+    routes:
+      - to: 0.0.0.0/0
+        via: ${gateway:-}
+    dhcp4: False
+    dhcp6: False
+    nameservers:
+      search: [${searchdomains:-}]
+      addresses: [${nameservers:-}]
+EOF
+  fi
+
+  # Generate cloud-init metadata.
+  cat <<EOF > "${VM_HOME}/${name}/meta-data"
+instance-id: ${uuid}
+local-hostname: ${name}
+EOF
+
+  # Generate cloud-init userdata.
+  cat <<EOF > "${VM_HOME}/${name}/user-data"
+#cloud-config
+disable_root: False
+ssh_pwauth: False
+resize_rootfs: True
+ssh_authorized_keys:
+${ssh_keys:-}
+users: []
+fqdn: ${name}.${domain}
+prefer_fqdn_over_hostname: True
+runcmd:
+  - sed -i.bak -E '/^#?PermitRootLogin/s/^.*$/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+  - rm -f /etc/ssh/sshd_config.bak
+  - service ssh restart
+  - service sshd restart
+EOF
+
+  # Generate cloud-init ISO file.
+  genisoimage -output "${VM_HOME}/${name}/seed.iso" -volid cidata -joliet -input-charset utf-8 -rock \
+    "${VM_HOME}/${name}/network-config" \
+    "${VM_HOME}/${name}/meta-data" \
+    "${VM_HOME}/${name}/user-data"
+
+  # Copy initial UEFI vars.
+  cp /usr/local/share/uefi-firmware/BHYVE_UEFI_VARS.fd "${VM_HOME}/${name}/uefi-vars.fd"
+
+  # Enable autostart (if requested).
+  [ "$autostart" = true ] && sysrc "vmctl_list+=${name}"
+
+  # Start the VM.
+  vm::start "$name" "${iso:-}"
+}
+
+cmd::create_snapshot(){
+  local usage='create-snapshot [-d] [-o] VM [SNAPNAME]'
+  local help='Create a VM snapshot.
+Options:
+  -d  Only snapshot the data dataset
+  -o  Only snapshot the OS dataset'
+
+  local opt both=true os_only=false data_only=false snapname
+  while getopts :dho opt; do
+    case $opt in
+      d) data_only=true; both=false ;;
+      h) cmd::help ;;
+      o) os_only=true; both=false ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  vm=$1 snapname=${2:-}
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  [ -n "$snapname" ] || snapname=$(date +%Y-%m-%dT%H:%M:%S)
+
+  # Snapshot the OS disk.
+  if [ "$both" = true ] || [ "$os_only" = true ]; then
+    zfs snapshot "${VM_DATASET}/${vm}/os@${snapname}"
+  fi
+
+  # Snapshot the data disk.
+  if [ "$both" = true ] || [ "$data_only" = true ]; then
+    zfs snapshot "${VM_DATASET}/${vm}/data@${snapname}"
+  fi
+}
+
+cmd::create_template(){
+  local usage='create-template NAME VM'
+  local help='Create a template from a VM.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'NAME not specified'
+  [ $# -lt 2 ] && cmd::usage 'VM not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local name=$1 vm=$2
+
+  vm::exists "$vm"         || die "no such vm: ${vm}"
+  template::exists "$name" && die "template already exists: $name"
+  vm::running "$vm"        && die "refusing to create template while vm is running: ${vm}"
+
+  local snapname
+  snapname=$(date +%Y-%m-%dT%H:%M:%S)
+  zfs snapshot "${VM_DATASET}/${vm}/os@${snapname}"
+  zfs send "${VM_DATASET}/${vm}/os@${snapname}" | zfs receive -v $ZFS_OPTS -o volmode=dev "${VM_DATASET}/templates/${name}"
+  zfs destroy "${VM_DATASET}/${vm}/os@${snapname}"
+}
+
+cmd::destroy_iso(){
+  local usage='destroy-iso ISO'
+  local help='Delete an ISO.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'ISO not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  iso=$1
+
+  iso::exists "$iso" || die "no such iso: ${iso}"
+  rm "${VM_HOME}/isos/${iso}.iso"
+}
+
+cmd::destroy(){
+  local usage='destroy [-y] VM'
+  local help="Delete a VM and its dataset.
+Options:
+  -y  Don't prompt for confirmation"
+
+  local noconfirm=false answer opt
+
+  while getopts :hy opt; do
+    case $opt in
+      h) cmd::help ;;
+      y) noconfirm=true ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  if [ "$noconfirm" != true ]; then
+    read -rp "Really destroy vm ${vm}? (y/N) " answer
+    case $answer in
+      [yY]|[yY][eE][sS]) : ;;
+      *) die 'operation cancelled' ;;
+    esac
+  fi
+
+  # If the VM is running, stop it.
+  vm::running "$1" && vm::stop "$1" KILL
+
+  # Destroy the VM's dataset.
+  zfs destroy -v -r "${VM_DATASET}/${vm}"
+
+  # Remove VM from autostart list.
+  sysrc -v "vmctl_list-=${vm}"
+}
+
+cmd::destroy_snapshot(){
+  local usage='destroy-snapshot [-y] VM SNAPSHOT'
+  local help="Delete a VM snapshot.
+Options:
+  -y  Don't prompt for confirmation"
+
+  local noconfirm=false answer opt
+
+  while getopts :hy opt; do
+    case $opt in
+      h) cmd::help ;;
+      y) noconfirm=true ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -lt 2 ] && cmd::usage 'SNAPSHOT not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local vm=$1 snapshot=$2
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  local datasets=''
+
+  if [ "${snapshot#*@}" != "$snapshot" ]; then
+    # If the snapshot name contains '@', then we have something like 'os@snapname'.
+    zfs::dataset_exists "${VM_DATASET}/${vm}/${snapshot}" && \
+      datasets="${VM_DATASET}/${vm}/${snapshot}"
+  else
+    # Otherwise, check if either os or data dataset contains a matching snapshot.
+    zfs::dataset_exists "${VM_DATASET}/${vm}/os@${snapshot}" && \
+      datasets="${VM_DATASET}/${vm}/os@${snapshot}"
+
+    zfs::dataset_exists "${VM_DATASET}/${vm}/data@${snapshot}" && \
+      datasets="${datasets} ${VM_DATASET}/${vm}/data@${snapshot}"
+  fi
+
+  [ -n "$datasets" ] || die "no such snapshot for vm ${vm}: ${snapshot}"
+
+  if [ "$noconfirm" != true ]; then
+    read -rp "Really destroy ${vm} snapshot ${snapshot}? (y/N) " answer
+    case $answer in
+      [yY]|[yY][eE][sS]) : ;;
+      *) die 'operation cancelled' ;;
+    esac
+  fi
+
+  local dataset
+  for dataset in $datasets; do
+    zfs destroy -v "$dataset"
+  done
+}
+
+cmd::destroy_template(){
+  local usage='destroy-template [-y] TEMPLATE'
+  local help="Delete a VM template image.
+Options:
+  -y  Don't prompt for confirmation
+Notes:
+  A template cannot be deleted while its clones still exist."
+
+  local noconfirm=false answer opt
+
+  while getopts :hy opt; do
+    case $opt in
+      h) cmd::help ;;
+      y) noconfirm=true ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'TEMPLATE not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local template=$1
+
+  template::exists "$template" || die "no such template: ${template}"
+
+  if [ "$noconfirm" != true ]; then
+    read -rp "Really destroy template ${template}? (y/N) " answer
+    case $answer in
+      [yY]|[yY][eE][sS]) : ;;
+      *) die 'operation cancelled' ;;
+    esac
+  fi
+
+  zfs destroy -v -r "${VM_DATASET}/templates/${template}"
+}
+
+cmd::download_iso(){
+  local usage='download-iso URL [NAME]'
+  local help='Download an ISO.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'URL not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local url=$1 name=${2:-}
+
+  [ -n "$name" ] || name=$(basename "$url" .iso)
+
+  iso::exists "$name" && die "iso already exists: ${name}"
+
+  fetch -o "${VM_HOME}/isos/${name}.iso" "$url"
+}
+
+cmd::download_template(){
+  local usage='download-template URL [NAME]'
+  local help='Download a disk image.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'URL not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local url=$1 name=${2:-}
+
+  local ext image_ok=false
+  for ext in .raw .raw.xz .qcow2; do
+    if [ -z "${url%%*"$ext"}" ]; then
+      image_ok=true
+      [ -n "$name" ] || name=$(basename "$url" "$ext")
+      break
+    fi
+  done
+
+  [ "$image_ok" = true ]   || die "unknown image type: $(basename "$url")"
+  template::exists "$name" && die "template already exists: ${name}"
+
+  local dataset="${VM_DATASET}/templates/${name}" \
+        zvol="/dev/zvol/${VM_DATASET}/templates/${name}"
+
+  # Create a ZFS dataset for the template.
+  zfs create -v -o volblocksize="$ZFS_VOLBLOCKSIZE" $ZFS_OPTS -o volmode=dev -V "$TEMPLATE_ZVOL_SIZE" "$dataset"
+
+  # Extract the template into the zvol, based on its file type.
+  case $url in
+    http://*.raw|https://*.raw)
+      fetch "$url" -o "$zvol" || zfs::cleanup_and_die "$dataset"
+      ;;
+    *.raw)
+      dd if="$url" of="$zvol" bs=1M || zfs::cleanup_and_die "$dataset"
+      ;;
+    http://*.raw.xz|https://*.raw.xz)
+      fetch "$url" -o - | xz -d | dd of="$zvol" bs=1M || zfs::cleanup_and_die "$dataset"
+      ;;
+    *.raw.xz)
+      xz -cd "$url" | dd of="$zvol" bs=1M || zfs::cleanup_and_die "$dataset"
+      ;;
+    http://*.qcow2|https://*.qcow2)
+      fetch "$url" -o "/root/${name}.qcow2" || zfs::cleanup_and_die "$dataset"
+      qemu-img dd -O raw if="/root/${name}.qcow2" of="$zvol" bs=1M || zfs::cleanup_and_die "$dataset"
+      rm "/root/${name}.qcow2"
+      ;;
+    *.qcow2)
+      qemu-img dd -O raw if="$url" of="$zvol" bs=1M || zfs::cleanup_and_die "$dataset"
+      ;;
+    *) # NOTREACHED
+      ;;
+  esac
+
+  # Snapshot the template so it can be cloned.
+  zfs snapshot "${VM_DATASET}/templates/${name}@$(date +%Y-%m-%dT%H:%M:%S)"
+}
+
+cmd::edit(){
+  local usage='edit VM'
+  local help='Edit VM configuration.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+  "$EDITOR" "${VM_HOME}/${vm}/bhyve.conf"
+}
+
+cmd::list(){
+  local usage='list [-t]'
+  local help='List configured VMs.'
+
+  local opt terse=false
+  while getopts :th opt; do
+    case $opt in
+      t) terse=true ;;
+      h) cmd::help ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -eq 0 ] || cmd::usage 'too many arguments'
+
+  local vm status
+  { [ $terse = true ] || echo 'VM STATUS'
+    for vm in $(vm::list); do
+      if [ $terse = true ]; then
+        printf '%s\n' "$vm"
+      else
+        if vm::running "${vm}"; then
+          status=running
+        else
+          status=stopped
+        fi
+        printf '%s %s\n' "$vm" "$status"
+      fi
+    done
+  } | column -t
+}
+
+cmd::list_isos(){
+  local usage='list-isos'
+  local help='List available ISOs.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+  [ $# -gt 0 ] && cmd::usage 'too many arguments'
+
+  local file
+  for file in "${VM_HOME}"/isos/*.iso; do
+    [ -e "$file" ] || continue
+    name=${file##*/}
+    name=${name%.iso}
+    printf '%s\n' "$name"
+  done
+}
+
+cmd::list_snapshots(){
+  local usage='list-snapshots VM'
+  local help='List VM snapshots.
+Options:
+  -d  List snapshots from data dataset only
+  -o  List snapshots from OS dataset only
+  -t  Use terse output'
+
+  local opt terse=false dataset=''
+  while getopts :dhot opt; do
+    case $opt in
+      d) dataset=/data ;;
+      h) cmd::help ;;
+      o) dataset=/os ;;
+      t) terse=true ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  if [ "$terse" = true ]; then
+    zfs list -r -t snapshot -H -o name -s creation "${VM_DATASET}/${vm}${dataset}" 2>/dev/null \
+      | sed 's/^.*\///' \
+      | sort -k1,1 -t@ -s
+  else
+    { echo 'DATASET SNAPSHOT USED REFER'
+      zfs list -r -t snapshot -H -o name,used,refer -s creation "${VM_DATASET}/${vm}${dataset}" 2>/dev/null
+    } | sed 's/^.*\///' \
+      | sort -k1,1 -t@ -s \
+      | tr '@' ' ' \
+      | column -t
+  fi
+}
+
+cmd::list_templates(){
+  local usage='list-templates'
+  local help='list template images.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -eq 0 ] || cmd::usage 'too many arguments'
+
+  ls -1 /dev/zvol/${VM_DATASET}/templates 2>/dev/null
+}
+
+cmd::reprovision(){
+  local usage='reprovision VM TEMPLATE'
+  local help="Wipe and reprovision a VM's OS dataset from a template."
+
+  local opt noconfirm=false running=false
+  while getopts :hy opt; do
+    case $opt in
+      h) cmd::help ;;
+      y) noconfirm=true ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -lt 2 ] && cmd::usage 'TEMPLATE not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local vm=$1 template=$2
+
+  vm::exists "$vm"             || die "no such vm: ${vm}"
+  template::exists "$template" || die "no such template: ${template}"
+
+  if [ "$noconfirm" != true ]; then
+    read -rp "Really reprovision ${vm}? (y/N) " answer
+    case $answer in
+      [yY]|[yY][eE][sS]) : ;;
+      *) die 'operation cancelled' ;;
+    esac
+  fi
+
+  # If the vm is running, stop it.
+  if vm::running "$vm"; then
+    running=true
+    vm::stop "$vm"
+  fi
+
+  local snapshot old_size
+
+  # Get the latest snapshot for the template (if not specified).
+  zfs::ensure_snapshot snapshot "${VM_DATASET}/templates/${template}"
+
+  # Stash old disk size.
+  old_size=$(zfs get -Hp -o value volsize "${VM_DATASET}/${vm}/os")
+
+  # Reprovision OS dataset from template.
+  zfs destroy -v -r "${VM_DATASET}/${vm}/os"
+  zfs clone $ZFS_OPTS -o volmode=dev -o volsize="$old_size" "$snapshot" "${VM_DATASET}/${vm}/os"
+
+  # If the jail was running, restart it.
+  if [ "$running" = true ]; then
+    vm::start "$vm"
+  fi
+}
+
+cmd::restart(){
+  local usage='restart VM'
+  local help='Restart a VM.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+
+  vm::exists "$1"  || die "no such vm: ${1}"
+  vm::running "$1" || die "vm not running: ${1}"
+
+  vm::stop "$1"
+  vm::start "$1"
+}
+
+cmd::show(){
+  local usage='show VM'
+  local help='Show VM configuration.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  printf -- '------------------------- BHYVE CONFIGURATION -------------------------\n'
+  cat "${VM_HOME}/${vm}/bhyve.conf"
+  printf -- '\n---------------------------- ZFS DATASET -----------------------------\n'
+  zfs list -o name,volsize,used,refer -S name \
+    "${VM_DATASET}/${vm}/os" \
+    "${VM_DATASET}/${vm}/data"
+}
+
+cmd::rollback(){
+  local usage='rollback VM SNAPSHOT'
+  local help='Rollback a VM to a given snapshot.
+Options:
+  -d  Rollback the data zvol only
+  -f  Attempt rollback even if the jail is running
+  -o  Rollback the OS zvol only'
+
+  local opt force=false both=true os_only=false data_only=false
+  while getopts :dfho opt; do
+    case $opt in
+      d) data_only=true; both=false ;;
+      f) force=true ;;
+      h) cmd::help ;;
+      o) os_only=true; both=false ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -lt 2 ] && cmd::usage 'SNAPSHOT not specified'
+  [ $# -gt 2 ] && cmd::usage 'too many arguments'
+  local vm=$1 snapshot=$2
+
+  vm::exists "$vm" || die "no such vm: ${vm}"
+
+  if [ "$both" = true ] || [ "$os_only" = true ]; then
+    zfs::dataset_exists "${VM_DATASET}/${vm}/os@${snapshot}" \
+      || die "no such snapshot for ${vm}/os: ${snapshot}"
+  fi
+  if [ "$both" = true ] || [ "$data_only" = true ]; then
+    zfs::dataset_exists "${VM_DATASET}/${vm}/data@${snapshot}" \
+      || die "no such snapshot for ${vm}/data: ${snapshot}"
+  fi
+
+  if vm::running "$vm" && [ "$force" != true ]; then
+    die "vm ${vm} is running, refusing to rollback (-f to override)"
+  fi
+
+  # Rollback the OS disk.
+  if [ "$both" = true ] || [ "$os_only" = true ]; then
+    zfs rollback -r "${VM_DATASET}/${vm}/os@${snapshot}"
+  fi
+
+  # Rollback the data disk.
+  if [ "$both" = true ] || [ "$data_only" = true ]; then
+    zfs rollback -r "${VM_DATASET}/${vm}/data@${snapshot}"
+  fi
+}
+
+cmd::start(){
+  local usage='start [-i ISO] VM'
+  local help='Start a VM.
+Options:
+  -i ISO  Boot from an ISO'
+
+  local iso opt
+  while getopts :hi: opt; do
+    case $opt in
+      h) cmd::help ;;
+      i) iso=$OPTARG ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm"  || die "no such vm: ${vm}"
+  vm::running "$vm" && die "vm already running: ${vm}"
+
+  if [ -n "${iso:-}" ]; then
+    iso::exists "$iso" || die "no such iso: ${iso}"
+  fi
+
+  vm::start "$vm" "${iso:-}"
+}
+
+cmd::_start_all(){
+  local usage='_start-all'
+  local help='Start all VMs.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+  [ $# -eq 0 ] || cmd::usage 'too many arguments'
+
+  rc::load_config
+
+  local vm
+  for vm in ${vmctl_list:-}; do
+    echo "vmctl: starting ${vm}"
+    vm::start "$vm"
+    sleep "${vmctl_delay:-$DEFAULT_AUTOSTART_DELAY}"
+  done
+}
+
+cmd::status(){
+  local usage='status VM'
+  local help='Show running VM status.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm"  || die "no such vm: ${vm}"
+  vm::running "$vm" || die "vm not running: ${vm}"
+
+  local pid
+  pid=$(vm::pid "$vm")
+
+  printf -- '----------------------------- BHYVE PROCESS ------------------------------\n'
+  ps -auxdr -p "$pid"
+  printf -- '\n---------------------------- ZFS DATASET -----------------------------\n'
+  zfs list -o name,volsize,used,refer -S name \
+    "${VM_DATASET}/${vm}/os" \
+    "${VM_DATASET}/${vm}/data" \
+    | sed "s|^${VM_DATASET}/${vm}/||" \
+    | column -t
+  printf -- '\n--------------------------- RESOURCE USAGE ---------------------------\n'
+  rctl -h -u "process:${pid}" \
+    | grep -E '^(pcpu|memoryuse|vmemoryuse|swapuse|readbps|writebps|readiops|writeiops)=' \
+    | rs -c= -C' ' -T \
+    | column -t
+}
+
+cmd::stop(){
+  local usage='start VM'
+  local help='Shutdown a VM.
+Options:
+  -f  Send SIGKILL'
+
+  local opt signal=TERM
+  while getopts :fh opt; do
+    case $opt in
+      f) signal=KILL ;;
+      h) cmd::help ;;
+      ?) cmd::usage "unknown option: -${OPTARG}" ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  [ $# -lt 1 ] && cmd::usage 'VM not specified'
+  [ $# -gt 1 ] && cmd::usage 'too many arguments'
+  local vm=$1
+
+  vm::exists "$vm"  || die "no such vm: ${vm}"
+  vm::running "$vm" || die "vm not running: ${vm}"
+
+  vm::stop "$vm" "$signal"
+}
+
+cmd::_stop_all(){
+  local usage='_stop-all'
+  local help='Stop all VMs.'
+
+  cmd::getopt_help "$@"; shift $((OPTIND - 1))
+  [ $# -eq 0 ] || cmd::usage 'too many arguments'
+
+  rc::load_config
+
+  # Reverse the autostart list.
+  local vm vmctl_list_rev=''
+  for vm in ${vmctl_list:-}; do
+    vmctl_list_rev="${vm} ${vmctl_list_rev}"
+  done
+
+  # Stop the VMs in reverse order.
+  for vm in $vmctl_list_rev; do
+    if vm::running "$vm"; then
+      echo "vmctl: stopping ${vm}"
+      vm::stop "$vm"
+      sleep "${vmctl_delay:-$DEFAULT_AUTOSTART_DELAY}"
+    fi
+  done
+
+  # Stop any other VMs that might be running.
+  for vm in $(vm::list); do
+    if vm::running "$vm"; then
+      echo "vmctl: stopping ${vm}"
+      vm::stop "$vm"
+    fi
+  done
+}
+
+
+################################################################################
+# "Library" functions.
+################################################################################
+interface::add_vlan(){
+  local id=$1
+  ifconfig "vlan${id}" create
+  ifconfig "vlan${id}" vlan "$id" vlandev "$TRUNK_INTERFACE" up
+  ifconfig "bridge${id}" create
+  ifconfig "bridge${id}" addm "vlan${id}" up
+  sysrc -v \
+    "cloned_interfaces+=vlan${id} bridge${id}" \
+    "ifconfig_vlan${id}=vlan ${id} vlandev ${TRUNK_INTERFACE} up" \
+    "ifconfig_bridge${id}=addm vlan${id} up"
+}
+
+interface::derive_mac(){
+  # Derive unique mac addresses for a virtual NIC, based on the physical
+  # interface address + vm name.
+  local iface=$1 name=$2
+  local hwaddr checksum virtual_mac
+
+  # Similar to /usr/share/examples/jails/jib
+  hwaddr=$(ifconfig "$iface" ether | awk '/ether/,$0=$2')
+  # ??:??:??:II:II:II
+  virtual_mac=${hwaddr#??:??:??} # => :II:II:II
+  # => :SS:SS:II:II:II
+  virtual_mac=":$(printf '%s' "$name" | md5 | sed 's/^\(..\)\(..\).*/\1:\2/')${virtual_mac}"
+  # => NP:SS:SS:II:II:II
+  case $hwaddr in
+    ?2:*)    virtual_mac="1e${virtual_mac}" ;;
+    ?[Ee]:*) virtual_mac="16${virtual_mac}" ;;
+    *)       virtual_mac="1e${virtual_mac}" ;;
+  esac
+
+  # Sanity check for duplicate MAC
+  ifconfig | grep -qE "(ether|hwaddr) ${virtual_mac}" && die "MAC collision when configuring virutal interface!"
+
+  printf '%s' "${virtual_mac}"
+}
+
+interface::exists(){
+  ifconfig "$1" > /dev/null 2>&1
+}
+
+interface::tap::derive_name(){
+  # Generate an tap(4) interface name, based on the VM name.
+  #
+  # The maximum length of a network interface name on FreeBSD is 15 characters.
+  # We use a prefix of 'tap_', leaving 11 characters for a unique suffix for each
+  # VM.
+  #
+  # If the sanitized VM name is less than 11 characters, we'll simply use it
+  # for the suffix. Otherwise, we'll use the last 11 characters of the VM
+  # name's SHA-1 hash.
+  local name=$1 sanitized hash
+  sanitized=$(printf '%s' "$name" | tr -dC '[:alnum:]_')
+
+  if [ "${#sanitized}" -le 11 ]; then
+    printf 'tap_%s' "$sanitized"
+  else
+    hash=$(printf '%s' "$name" | sha1 | tail -c 11)
+    printf 'tap_%s' "$hash"
+  fi
+}
+
+iso::exists(){
+  test -f "${VM_HOME}/isos/${1}.iso"
+}
+
+rc::load_config(){
+  set +eu +o pipefail
+  . /etc/rc.subr
+  load_rc_config vmctl
+  set -eu -o pipefail
+}
+
+template::exists(){
+  zfs list -H "${VM_DATASET}/templates/${1}" > /dev/null 2>&1
+}
+
+vm::exists(){
+  test -f "${VM_HOME}/${1}/bhyve.conf"
+}
+
+vm::list(){
+  for file in "${VM_HOME}"/*/bhyve.conf; do
+    [ -e "$file" ] || continue
+    printf '%s\n' "$(basename "$(dirname "$file")")"
+  done
+}
+
+vm::pid(){
+  pgrep -fx "bhyve: ${1}"
+}
+
+vm::run(){
+  local vm=$1 iso=${2:-} bootdisk zvol iso_args bootcount=0 rc=0
+
+  zvol="/dev/zvol/${VM_DATASET}/${vm}/os"
+  bootdisk=$zvol
+  iso_args=''
+
+  # bhyve exit codes:
+  #   0: reboot
+  #   1: shutdown
+  #  >1: error
+  # As long as rc=0, keep rebooting.
+
+  while [ "$rc" -eq 0 ]; do
+    if [ -n "$iso" ]; then
+      # If this is the first boot, or no bootsector exists, boot from ISO.
+      if [ "$bootcount" -eq 0 ] || ! file -bs "$zvol" | grep -q 'boot sector'; then
+        bootdisk="${VM_HOME}/isos/${iso}.iso"
+        iso_args="-s 31:0,ahci-cd,${bootdisk}"
+      else
+        # Otherwise, boot from disk.
+        bootdisk=$zvol
+        iso_args=''
+      fi
+    fi
+
+    bootcount=$(( bootcount + 1 ))
+
+    bhyve -k "${VM_HOME}/${vm}/bhyve.conf" $iso_args "$vm" && rc=$? || rc=$?
+  done
+
+  # If we reach this point, the bhyve process has terminated. Clean up the
+  # /dev/vmm device and tap interface.
+  bhyvectl --vm="${vm}" --destroy
+  ifconfig "$(interface::tap::derive_name "$vm")" destroy
+}
+
+vm::running(){
+  vm::pid "$1" > /dev/null
+}
+
+vm::stop(){
+  local vm=$1 signal=${2:-TERM} pid
+  pid=$(vm::pid "$vm")
+
+  kill -s "$signal" "$pid"
+
+  # Loop until the bhyve process terminates.
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 1
+  done
+}
+
+vm::start(){
+  local vm=$1 iso=${2:-} vlan newif
+
+  vlan=$(vm::config::get "$vm" vmctl.vlan)
+
+  # Create the tap interface.
+  newif=$(ifconfig tap create)
+  ifconfig "bridge${vlan}" addm "$newif"
+  ifconfig "$newif" name "$(interface::tap::derive_name "$vm")" descr "vm/${vm}"
+
+  # Start the bhyve process in the background.
+  vm::run "$vm" "$iso" > /dev/null 2>&1 &
+}
+
+vm::config::get(){
+  local vm=$1 key=$2
+  awk -F= -v "key=${key}" \
+    '$1 == key {rc=1; print $2} END {exit !rc}' \
+    "${VM_HOME}/${vm}/bhyve.conf" \
+    || die "config value not set for vm ${vm}: ${key}"
+}
+
+zfs::ensure_snapshot(){
+  # If the given zfs dataset is a snapshot, return as-is.
+  # Otherwise, get the latest snapshot from the given dataset and return that.
+  local upvar=$1 dataset=$2 latest
+
+  if [ "${dataset#*@}" = "$dataset" ]; then
+    latest=$(zfs list -t snapshot -o name -s creation -H "$dataset" | tail -1)
+    setvar "$upvar" "$latest"
+  else
+    zfs list -t snapshot -H "$dataset" > /dev/null 2>&1 || die "no such snapshot: ${dataset}"
+    setvar "$upvar" "$dataset"
+  fi
+}
+
+zfs::cleanup_and_die(){
+  zfs destroy -v -r "$1"
+  exit 1
+}
+
+zfs::dataset_exists(){
+  zfs list "$1" > /dev/null 2>&1
+}
+
+
+cmd::main "$@"

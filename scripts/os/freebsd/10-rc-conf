@@ -1,0 +1,7 @@
+#!/bin/sh
+
+sysrc -v \
+  clear_tmp_enable=YES \
+  dumpdev=NO \
+  ipv6_activate_all_interfaces=NO \
+  syslogd_flags=-ss

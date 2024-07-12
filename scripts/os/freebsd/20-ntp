@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Jails don't need NTP.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ]; then
+  return
+fi
+
+install_template -m 0644 /etc/ntp.conf
+
+sysrc -v \
+  ntpd_enable=YES \
+  ntpd_sync_on_start=YES
+
+service ntpd restart

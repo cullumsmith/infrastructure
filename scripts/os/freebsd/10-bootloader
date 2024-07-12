@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Skip this file if running in a jail - jails don't have a bootloader.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ]; then
+  return
+fi
+
+# Configure serial console.
+install_file -m 0644 /boot.config
+install_file -m 0644 /etc/ttys
+kill -HUP 1
+
+set_loader_conf \
+  autoboot_delay=1 \
+  beastie_disable=YES \
+  boot_multicons=YES \
+  boot_serial=YES \
+  cc_htcp_load=YES \
+  console=comconsole,efi \
+  comconsole_speed=115200 \
+  kern.geom.label.disk_ident.enable=0 \
+  kern.geom.label.gptid.enable=0 \
+  net.inet.tcp.soreceive_stream=1 \
+  net.inet6.ip6.auto_linklocal=0 \
+  net.isr.defaultqlimit=2048 \
+  net.link.ifqmaxlen=2048 \
+  pf_load=YES \
+  pflog_load=YES \
+  security.bsd.allow_destructive_dtrace=0

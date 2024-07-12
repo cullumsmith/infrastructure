@@ -1,0 +1,4 @@
+::1        localhost  localhost.${domain}
+127.0.0.1  localhost  localhost.${domain}
+
+${BOXCONF_DEFAULT_IPV4}  ${BOXCONF_HOSTNAME}.${domain}  ${BOXCONF_HOSTNAME}

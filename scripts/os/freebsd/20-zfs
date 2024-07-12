@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Every host should have a "state" dataset, which is a ZFS dataset which
+# persists across OS rebuilds.
+[ -n "${state_dataset:-}" ] || die 'state_dataset not defined!'
+create_dataset "$state_dataset"
+
+# If this is baremetal host or a VM, trim the zpools periodically.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
+  install_file -m 0644 /etc/cron.d/zfs-trim
+fi

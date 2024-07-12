@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Create local CA certificates directory.
+install_directory -m 0755  \
+  /usr/local/etc           \
+  /usr/local/etc/ssl       \
+  /usr/local/etc/ssl/certs
+
+# Install our root CA.
+install_ca_certificate "$site_cacert_path"
+
+certctl rehash

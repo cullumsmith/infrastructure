@@ -1,0 +1,29 @@
+#!/bin/sh
+
+JAIL_HOME='${hypervisor_jail_home}'
+JAIL_DATASET='${hypervisor_jail_dataset}'
+TRUNK_INTERFACE='${hypervisor_trunk_interface}'
+
+DEFAULT_DOMAIN='${domain}'
+DEFAULT_VLAN='${hypervisor_default_vlan}'
+DEFAULT_NETMASK='$(prefix2netmask "$hypervisor_default_prefix")'
+DEFAULT_OS_QUOTA='${hypervisor_default_os_quota}'
+DEFAULT_DATA_QUOTA='${hypervisor_default_data_quota}'
+
+ZFS_OPTS='${hypervisor_jail_default_zfs_opts}'
+
+DEFAULT_DEVFS_RULESET='5'
+BPF_ENABLED_DEVFS_RULESET='${hypervisor_jail_bpf_ruleset}'
+
+DEFAULT_PF_CONF='egress = "jail0"
+
+set block-policy return
+set skip on lo
+scrub in on \$egress all fragment reassemble no-df
+
+antispoof quick for \$egress
+
+block all
+pass out quick on \$egress inet
+pass in quick on \$egress inet proto icmp all icmp-type { echoreq, unreach }
+pass in quick on \$egress inet proto tcp to port ssh'

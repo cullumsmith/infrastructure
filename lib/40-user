@@ -1,0 +1,26 @@
+#!/bin/sh
+
+set_authorized_keys(){
+  # Add authorized_keys for a user.
+  # $1 = username
+  # $2 = newline-separated string of authorized keys
+  _sak_homedir=$(eval echo "~${1}")
+  _sak_group=$(getent passwd "$1" | awk -F: '{ print $4}')
+
+  # Create authorized keys file and set permissions.
+  install_directory -o "$1" -g "$_sak_group" -m 0700 "${_sak_homedir}/.ssh"
+  [ -f "${_sak_homedir}/.ssh/authorized_keys" ] || touch "${_sak_homedir}/.ssh/authorized_keys"
+  chown "$1" "${_sak_homedir}/.ssh/authorized_keys"
+  chgrp "$_sak_group" "${_sak_homedir}/.ssh/authorized_keys"
+  chmod 600 "${_sak_homedir}/.ssh/authorized_keys"
+
+  printf '%s\n' "${2}" > "${_sak_homedir}/.ssh/authorized_keys"
+  log "added authorized_keys for ${1}:"$'\n'"$2"
+}
+
+set_password(){
+  # Set password for a local user.
+  # $1 = username
+  # $2 = password
+  printf '%s\n%s\n' "$2" "$2" | passwd "$1" > /dev/null
+}

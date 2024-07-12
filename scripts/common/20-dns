@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# For IDM servers, the resolver is localhost. In that case, we delay copying
+# this file until the IDM stack is fully up and running.
+if [ "$BOXCONF_HOSTCLASS" = idm_server ]; then
+  return
+fi
+
+install_template -m 0644 /etc/resolv.conf

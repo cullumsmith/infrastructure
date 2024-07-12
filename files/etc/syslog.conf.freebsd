@@ -1,0 +1,12 @@
+*.err;kern.warning;auth.notice;mail.crit		/dev/console
+*.info;authpriv.none;auth.none;cron.none;kern.debug;mail.crit;news.err	/var/log/messages
+security.*					/var/log/security
+auth.info;authpriv.info				/var/log/auth.log
+mail.info					/var/log/maillog
+cron.*						/var/log/cron
+!-devd
+*.=debug					/var/log/debug.log
+*.emerg						*
+!*
+include						/etc/syslog.d
+include						/usr/local/etc/syslog.d

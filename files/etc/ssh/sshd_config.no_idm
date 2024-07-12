@@ -1,0 +1,10 @@
+PermitRootLogin prohibit-password
+AuthorizedKeysFile	.ssh/authorized_keys
+
+KbdInteractiveAuthentication no
+PasswordAuthentication yes
+
+UsePAM yes
+UseDNS no
+
+Subsystem	sftp	/usr/libexec/sftp-server

@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Only run this file on baremetal hosts.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" != none ]; then
+  return
+fi
+
+# Allow lower C-states. As of FreeBSD 13, the default is to only allow C1.
+# My Xeon processor supports C2, and enabling that resulted in 15 watts of
+# power savings.
+#
+# Note that if your CPU supports *very* low C-states (likely for commodity
+# desktop and laptop hardware), you may not want them enabled, as transitioning
+# from a very low C-state can cause rather severe latency spikes.
+#
+# Experiment with your hardware and set $cx_lowest accordingly.
+sysrc -v \
+  microcode_update_enable=YES \
+  performance_cx_lowest="$cx_lowest" \
+  economy_cx_lowest="$cx_lowest"
+
+# Set energy/performance preference for Intel P-states.
+# 0 = most performance, 100 = most power savings
+if sysctl -n dev.hwpstate_intel.0.epp >/dev/null 2>&1; then
+  for n in $(seq 0 $(($(sysctl -n hw.ncpu)-1))); do
+    set_sysctl "dev.hwpstate_intel.${n}.epp=${intel_epp}"
+  done
+fi

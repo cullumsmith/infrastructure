@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Set the system timezone.
+cp -v "/usr/share/zoneinfo/${timezone}" /etc/localtime

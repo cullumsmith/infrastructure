@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Copy syslog configuration.
+install_file -m 0644 /etc/syslog.conf
+
+# Restart syslogd.
+service syslogd restart

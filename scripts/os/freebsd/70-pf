@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ "$enable_pf" != true ]; then
+  return
+fi
+
+# Enable pf.
+sysrc -v pf_enable=YES
+
+# Copy pf configuration.
+install_template -m 0600 /etc/pf.conf
+
+# Start (or reload) pf.
+service pf status > /dev/null || service pf start
+service pf reload

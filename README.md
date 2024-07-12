@@ -13,7 +13,7 @@ frustration with Ansible.
 
 To execute boxconf on a target host, just run the following:
 
-    ./boxconf $TARGET_HOSTNAME
+    ./boxconf $HOSTNAME
 
 A deployment tarball will be generated and SCP'd to the remote box, where `boxconf`
 will re-exec itself. After gathering some information about the target system (such
@@ -48,9 +48,8 @@ The `site/` directory does not exist in this repo. Its purpose is to hold person
 site-specific variables and scripts that you would rather not share in a public git repo.
 Ideally, you would use git submodules for this.
 
-The `hostname` value is taken from the short hostname of the remote system.
-If the remote hostname is incorrect (or unset), you can override the hostname
-detection by passing the `-o $HOSTNAME` flag to boxconf.
+If the hostname does not exist in DNS, you can manually specify the SSH
+target by passing the `-s $IP_ADDRESS` option to `boxconf`.
 
 The `hostclass` value is matched based on the regular expressions listed in
 the [hostclasses](./hostclasses) file.

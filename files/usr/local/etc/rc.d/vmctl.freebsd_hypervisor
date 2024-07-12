@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# $FreeBSD$
+
+# PROVIDE: vmctl
+# REQUIRE: NETWORKING SERVERS dmesg
+# BEFORE: ipfw pf
+# KEYWORD: shutdown nojail
+
+. /etc/rc.subr
+
+name="vmctl"
+desc="Start and stop bhyve virtual machines"
+rcvar="vmctl_enable"
+
+: ${vmctl_enable:="NO"}
+
+command="/usr/local/sbin/${name}"
+start_cmd="${command} _start-all"
+stop_cmd="${command} _stop-all"
+status_cmd="${command} list"
+
+load_rc_config $name
+run_rc_command "$1"

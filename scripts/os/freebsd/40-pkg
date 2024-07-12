@@ -1,0 +1,29 @@
+#!/bin/sh
+
+case $BOXCONF_HOSTCLASS in
+  pkg_repository)
+    return # Do nothing.
+    ;;
+  freebsd_hypervisor)
+    ;; # Keep default FreeBSD pkg repository.
+  *)
+    # Configure on-prem pkg repository.
+    install_directory -m 0755 \
+      /usr/local/etc/pkg \
+      /usr/local/etc/pkg/repos
+
+    install_file -m 0644 \
+      /usr/local/etc/ssl/repo.crt \
+      /usr/local/etc/pkg/repos/FreeBSD.conf
+
+    install_template -m 0644 /usr/local/etc/pkg/repos/onprem.conf
+    ;;
+esac
+
+# Update packages.
+pkg update -f
+
+# Install default packages.
+if [ -n "${install_packages:-}" ]; then
+  pkg install -y $install_packages
+fi

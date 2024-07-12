@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Add root SSH pubkeys.
+set_authorized_keys root "$root_authorized_keys"
+
+# Set root password.
+set_password root "$root_password"

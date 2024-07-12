@@ -1,0 +1,4 @@
+# Allow jails to access bpf device for DHCP.
+[devfsrules_jail_vnet_bpf=${hypervisor_jail_bpf_ruleset}]
+add include \$devfsrules_jail_vnet
+add path 'bpf*' unhide

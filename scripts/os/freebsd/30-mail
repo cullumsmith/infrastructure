@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ "$BOXCONF_HOSTCLASS" = smtp_server ]; then
+  return
+fi
+
+# Configure local mail agent.
+install_template -m 0644 /etc/dma/dma.conf
+install_template -m 0644 /etc/aliases
