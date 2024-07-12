@@ -5,7 +5,7 @@
 set -eu
 
 PROGNAME=boxconf
-USAGE="${PROGNAME} [-d] [-e VAR=VALUE]... [-o HOSTNAME] TARGET"
+USAGE="${PROGNAME} [-d] [-e VAR=VALUE]... [-s SSH_HOST] HOSTNAME"
 BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
 
 usage(){
@@ -14,12 +14,12 @@ usage(){
   exit 2
 }
 
-while getopts :hde:o:X _bc_opt; do
+while getopts :hde:s:X _bc_opt; do
   case $_bc_opt in
     h) usage ;;
     d) set -x ;;
     e) eval "$OPTARG" ;;
-    o) BOXCONF_HOSTNAME=$OPTARG ;;
+    s) BOXCONF_SSH_HOST=$OPTARG ;;
     X) _bc_run=1 ;;
     :) usage "missing option value: -${OPTARG}" ;;
     ?) usage "unknown option: -${OPTARG}" ;;
@@ -29,6 +29,8 @@ done
 shift $((OPTIND - 1))
 [ $# -eq 1 ] || usage
 
+BOXCONF_HOSTNAME=$1
+
 for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
   . "$_bc_lib"
 done
@@ -36,5 +38,5 @@ done
 if [ -n "${_bc_run:-}" ]; then
   _boxconf_run
 else
-  _boxconf_deploy "$1" "${BOXCONF_HOSTNAME:-$1}" "$@"
+  _boxconf_deploy "${BOXCONF_SSH_HOST:-$1}" "$BOXCONF_HOSTNAME" "$@"
 fi

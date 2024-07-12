@@ -26,7 +26,7 @@ set_loader_conf(){
   # Set the FreeBSD bootloader options in /boot/loader.conf.
   # The host will be rebooted if the file is changed.
   # $1..$N = bootloader options (as "name=value" strings)
-  [ "$BOXCONF_OS_FAMILY" = freebsd ] || bug 'set_loader_conf can only be used on FreeBSD'
+  [ "$BOXCONF_OS" = freebsd ] || bug 'set_loader_conf can only be used on FreeBSD'
 
   while [ $# -gt 0 ]; do
     grep -qxF "${1%%=*}=\"${1#*=}\"" /boot/loader.conf || BOXCONF_NEED_REBOOT=true
@@ -50,7 +50,7 @@ x
 load_kernel_module(){
   # Ensure the given kernel modules are loaded.
   # $1..$N = bootloader options (as "name=value" strings)
-  case $BOXCONF_OS_FAMILY in
+  case $BOXCONF_OS in
     freebsd)
       while [ $# -gt 0 ]; do
         kldstat -qn "$1" || kldload -v "$1"
@@ -58,7 +58,7 @@ load_kernel_module(){
       done
       ;;
     *)
-      die "load_kernel_module unimplemented for ${BOXCONF_OS_FAMILY}"
+      die "load_kernel_module unimplemented for ${BOXCONF_OS}"
       ;;
   esac
 }

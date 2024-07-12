@@ -3,23 +3,23 @@
 _boxconf_try_files(){
   # Get the highest precedence file for a given path.
   # $1 = target file path
-  for _bcsf_file in                                                                \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTNAME}"                             \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTNAME}"                                  \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS_DISTRIBUTION}" \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS_DISTRIBUTION}"      \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS_DISTRIBUTION}.${BOXCONF_HOSTCLASS}" \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS_DISTRIBUTION}.${BOXCONF_HOSTCLASS}"      \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS_FAMILY}"       \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS_FAMILY}"            \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS_FAMILY}.${BOXCONF_HOSTCLASS}"       \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS_FAMILY}.${BOXCONF_HOSTCLASS}"            \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}"                            \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}"                                 \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS_DISTRIBUTION}"                      \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS_DISTRIBUTION}"                           \
-    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS_FAMILY}"                            \
-    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS_FAMILY}"                                 \
+  for _bcsf_file in \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTNAME}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTNAME}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_DISTRO}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_DISTRO}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_DISTRO}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_DISTRO}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}.${BOXCONF_OS}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_HOSTCLASS}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_DISTRO}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_DISTRO}" \
+    "${BOXCONF_SITE_FILE_DIR}${1}.${BOXCONF_OS}" \
+    "${BOXCONF_FILE_DIR}${1}.${BOXCONF_OS}" \
     "${BOXCONF_SITE_FILE_DIR}${1}.common" \
     "${BOXCONF_FILE_DIR}${1}.common"
   do
