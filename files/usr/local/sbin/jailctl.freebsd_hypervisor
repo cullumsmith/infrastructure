@@ -132,6 +132,7 @@ Options:
     devfs_ruleset=$DEFAULT_DEVFS_RULESET \
     domain=$DEFAULT_DOMAIN \
     gateway \
+    jail_opts \
     ip \
     memlimit \
     nameservers \
@@ -143,12 +144,13 @@ Options:
     vlan=$DEFAULT_VLAN \
     opt
 
-  while getopts :a:bc:d:g:hk:m:n:q:Q:r:s:v: opt; do
+  while getopts :a:bc:d:e:g:hk:m:n:q:Q:r:s:v: opt; do
     case $opt in
       a) ip=$OPTARG ;;
       b) bpf_enabled=true ;;
       c) cpuset=$OPTARG ;;
       d) domain=$OPTARG ;;
+      e) jail_opts="${jail_opts:-}"$'\n'"  ${OPTARG};" ;;
       g) gateway=$OPTARG ;;
       h) cmd::help ;;
       k) sshkey=$OPTARG ;;
@@ -164,6 +166,10 @@ Options:
     esac
   done
   shift $((OPTIND - 1))
+
+  if [ -n "${ip:-}" ]; then
+    : ${gateway:="${ip%.*}.1"}
+  fi
 
   [ $# -lt 1 ] && cmd::usage 'NAME not specified'
   [ $# -lt 2 ] && cmd::usage 'TEMPLATE not specified'
@@ -199,8 +205,10 @@ Options:
   cp -v /etc/localtime "${JAIL_HOME}/${name}/os/etc/localtime"
 
   # Generate /etc/resolv.conf in the jail (word-splitting intentional).
-  [ -n "${nameservers:-}"   ] && printf 'nameserver %s\n' $nameservers     >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
-  [ -n "${searchdomains:-}" ] && printf 'search %s\n'     "$searchdomains" >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
+  if [ -n "${nameservers:-} "]; then
+    printf 'nameserver %s\n' $nameservers >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
+    printf 'search %s\n'     "${searchdomains:-$domain}" >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
+  fi
 
   # Get the jail's virtual interface name.
   local epair_name
@@ -272,6 +280,8 @@ ${name} {
 
   vnet;
   vnet.interface = "ej_${epair_name}";
+${jail_opts:-}
+
 EOF
 
   ln -sv "$jailcfg" "/etc/jail.conf.d/${name}.conf"
