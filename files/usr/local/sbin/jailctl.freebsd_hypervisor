@@ -171,6 +171,8 @@ Options:
     : ${gateway:="${ip%.*}.1"}
   fi
 
+  : ${nameservers:="$DEFAULT_NAMESERVERS"}
+
   [ $# -lt 1 ] && cmd::usage 'NAME not specified'
   [ $# -lt 2 ] && cmd::usage 'TEMPLATE not specified'
   [ $# -gt 2 ] && cmd::usage 'too many arguments'
@@ -205,10 +207,8 @@ Options:
   cp -v /etc/localtime "${JAIL_HOME}/${name}/os/etc/localtime"
 
   # Generate /etc/resolv.conf in the jail (word-splitting intentional).
-  if [ -n "${nameservers:-} "]; then
-    printf 'nameserver %s\n' $nameservers >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
-    printf 'search %s\n'     "${searchdomains:-$domain}" >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
-  fi
+  printf 'nameserver %s\n' $nameservers >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
+  printf 'search %s\n'     "${searchdomains:-$domain}" >> "${JAIL_HOME}/${name}/os/etc/resolv.conf"
 
   # Get the jail's virtual interface name.
   local epair_name
