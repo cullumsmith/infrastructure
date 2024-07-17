@@ -1072,8 +1072,8 @@ template::download_release(){
 
 template::release2name(){
   # Convert a FreeBSD release version to a template name.
-  # e.g. for "13.2-RELEASE", return "freebsd13".
-  setvar "$1" "freebsd${2%.*}"
+  # e.g. for "13.2-RELEASE", return "freebsd13.2".
+  setvar "$1" "freebsd${2%-*}"
 }
 
 template::update_release(){

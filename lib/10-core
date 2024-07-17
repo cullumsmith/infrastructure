@@ -226,7 +226,7 @@ _boxconf_deploy(){
   _bc_deploy_target=$1; shift
   _bc_deploy_hostname=$1; shift
 
-  _bc_stagedir=$(mktemp -d -t "boxconf-${_bc_deploy_hostname}")
+  _bc_stagedir=$(mktemp -d -t "boxconf-${_bc_deploy_hostname}.XXXXXX")
   trap 'rm -rf -- "$_bc_stagedir"' HUP INT QUIT TERM ABRT EXIT
 
   _boxconf_stage "$_bc_deploy_hostname" "$_bc_stagedir"

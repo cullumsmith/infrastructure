@@ -5,7 +5,7 @@ JAIL_DATASET='${hypervisor_jail_dataset}'
 TRUNK_INTERFACE='${hypervisor_trunk_interface}'
 
 DEFAULT_DOMAIN='${domain}'
-DEFAULT_NAMESERVERS='${resolvers:-1.1.1.1}'
+DEFAULT_NAMESERVERS='1.1.1.1'
 DEFAULT_VLAN='${hypervisor_default_vlan}'
 DEFAULT_NETMASK='$(prefix2netmask "$hypervisor_default_prefix")'
 DEFAULT_OS_QUOTA='${hypervisor_default_os_quota}'

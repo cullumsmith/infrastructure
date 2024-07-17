@@ -1,0 +1,47 @@
+server {
+  listen       0.0.0.0:80 default_server;
+  listen       [::]:80 default_server;
+  server_name  ${fqdn};
+  root         ${poudriere_data_dir}/data/packages;
+
+  include mime.types;
+  types {
+    text/plain  log;
+  }
+
+  location /poudriere/ {
+    alias /usr/local/share/poudriere/html/;
+
+    # Allow caching static resources
+    location ~* ^.+\.(jpg|jpeg|gif|png|ico|svg|woff|css|js|html)$ {
+      add_header Cache-Control "public";
+      expires 2d;
+    }
+
+    location /poudriere/data {
+      alias ${poudriere_data_dir}/data/logs/bulk;
+
+      # Allow caching dynamic files but ensure they get rechecked
+      location ~* ^.+\.(log|txz|tbz|bz2|gz)$ {
+        add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+      }
+
+      # Don't log json requests as they come in frequently and ensure
+      # caching works as expected
+      location ~* ^.+\.(json)$ {
+        add_header Cache-Control "public, must-revalidate, proxy-revalidate";
+        access_log off;
+        log_not_found off;
+      }
+
+      # Allow indexing only in log dirs
+      location ~ /poudriere/data/?.*/(logs|latest-per-pkg)/ {
+        autoindex on;
+      }
+    }
+  }
+
+  location / {
+    autoindex on;
+  }
+}

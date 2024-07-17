@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu -o pipefail
+
+ports_tree=latest
+
+# update ports tree
+poudriere ports -u -p "$ports_tree" > /dev/null
+
+for jail in "$@"; do
+  poudriere jail -u -j "$jail" > /dev/null
+  poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/pkglist -p "$ports_tree" > /dev/null
+done
+
+poudriere distclean -p "$ports_tree" -a -y > /dev/null
+poudriere logclean -N 5 -p "$ports_tree" -y > /dev/null

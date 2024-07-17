@@ -1,0 +1,16 @@
+ZPOOL=${poudriere_dataset%%/*}
+ZROOTFS=/${poudriere_dataset#*/}/poudriere
+FREEBSD_HOST=https://download.freebsd.org
+RESOLV_CONF=/etc/resolv.conf
+BASEFS=${poudriere_data_dir}
+POUDRIERE_DATA=\${BASEFS}/data
+PARALLEL_JOBS=${poudriere_jobs}
+USE_PORTLINT=no
+USE_TMPFS=yes
+DISTFILES_CACHE=/usr/ports/distfiles
+PKG_REPO_SIGNING_KEY=/usr/local/etc/ssl/repo.key
+URL_BASE=http://${fqdn}/poudriere/
+ALLOW_MAKE_JOBS_PACKAGES='${poudriere_allow_make_jobs_packages:-}'
+PRIORITY_BOOST='${poudriere_priority_boost:-}'
+CCACHE_DIR=\${BASEFS}/ccache
+CCACHE_DIR_NON_ROOT_SAFE=yes

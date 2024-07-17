@@ -1,0 +1,92 @@
+#!/bin/sh
+
+: ${poudriere_versions:='14.1-RELEASE'}
+: ${poudriere_jobs:="$nproc"}
+: ${poudriere_dataset:="${state_dataset:-zroot}"}
+: ${poudriere_make_jobs_number:='8'}
+: ${poudriere_priority_boost:='gcc* llvm* rust'}
+: ${poudriere_allow_make_jobs_packages:='ImageMagick* bitwarden-cli cargo-c *chromium* cmake cmake-core eclipse electron* ffmpeg firefox gcc* gnutls gtk3* icu libreoffice* llvm* mongodb* mysql*-client mysql*-server node* openjdk* openssl pkg qt*-webengine rust webkit* vaultwarden'}
+: ${poudriere_ccache_size:='50.0G'}
+: ${poudriere_default_versions:='imagemagick=7-nox11'}
+
+poudriere_data_dir=/usr/local/poudriere
+poudriere_conf_dir=/usr/local/etc/poudriere.d
+
+# Create poudriere datasets.
+create_dataset -o "mountpoint=${poudriere_data_dir}" "${state_dataset}/poudriere"
+create_dataset -o "mountpoint=${poudriere_conf_dir}" "${state_dataset}/poudriere-config"
+
+# These packages are needed to bootstrap poudriere. On the first run, they'll
+# be installed from the public FreeBSD repos.
+pkg install -y \
+  poudriere \
+  git-lite \
+  nginx \
+  ccache
+
+# Generate poudriere configuration.
+install_template -m 0644 \
+  /usr/local/etc/poudriere.conf \
+ "${poudriere_conf_dir}/make.conf" \
+ "${poudriere_conf_dir}/pkglist"
+install_file -m 0400 /usr/local/etc/ssl/repo.key
+install_directory -m 0755 /usr/ports/distfiles
+install_directory -m 0755 -o nobody -g nobody "${poudriere_data_dir}/ccache"
+install_template -m 0644 -o nobody -g nobody "${poudriere_data_dir}/ccache/ccache.conf"
+
+# Configure and enable nginx to serve the packages.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+sysrc -v nginx_enable=YES
+service nginx restart
+
+# Create and update the `latest` ports tree.
+[ -d "${poudriere_data_dir}/ports/latest" ] || poudriere ports -c -v -p latest
+poudriere ports -v -u -p latest
+
+# Since we're doing a ton of compilation, disable sync on the poudriere dataset.
+# Possibly snakeoil, but my hope is that most file I/O will end up in the ARC cache
+# and not thrash the disks.
+zfs set sync=disabled "${poudriere_dataset}/poudriere"
+
+# For each specified FreeBSD version, build all packages.
+for version in $poudriere_versions; do
+  jail=$(echo "$version" | tr . _)
+  abi="FreeBSD:${version%%.*}:$(uname -p)"
+
+  [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
+  poudriere jail -u -j "$jail"
+  poudriere bulk -v -j "$jail" -f "${poudriere_conf_dir}/pkglist" -p latest
+
+  install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
+  ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
+done
+
+# Clean stale distfiles and logs.
+poudriere distclean -v -a -p latest -y
+poudriere logclean -N 5 -p latest -y
+
+# Add an empty directory named "poudriere" in the webroot, just so we can easily
+# click on something in the autoindex page that takes us to the Poudriere interface.
+install_directory -m 0555 "${poudriere_data_dir}/data/packages/poudriere"
+
+# Create cron job to update packages automatically.
+install_file -m 0555 /usr/local/libexec/poudriere-cron
+echo "@weekly root lockf -t 0 /tmp/poudriere-cron.lock /usr/local/libexec/poudriere-cron $(echo "$poudriere_versions" | tr . _)" \
+  | tee /etc/cron.d/poudriere
+
+# Now that we have a valid repo, switch the pkg repo to the local filesystem.
+install_directory -m 0755 \
+  /usr/local/etc/pkg \
+  /usr/local/etc/pkg/repos
+
+install_file     -m 0644 /usr/local/etc/pkg/repos/FreeBSD.conf
+install_template -m 0644 /usr/local/etc/pkg/repos/onprem.conf
+
+# Install default packages (now that they've been built).
+pkg update -f
+
+if [ -n "${install_packages:-}" ]; then
+  pkg install $install_packages
+fi

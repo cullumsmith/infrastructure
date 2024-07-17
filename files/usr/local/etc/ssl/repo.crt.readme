@@ -1,0 +1,3 @@
+Generate this file using:
+
+    openssl rsa -in site/files/usr/local/etc/ssl/repo.key.pkg_repository -pubout -out site/files/usr/local/etc/ssl/repo.crt.freebsd
