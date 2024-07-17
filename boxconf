@@ -27,7 +27,7 @@ while getopts :hde:s:X _bc_opt; do
 done
 
 [ $(( OPTIND - $# )) -eq 0 ] || usage
-eval "BOXCONF_HOSTNAME=\$$((OPTIND))"
+eval "BOXCONF_HOSTNAME=\$$#"
 
 for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
   . "$_bc_lib"
@@ -36,5 +36,5 @@ done
 if [ -n "${_bc_run:-}" ]; then
   _boxconf_run
 else
-  _boxconf_deploy "${BOXCONF_SSH_HOST:-$1}" "$BOXCONF_HOSTNAME" "$@"
+  _boxconf_deploy "${BOXCONF_SSH_HOST:-$BOXCONF_HOSTNAME}" "$BOXCONF_HOSTNAME" "$@"
 fi
