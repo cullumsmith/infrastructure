@@ -26,8 +26,8 @@ while getopts :hde:s:X _bc_opt; do
   esac
 done
 
-[ $(( OPTIND - $# )) -eq 1 ] && usage 'HOST not specified'
-eval "BOXCONF_HOSTNAME=\$$#"
+[ $(( OPTIND - $# )) -eq 0 ] || usage
+eval "BOXCONF_HOSTNAME=\$$((OPTIND))"
 
 for _bc_lib in "${BOXCONF_ROOT}/lib"/*; do
   . "$_bc_lib"
