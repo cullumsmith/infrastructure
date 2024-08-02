@@ -28,4 +28,5 @@ install_template -m 0644 \
   /etc/ssh/ssh_config
 
 # Restart sshd.
+sysrc -v sshd_enable=YES
 service sshd restart

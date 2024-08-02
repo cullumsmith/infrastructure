@@ -1,0 +1,114 @@
+#!/bin/sh
+
+: ${pdns_port:='1053'}
+: ${pdns_distributor_threads:='3'}
+: ${pdns_receiver_threads:="$nproc"}
+: ${pdns_allow_axfr_ips:='127.0.0.1/8'}
+: ${pdns_cache_ttl:='30'}
+: ${pdns_query_cache_ttl:='20'}
+: ${pdns_negquery_cache_ttl:='60'}
+
+pdns_conf_dir=/usr/local/etc/pdns
+pdns_runtime_dir=/var/run/pdns
+pdns_soa_record="sOARecord: ${fqdn} root.${domain} 0 10800 3600 604800 3600"
+pdns_ns_records=$(printf "nSRecord: %s.${domain}\n" $idm_hostnames)
+pdns_user=pdns
+
+# Install PowerDNS.
+pkg install -y powerdns
+
+# Generate PowerDNS configuration.
+install_template -m 0644 "${pdns_conf_dir}/pdns.conf"
+
+# Enable PowerDNS and start it.
+sysrc -v pdns_enable=YES
+service pdns restart
+
+# Create initial IDM DNS records.
+if is_primary_server; then
+  # ou=dns,dc=example,dc=com
+  ldap_add "$dns_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$dns_basedn")
+EOF
+
+  # Forward DNS zone
+  # dc=idm.example.com,ou=dns,dc=example,dc=com
+  ldap_add "dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${domain}
+${pdns_soa_record}
+${pdns_ns_records}
+$(echo "$idm_server_list" | awk '{print "aRecord: "$2}')
+associatedDomain: ${domain}
+EOF
+
+  # Reverse DNS zone(s)
+  # dc=0.168.192.in-addr.arpa,ou=dns,dc=example.com
+  for zone in $reverse_dns_zones; do
+    ldap_add "dc=${zone},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+${pdns_soa_record}
+${pdns_ns_records}
+associatedDomain: ${zone}
+EOF
+  done
+
+  # LDAP SRV record
+  ldap_add "dc=_ldap._tcp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _ldap._tcp.${domain}
+$(printf "sRVRecord: 0 100 389 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # LDAPS SRV record
+  ldap_add "dc=_ldaps._tcp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _ldaps._tcp.${domain}
+$(printf "sRVRecord: 0 100 636 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # Kerberos SRV record (UDP)
+  ldap_add "dc=_kerberos._udp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _kerberos._udp.${domain}
+$(printf "sRVRecord: 0 100 88 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # Kerberos SRV record (TCP)
+  ldap_add "dc=_kerberos._tcp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _kerberos._tcp.${domain}
+$(printf "sRVRecord: 0 100 88 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # Kadmin SRV record
+  ldap_add "dc=_kerberos-adm._tcp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _kerberos-adm._tcp.${domain}
+$(printf "sRVRecord: 0 100 749 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # Kpasswd SRV record
+  ldap_add "dc=_kpasswd._udp,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _kpasswd._udp.${domain}
+$(printf "sRVRecord: 0 100 464 %s.${domain}\n" ${idm_hostnames})
+EOF
+
+  # Kerberos realm TXT record
+  ldap_add "dc=_kerberos,dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+associatedDomain: _kerberos.${domain}
+tXTRecord: ${realm}
+EOF
+fi

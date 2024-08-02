@@ -1,0 +1,34 @@
+CFLAGS=-O2 -pipe
+DISABLE_LICENSES=yes
+DEFAULT_VERSIONS+=${poudriere_default_versions:-}
+MAKE_JOBS_NUMBER=${poudriere_make_jobs_number}
+
+# Global port options
+OPTIONS_UNSET=TEST DEBUG GSSAPI_HEIMDAL GSSAPI_BASE GSSAPI_NONE HEIMDAL NLS DOCS AVAHI LIBWRAP MYSQL MSQLND ODBC READLINE PULSEAUDIO UPNP BASH ZSH INFO ALSA SAMBA WAYLAND PLATFORM_WAYLAND PIPEWIRE
+OPTIONS_SET=GSSAPI GSSAPI_MIT NONFREE LIBEDIT
+
+# Per-port options
+dns_powerdns_SET=OPENLDAP
+dns_powerdns_UNSET=PGSQL SQLITE3
+dns_unbound_SET=TFOCL TFOSE
+dns_unbound_UNSET=DOH
+editors_vim_SET=CTAGS_EXUBERANT XTERM_SAVE
+editors_vim_UNSET=CTAGS_BASE
+net_openldap26-server_SET=DEBUG
+net_openldap26-server_UNSET=SMBPWD
+security_cyrus-sasl2-saslauthd_UNSET=BDB1
+security_krb5_SET=DNS_FOR_REALM LDAP
+security_krb5_UNSET=KRB5_HTML KRB5_PDF
+security_sudo_SET=LDAP
+security_sudo_UNSET=GSSAPI_MIT
+shells_bash_UNSET=PORTS_READLINE
+sysutils_htop_SET=LSOF
+sysutils_rsyslog8_SET=GSSAPI RELP OPENSSL
+sysutils_rsyslog8_UNSET=GCRYPT
+www_nginx_SET=HTTPV3 HTTPV3_QTLS HTTP_AUTH_KRB5 HTTP_AUTH_LDAP
+www_nginx_UNSET=MAIL
+
+# We must use base kerberos to build cyrus to avoid a circular dependency with
+# MIT kerberos and LDAP.
+security_cyrus-sasl2-gssapi_SET=GSSAPI_BASE
+security_cyrus-sasl2-gssapi_UNSET=GSSAPI_MIT

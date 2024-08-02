@@ -1,0 +1,165 @@
+#!/bin/sh
+
+: ${slapd_root_dn:='cn=admin'}
+: ${slapd_replicator_dn:="cn=replicator,${basedn}"}
+: ${slapd_result_size_limit:='10000'}
+: ${slapd_db_max_size:='1073741824'} # 1 GB
+: ${slapd_accesslog_db_max_size:='134217728'} # 128 MB
+: ${slapd_syncrepl_checkpoint_ops:='100'}
+: ${slapd_syncrepl_checkpoint_minutes:='10'}
+: ${slapd_syncrepl_session_log:='1000'}
+: ${slapd_syncrepl_cleanup_age:='7'}
+: ${slapd_syncrepl_cleanup_interval:='1'}
+
+slapd_user=ldap
+slapd_data_dir=/var/db/openldap-data
+slapd_conf_dir=/usr/local/etc/openldap
+slapd_tls_cert="${slapd_conf_dir}/slapd.crt"
+slapd_tls_key="${slapd_conf_dir}/slapd.key"
+slapd_replicator_tls_cert="${slapd_conf_dir}/replicator.crt"
+slapd_replicator_tls_key="${slapd_conf_dir}/replicator.key"
+slapd_keytab="${keytab_dir}/slapd.keytab"
+
+is_primary_server(){
+  # Return 0 if the current hostname is equal to $idm_primary_server.
+  # If $idm_primary_server is unset, use the first hostname in $idm_server_list.
+  _primary="${idm_primary_server:-$(echo "$idm_server_list" | awk 'NR==1{print $1}')}"
+  test "$BOXCONF_HOSTNAME" = "$_primary"
+}
+
+pkg install -y \
+  openldap26-server \
+  cyrus-sasl-saslauthd
+
+# Create ZFS dataset for OpenLDAP DB.
+create_dataset -o "mountpoint=${slapd_data_dir}" "${state_dataset}/openldap-data"
+
+# Copy TLS certificate for LDAP server.
+install_certificate     -o "$slapd_user" -g "$slapd_user" slapd "$slapd_tls_cert"
+install_certificate_key -o "$slapd_user" -g "$slapd_user" slapd "$slapd_tls_key"
+
+# Copy client certificate for LDAP replication.
+install_certificate     -o "$slapd_user" -g "$slapd_user" replicator "$slapd_replicator_tls_cert"
+install_certificate_key -o "$slapd_user" -g "$slapd_user" replicator "$slapd_replicator_tls_key"
+
+# Copy LDIF for the cn=config database.
+install_template -m 0600 "${slapd_conf_dir}/slapd.ldif"
+
+# Copy third-party schema files.
+install_file -m 0644 \
+  "${slapd_conf_dir}/schema/rfc2307bis.ldif" \
+  "${slapd_conf_dir}/schema/kerberos.ldif" \
+  "${slapd_conf_dir}/schema/openssh-lpk.ldif" \
+  "${slapd_conf_dir}/schema/sudo.ldif" \
+  "${slapd_conf_dir}/schema/dnsdomain2.ldif" \
+  "${slapd_conf_dir}/schema/mailservice.ldif"
+
+# Create the directories for the LDAP databases.
+install_directory -m 0770 -o "$slapd_user" -g "$slapd_user" \
+  "${slapd_data_dir}" \
+  "${slapd_data_dir}/accesslog"
+
+# If slapd.d doesn't exist, populate it with slapd.ldif.
+if [ ! -d "${slapd_conf_dir}/slapd.d" ]; then
+  install_directory -m 0700 -o "$slapd_user" "${slapd_conf_dir}/slapd.d"
+  slapadd -v -n0 -F "${slapd_conf_dir}/slapd.d" -l "${slapd_conf_dir}/slapd.ldif"
+  chown -R "${slapd_user}:${slapd_user}" "${slapd_conf_dir}/slapd.d"
+fi
+
+# Enable OpenLDAP in /etc/rc.conf, and start it.
+# Note: whatever LDAP IP you specified in $slapd_server_list must be present in
+# the `-h` argument to slapd. That's how slapd figures out its own server ID.
+sysrc -v \
+  slapd_enable=YES \
+  slapd_cn_config=YES \
+  slapd_flags="-h 'ldapi://%2fvar%2frun%2fopenldap%2fldapi/ ldap://0.0.0.0/ ldaps://0.0.0.0/ ldaps://${BOXCONF_DEFAULT_IPV4}/'" \
+  slapd_sockets="/var/run/openldap/ldapi" \
+  slapd_krb5_ktname="$slapd_keytab"
+
+service slapd restart
+
+# Copy the LDAP client configs.
+install_template -m 0644 "${slapd_conf_dir}/ldap.conf"
+
+# Copy slapd SASL configuration.
+install_template -m 0644 /usr/local/lib/sasl2/slapd.conf
+
+# Allow slapd to read the saslauthd socket.
+install_directory -m 0750 -o "$saslauthd_user" -g "$slapd_user" "$saslauthd_runtime_dir"
+
+# Enable and start saslauthd.
+sysrc -v \
+  saslauthd_flags='-a kerberos5' \
+  saslauthd_enable=YES
+service saslauthd restart
+
+# Create directory tree.
+if is_primary_server; then
+  # dc=example,dc=com
+  ldap_add "$basedn" <<EOF
+objectClass: dcObject
+objectClass: organization
+dc: $(ldap_rdn_value "$basedn")
+o: ${site}
+EOF
+
+  # ou=accounts,dc=example,dc=com
+  ldap_add "$accounts_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$accounts_basedn")
+EOF
+
+  # ou=people,ou=accounts,dc=example,dc=com
+  ldap_add "$people_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$people_basedn")
+EOF
+
+  # ou=robots,ou=accounts,dc=example,dc=com
+  ldap_add "$robots_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$robots_basedn")
+EOF
+
+  # ou=hosts,ou=accounts,dc=example,dc=com
+  ldap_add "$hosts_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$hosts_basedn")
+EOF
+
+  # ou=services,ou=accounts,dc=example,dc=com
+  ldap_add "$services_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$services_basedn")
+EOF
+
+  # ou=groups,ou=accounts,dc=example,dc=com
+  ldap_add "$groups_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$groups_basedn")
+EOF
+
+  # ou=userprivate,ou=groups,ou=accounts,dc=example,dc=com
+  ldap_add "$private_groups_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$private_groups_basedn")
+EOF
+
+  # ou=roles,ou=groups,ou=accounts,dc=example,dc=com
+  ldap_add "$roles_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$roles_basedn")
+EOF
+
+  # ou=automount,dc=example,dc=com
+  ldap_add "$automount_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$automount_basedn")
+EOF
+
+  # ou=sudo,dc=example,dc=com
+  ldap_add "$sudo_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$sudo_basedn")
+EOF
+fi

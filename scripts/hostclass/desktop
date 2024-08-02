@@ -1,0 +1,98 @@
+#!/bin/sh
+
+load_kernel_module linux linux64 acpi_ibm
+
+pkg install -y \
+  chromium \
+  compton \
+  dino \
+  dmenu \
+  eclipse \
+  firefox \
+  git \
+  krb5 \
+  i3 \
+  libreoffice \
+  libva-intel-media-driver \
+  networkmgr \
+  py${python_version}-pip  \
+  stow \
+  terminus-font \
+  terminus-ttf \
+  tmux \
+  tree \
+  wireguard-tools \
+  xfontsel \
+  xidle \
+  xorg \
+  xterm
+
+case $desktop_type in
+  i3)
+    pkg install \
+      i3 \
+      i3lock \
+      i3status
+    ;;
+  kde)
+    pkg install \
+      juk \
+      k3b \
+      kde5 \
+      kid3-qt6 \
+      kmix \
+      konversation \
+      sddm
+    ;;
+esac
+
+set_sysctl \
+  net.local.stream.recvspace=65536 \
+  net.local.stream.sendspace=65536 \
+  kern.sched.preempt_thresh=224 \
+  vfs.usermount=1 \
+  hw.snd.latency=7
+
+set_loader_conf \
+  kern.ipc.shmseg=1024 \
+  kern.ipc.shmmni=1024 \
+  kern.maxproc=100000 \
+  linux_load=YES \
+  linux64_load=YES \
+  acpi_ibm_load=YES \
+  compat.linuxkpi.i915_enable_dc=2 \
+  compat.linuxkpi.i915_enable_fbc=1 \
+  compat.linuxkpi.i915_fastboot=1 \
+  compat.linuxkpi.i915_disable_power_well=1 \
+  machdep.hwpstate_pkg_ctrl=0 \
+  vfs.zfs.txg.timeout=10 \
+  hw.pci.do_power_nodriver=3
+
+# Create policy file for firefox.
+install_directory -m 0755 /usr/local/lib/firefox/distribution
+install_template -m 0644  /usr/local/lib/firefox/distribution/policies.json
+
+# Create policy file for chromium.
+install_directory -m 0755 \
+  /usr/local/etc/chromium/policies \
+  /usr/local/etc/chromium/policies/managed
+install_template -m 0644 /usr/local/etc/chromium/policies/managed/policies.json
+
+# Configure libreoffice
+install_file -m 0644 /usr/local/lib/libreoffice/program/sofficerc
+
+# Add terminus font to X11
+install_file -m 0644 /usr/local/etc/X11/xorg.conf.d/terminus.conf
+
+# Enable dbus.
+sysrc -v dbus_enable=YES
+service dbus status || service dbus start
+
+# Configure graphics drivers.
+case $graphics_type in
+  intel)
+    pkg install -y drm-kmod
+    sysrc -v kld_list+=i915kms
+    load_kernel_module i915kms
+    ;;
+esac

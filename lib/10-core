@@ -81,6 +81,19 @@ _boxconf_decrypt(){
   fi
 }
 
+_boxconf_decrypt_key(){
+  # Decrypt an OpenSSL key file using the vault password.
+  # $1 = encrypted key file
+  # $2 = plaintext output file (or stdout if unset)
+  _boxconf_get_vault_password
+
+  if [ $# -gt 1 ]; then
+    PASS=$BOXCONF_VAULT_PASSWORD openssl ec -in "$1" -out "$2" -passin env:PASS
+  else
+    PASS=$BOXCONF_VAULT_PASSWORD openssl ec -in "$1" -passin env:PASS
+  fi
+}
+
 _boxconf_is_encrypted(){
   # Check if a given file is encrypted.
   head -n1 "$1" | grep -q '^Salted__'
@@ -144,7 +157,7 @@ _boxconf_stage(){
   set -f
   _bcs_relevant_files=$(find -L "$BOXCONF_ROOT" -type f -and \( \
     -path "${BOXCONF_CA_DIR}/ca.crt" \
-    -or -path "${BOXCONF_CA_DIR}/${_bcs_hostname}" \
+    -or -path "${BOXCONF_CA_DIR}/${_bcs_hostname}/*" \
     -or -path "${BOXCONF_VAR_DIR}/common" \
     -or -path "${BOXCONF_VAR_DIR}/common/*" \
     -or -path "${BOXCONF_VAR_DIR}/os/*" \
@@ -202,18 +215,20 @@ _boxconf_stage(){
   set -- $_bcs_relevant_files
   IFS=$OIFS
 
-  for _bc_stage_fullpath; do
+  for _bcs_fullpath; do
     # Calculate the file's path relative to the BOXCONF_ROOT.
-    _bc_stage_relpath=${_bc_stage_fullpath#${BOXCONF_ROOT}/}
+    _bcs_relpath=${_bcs_fullpath#${BOXCONF_ROOT}/}
 
     # Create the file's parent directories (if any) in the stage dir.
-    mkdir -p "${_bcs_stagedir}/$(dirname "$_bc_stage_relpath")"
+    mkdir -p "${_bcs_stagedir}/$(dirname "$_bcs_relpath")"
 
     # Copy the file to the stage dir, decrypting if necessary.
-    if _boxconf_is_encrypted "$_bc_stage_fullpath"; then
-      _boxconf_decrypt "$_bc_stage_fullpath" "${_bcs_stagedir}/${_bc_stage_relpath}"
+    if _boxconf_is_encrypted "$_bcs_fullpath"; then
+      _boxconf_decrypt "$_bcs_fullpath" "${_bcs_stagedir}/${_bcs_relpath}"
+    elif head -n1 "$_bcs_fullpath" | grep -Fxq -- '-----BEGIN ENCRYPTED PRIVATE KEY-----'; then
+      _boxconf_decrypt_key "$_bcs_fullpath" "${_bcs_stagedir}/${_bcs_relpath}"
     else
-      cp -p "$_bc_stage_fullpath" "${_bcs_stagedir}/${_bc_stage_relpath}"
+      cp -p "$_bcs_fullpath" "${_bcs_stagedir}/${_bcs_relpath}"
     fi
   done
 }

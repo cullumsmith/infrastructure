@@ -1,0 +1,6 @@
+notify 20 {
+  match "system"    "ACPI";
+  match "subsystem" "Lid";
+  match "notify"    "0x00";
+  action            "/usr/local/libexec/lid-close";
+};

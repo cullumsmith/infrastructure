@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Create host object for this server
+# Create ldap service principal for this server
+# Create A record
+# Create PTR record
+# Create boxconf user
+# Create sudo rules
+# Create admin group

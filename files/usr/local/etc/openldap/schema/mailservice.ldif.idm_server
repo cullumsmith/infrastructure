@@ -1,0 +1,177 @@
+dn: cn=mailservice,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: mailservice
+olcObjectIdentifier: {0}DebOps 1.3.6.1.4.1.53622
+olcObjectIdentifier: {1}DebOpsLDAP DebOps:42
+olcObjectIdentifier: {2}mailService DebOpsLDAP:2
+olcObjectIdentifier: {3}mailServiceAttribute mailService:3
+olcObjectIdentifier: {4}mailServiceObject mailService:4
+olcAttributeTypes: {0}( mailServiceAttribute:1 NAME 'mailAddress' DESC 'Primar
+ y RFC 822 email address of this recipient, can be                      used a
+ s a login identifier.' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substr
+ ingsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} SINGLE-VALUE )
+olcAttributeTypes: {1}( mailServiceAttribute:2 NAME 'mailAlternateAddress' DES
+ C 'Alternate RFC 822 email address(es) of this recipient' EQUALITY caseIgnore
+ IA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.
+ 1.26{256} )
+olcAttributeTypes: {2}( mailServiceAttribute:3 NAME 'mailPrivateAddress' DESC 
+ 'A confidential RFC 822 email address of this recipient                      
+ which can be used as a login identifier.' EQUALITY caseIgnoreIA5Match SUBSTR 
+ caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} SINGLE
+ -VALUE )
+olcAttributeTypes: {3}( mailServiceAttribute:4 NAME 'mailContactAddress' DESC 
+ 'RFC 822 email address of this recipient which is meant to                   
+    be public and serve as the primary contact address.' EQUALITY caseIgnoreIA
+ 5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.
+ 26{256} )
+olcAttributeTypes: {4}( mailServiceAttribute:5 NAME 'mailInternalAddress' DESC
+  'An internal RFC 822 email address of this recipient                      wh
+ ich will be rewritten to an external email address' EQUALITY caseIgnoreIA5Mat
+ ch SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{2
+ 56} SINGLE-VALUE )
+olcAttributeTypes: {5}( mailServiceAttribute:6 NAME 'mailExternalAddress' DESC
+  'An external RFC 822 email address of this recipient                      wh
+ ich will be rewritten to an internal email address' EQUALITY caseIgnoreIA5Mat
+ ch SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{2
+ 56} SINGLE-VALUE )
+olcAttributeTypes: {6}( mailServiceAttribute:7 NAME 'mailSenderBccTo' DESC 'RF
+ C 822 BCC email address(es) to add for a given mail sender' EQUALITY caseIgno
+ reIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.12
+ 1.1.26{256} )
+olcAttributeTypes: {7}( mailServiceAttribute:8 NAME 'mailRecipientBccTo' DESC 
+ 'RFC 822 BCC email address(es) to add for a given mail recipient' EQUALITY ca
+ seIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.
+ 115.121.1.26{256} )
+olcAttributeTypes: {8}( mailServiceAttribute:9 NAME 'mailForwardTo' DESC 'RFC 
+ 822 email address(es) to forward all incoming messages to' EQUALITY caseIgnor
+ eIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121
+ .1.26{256} )
+olcAttributeTypes: {9}( mailServiceAttribute:10 NAME 'mailForwardToURL' DESC '
+ LDAP search URL that defines the recipients of the mail messages             
+          sent to this mailing list' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1
+ .4.1.1466.115.121.1.26 )
+olcAttributeTypes: {10}( mailServiceAttribute:11 NAME 'mailErrorsTo' DESC 'RFC
+  822 email address(es) to use when routing error and notification            
+           messages to the owner(s) of an email distribution list' EQUALITY ca
+ seIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.
+ 115.121.1.26{256} )
+olcAttributeTypes: {11}( mailServiceAttribute:12 NAME 'mailRequestsTo' DESC 'R
+ FC 822 email address(es) to use when routing request                      mes
+ sages sent to the email distribution list' EQUALITY caseIgnoreIA5Match SUBSTR
+  caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+olcAttributeTypes: {12}( mailServiceAttribute:13 NAME 'mailEnvelopeAddress' DE
+ SC 'RFC 822 envelope sender email address of a given mail user               
+        or email distribution list' EQUALITY caseIgnoreIA5Match SUBSTR caseIgn
+ oreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} SINGLE-VALUE 
+ )
+olcAttributeTypes: {13}( mailServiceAttribute:14 NAME 'mailRoutingAddress' DES
+ C 'RFC 822 email address to use when routing messages to                     
+  the SMTP MTA of this recipient' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnor
+ eIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} SINGLE-VALUE )
+olcAttributeTypes: {14}( mailServiceAttribute:15 NAME 'mailHost' DESC 'Fully Q
+ ualified Domain Name of the SMTP MTA that                      handles messag
+ es for this recipient' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMa
+ tch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{256} SINGLE-VALUE )
+olcAttributeTypes: {15}( mailServiceAttribute:16 NAME 'mailTransport' DESC 'MT
+ A mail transport method which will take care of the email delivery' EQUALITY 
+ caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {16}( mailServiceAttribute:17 NAME 'mailUidNumber' DESC 'UI
+ D required to access the mailbox' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.14
+ 66.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: {17}( mailServiceAttribute:18 NAME 'mailGidNumber' DESC 'GI
+ D required to access the mailbox' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.14
+ 66.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: {18}( mailServiceAttribute:19 NAME 'mailHomeDirectory' DESC
+  'The absolute path to the mail user home directory' EQUALITY caseExactIA5Mat
+ ch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {19}( mailServiceAttribute:20 NAME 'mailMessageStore' DESC 
+ 'The path to the mail user mailbox storage directory' EQUALITY caseExactIA5Ma
+ tch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {20}( mailServiceAttribute:21 NAME 'mailQuota' DESC 'Mail q
+ uota limit in kilobytes' EQUALITY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.
+ 115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {21}( mailServiceAttribute:22 NAME 'mailGroupACL' DESC 'Com
+ ma-separated list of mail groups a given mail user                      belon
+ gs to, used for mailbox access control' EQUALITY caseExactIA5Match SUBSTR cas
+ eExactIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {22}( mailServiceAttribute:23 NAME 'mailExpungeTrash' DESC 
+ 'Time to automatically expunge Trash mailbox' EQUALITY caseIgnoreIA5Match SYN
+ TAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {23}( mailServiceAttribute:24 NAME 'mailSieveRuleSource' DE
+ SC 'Definition of a Sieve filter script for a given mail user' SYNTAX 1.3.6.1
+ .4.1.1466.115.121.1.26 )
+olcAttributeTypes: {24}( mailServiceAttribute:25 NAME 'mailSuppressErrors' DES
+ C 'Suppress error messages from being sent back to message originator' EQUALI
+ TY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {25}( mailServiceAttribute:26 NAME 'mailDeliveryFile' DESC 
+ 'Path to a file used for archiving messages sent to the distribution list' EQ
+ UALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {26}( mailServiceAttribute:27 NAME 'mailDeliveryOption' DES
+ C 'Message handling option for messages sent to a designated recipient' EQUAL
+ ITY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {27}( mailServiceAttribute:28 NAME 'mailProgramDeliveryInfo
+ ' DESC 'Named programs for message post-processing' EQUALITY caseExactIA5Matc
+ h SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {28}( mailServiceAttribute:29 NAME 'mailAuthorizedDomain' D
+ ESC 'Domains authorized to submit messages to the distribution list' EQUALITY
+  caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {29}( mailServiceAttribute:30 NAME 'mailAuthorizedSender' D
+ ESC 'Addresses authorized to submit messages to the distribution list' EQUALI
+ TY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {30}( mailServiceAttribute:31 NAME 'mailUnauthorizedDomain'
+  DESC 'Domains not authorized to submit messages to the distribution list' EQ
+ UALITY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {31}( mailServiceAttribute:32 NAME 'mailUnauthorizedSender'
+  DESC 'Addresses not authorized to submit messages to the distribution list' 
+ EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: {32}( mailServiceAttribute:33 NAME 'mailRemoveHeader' DESC 
+ 'Headers to remove from the messages sent to the mailing list' SYNTAX 1.3.6.1
+ .4.1.1466.115.121.1.26 )
+olcAttributeTypes: {33}( mailServiceAttribute:34 NAME 'mailAddHeader' DESC 'He
+ aders to add to the messages sent to the mailing list' SYNTAX 1.3.6.1.4.1.146
+ 6.115.121.1.26 )
+olcAttributeTypes: {34}( mailServiceAttribute:35 NAME 'mailAntispamPolicy' DES
+ C 'Name of the anti-spam policy to apply to a given LDAP entry' SYNTAX 1.3.6.
+ 1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {35}( mailServiceAttribute:36 NAME 'mailAntivirusPolicy' DE
+ SC 'Name of the anti-virus policy to apply to a given LDAP entry' SYNTAX 1.3.
+ 6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: {36}( mailServiceAttribute:37 NAME 'mailContentPolicy' DESC
+  'Name of the content policy to apply to a given LDAP entry' SYNTAX 1.3.6.1.4
+ .1.1466.115.121.1.26 SINGLE-VALUE )
+olcObjectClasses: {0}( mailServiceObject:1 NAME 'mailRecipient' DESC 'The entr
+ y represents an entity within the organization that                    can re
+ ceive SMTP mail, such as a mail user account' SUP top AUXILIARY MUST mailAddr
+ ess MAY ( mailAlternateAddress $ mailPrivateAddress $ mailContactAddress $ ma
+ ilEnvelopeAddress $ mailRoutingAddress $ mailExternalAddress $ mailInternalAd
+ dress $ mailSenderBccTo $ mailRecipientBccTo $ mailHost $ mailTransport $ mai
+ lUidNumber $ mailGidNumber $ mailHomeDirectory $ mailMessageStore $ mailQuota
+  $ mailGroupACL $ mailExpungeTrash $ mailSieveRuleSource $ mailDeliveryOption
+  $ mailProgramDeliveryInfo $ mail $ cn $ description $ uid $ userPassword ) )
+olcObjectClasses: {1}( mailServiceObject:2 NAME 'mailAlias' DESC 'The entry re
+ presents an entity within the organization that                    defines an
+  email alias for mail recipients' SUP top STRUCTURAL MUST mailAddress MAY ( m
+ ailForwardTo $ mailForwardToURL $ mailHost $ mailTransport $ mailDeliveryFile
+  $ mailDeliveryOption $ mailProgramDeliveryInfo $ mail $ cn $ description $ o
+ wner ) )
+olcObjectClasses: {2}( mailServiceObject:3 NAME 'mailDistributionList' DESC 'T
+ he entry represents an entity within the organization that                   
+  can receive and forward SMTP mail, such as a mail                    group a
+ ccount (mailing list)' SUP top AUXILIARY MUST mailAddress MAY ( mailForwardTo
+  $ mailForwardToURL $ mailEnvelopeAddress $ mailErrorsTo $ mailRequestsTo $ m
+ ailSuppressErrors $ mailHost $ mailTransport $ mailDeliveryFile $ mailDeliver
+ yOption $ mailProgramDeliveryInfo $ mailAuthorizedDomain $ mailAuthorizedSend
+ er $ mailUnauthorizedDomain $ mailUnauthorizedSender $ mailRemoveHeader $ mai
+ lAddHeader $ mail $ cn $ description $ owner $ manager $ seeAlso ) )
+olcObjectClasses: {3}( mailServiceObject:4 NAME 'mailDomain' DESC 'The entry r
+ epresents an entity within the organization that                    defines a
+ n email domain' SUP domain STRUCTURAL MAY ( mailHost $ mailTransport $ mailSe
+ nderBccTo $ mailRecipientBccTo $ mailErrorsTo $ mailSuppressErrors $ mailAuth
+ orizedDomain $ mailAuthorizedSender $ mailUnauthorizedDomain $ mailUnauthoriz
+ edSender $ mailRemoveHeader $ mailAddHeader $ description $ owner $ manager )
+  )
+olcObjectClasses: {4}( mailServiceObject:5 NAME 'mailFilter' DESC 'The entry r
+ epresents an entity within the organization that                    can filte
+ r email messages according to various policies' SUP top AUXILIARY MAY ( mailA
+ ntispamPolicy $ mailAntivirusPolicy $ mailContentPolicy $ cn $ description $ 
+ seeAlso ) )

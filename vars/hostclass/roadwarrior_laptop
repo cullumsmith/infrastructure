@@ -1,0 +1,2 @@
+#!/bin/sh
+resolvers=$bootstrap_resolvers

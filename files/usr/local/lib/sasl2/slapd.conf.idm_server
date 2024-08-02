@@ -1,0 +1,3 @@
+mech_list: gssapi external plain login
+pwcheck_method: saslauthd
+saslauthd_path: ${saslauthd_runtime_dir}/mux

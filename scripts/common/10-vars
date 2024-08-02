@@ -1,0 +1,31 @@
+#!/bin/sh
+
+if [ "${idm_bootstrap:-}" = true ]; then
+  resolvers=$bootstrap_resolvers
+  pkg_host=$pkg_host_ip
+else
+  : ${resolvers:="$(echo "$idm_server_list" | awk '{print $3}')"}
+fi
+
+idm_hostnames=$(echo "$idm_server_list" | awk '{print $1}')
+
+realm=$(echo "$domain" | tr '[:lower:]' '[:upper:]')
+
+basedn=$(echo "$domain" | sed -e 's/^/dc=/' -e 's/\./,dc=/g')
+ldap_uri=$(printf "ldap://%s.${domain}/ " $idm_hostnames)
+ldaps_uri=$(printf "ldaps://%s.${domain}/ " $idm_hostnames)
+ldap_hosts=$(printf "%s.${domain} " $idm_hostnames)
+accounts_basedn="ou=accounts,${basedn}"
+people_basedn="ou=people,${accounts_basedn}"
+robots_basedn="ou=robots,${accounts_basedn}"
+hosts_basedn="ou=hosts,${accounts_basedn}"
+services_basedn="ou=services,${accounts_basedn}"
+groups_basedn="ou=groups,${accounts_basedn}"
+private_groups_basedn="ou=userprivate,${groups_basedn}"
+roles_basedn="ou=roles,${groups_basedn}"
+automount_basedn="ou=automount,${basedn}"
+sudo_basedn="ou=sudo,${basedn}"
+dns_basedn="ou=dns,${basedn}"
+kdc_basedn="ou=dns,${basedn}"
+mail_basedn="ou=mail,${basedn}"
+mail_domains_basedn="ou=domains,${mail_basedn}"

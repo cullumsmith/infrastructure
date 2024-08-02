@@ -1,0 +1,29 @@
+# With SASL_MECH=EXTERNAL set in system ldap.conf, PowerDNS can be fooled
+# into performing an EXTERNAL (Unix peercred) bind over the ldapi:/// domain
+# socket.
+#
+# You must set ldap-bindmethod=gssapi (?!) for this to work. This behavior doesn't
+# seem to be documented anywhere, but hey, it's nice!
+ldap-host=ldapi:///
+ldap-bindmethod=gssapi
+
+ldap-basedn=${dns_basedn}
+ldap-reconnect-attempts=2147483647
+ldap-method=simple
+
+launch=ldap
+
+local-address=127.0.0.1,::1
+local-port=${pdns_port}
+distributor-threads=${pdns_distributor_threads}
+receiver-threads=${pdns_receiver_threads}
+reuseport=yes
+
+allow-axfr-ips=${pdns_allow_axfr_ips}
+
+cache-ttl=${pdns_cache_ttl}
+query-cache-ttl=${pdns_query_cache_ttl}
+negquery-cache-ttl=${pdns_negquery_cache_ttl}
+zone-cache-refresh-interval=0
+
+security-poll-suffix=

@@ -1,0 +1,163 @@
+{
+  "policies": {
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
+        "installation_mode": "force_installed"
+      },
+      "{446900e4-71c2-419f-a6a7-df9c091e268b}": {
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi",
+        "installation_mode": "normal_installed"
+      },
+      "7esoorv3@alefvanoon.anonaddy.me": {
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/libredirect/latest.xpi",
+        "installation_mode": "normal_installed"
+      },
+      "{9cbd40c5-5275-443e-811b-dc57d8c7c5d2}": {
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kde-default-breeze/latest.xpi",
+        "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo 'normal_installed'; else echo 'allowed'; fi)"
+      },
+      "plasma-browser-integration@kde.org": {
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/plasma-integration/latest.xpi",
+        "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo normal_installed; else echo allowed; fi)"
+      }
+    },
+    "3rdparty": {
+      "Extensions": {
+        "uBlock0@raymondhill.net": {
+          "toOverwrite": {
+            "filterLists": [
+              "user-filters",
+              "ublock-filters",
+              "ublock-badware",
+              "ublock-privacy",
+              "ublock-abuse",
+              "ublock-unbreak",
+              "ublock-annoyances",
+              "easylist",
+              "easyprivacy",
+              "urlhaus-1",
+              "plowe-0",
+              "fanboy-annoyance",
+              "fanboy-thirdparty_social",
+              "adguard-spyware-url",
+              "ublock-quick-fixes"
+            ]
+          },
+          "toAdd": {
+            "trustedSiteDirectives": [
+              "${domain}"
+            ]
+          }
+        }
+      }
+    },
+    "UserMessaging": {
+      "WhatsNew": false,
+      "ExtensionRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true
+    },
+    "OverridePostUpdatePage": "",
+    "OverrideFirstRunPage": "",
+    "EnableTrackingProtection": {
+      "Value": false,
+      "Cryptomining": false,
+      "Fingerprinting": false,
+      "Locked": false
+    },
+    "Cookies": {
+      "Behavior": "reject-tracker-and-partition-foreign",
+      "BehaviorPrivateBrowsing": "reject-tracker-and-partition-foreign"
+    },
+    "Authentication": {
+      "SPNEGO": ["${domain}"],
+      "AllowNonFQDN": {
+        "SPNEGO": true
+      },
+      "AllowProxies": {
+        "SPNEGO": true
+      }
+    },
+    "NoDefaultBookmarks": true,
+    "DisablePocket": true,
+    "DisableAppUpdate": true,
+    "CaptivePortal": false,
+    "Certificates": {
+      "Install": [
+        "${site_cacert_path}"
+      ]
+    },
+    "DisableFeedbackCommands": true,
+    "DisableFirefoxAccounts": true,
+    "DisableFirefoxStudies": true,
+    "DisableTelemetry": true,
+    "DontCheckDefaultBrowser": true,
+    "OfferToSaveLoginsDefault": false,
+    "DNSOverHTTPS": {
+      "Enabled": false
+    },
+    "SearchSuggestEnabled": false,
+    "Homepage": {
+      "URL": "about:home",
+      "StartPage": "homepage"
+    },
+    "FirefoxHome": {
+      "Search": true,
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false
+    },
+    "ManagedBookmarks": [
+      {
+        "toplevel_name": "Intranet"
+      },
+      {
+        "url": "http://pkg.${domain}/poudriere/",
+        "name": "Poudriere"
+      }
+    ],
+    "ExtensionUpdate": true,
+    "Preferences": {
+      "dom.security.https_only_mode": {
+        "Value": true,
+        "Status": "locked"
+      },
+      "dom.push.connection.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "privacy.trackingprotection.socialtracking.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.urlbar.suggest.quicksuggest.nonsponsored": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.urlbar.suggest.quicksuggest.sponsored": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.toolbars.bookmarks.visibility": {
+        "Value": "newtab",
+        "Status": "default"
+      },
+      "browser.safebrowsing.malware.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.safebrowsing.phishing.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.safebrowsing.downloads.enabled": {
+        "Value": false,
+        "Status": "locked"
+      }
+    }
+  }
+}

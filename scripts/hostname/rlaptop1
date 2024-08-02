@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set_loader_conf \
+  if_iwm_load=YES \
+  iwm8265fw_load=YES
+
+sysrc -v wlans_iwm0='wlan0'
+
+# On this laptop, kern.vt.suspendswitch=1 (the default) breaks graphics
+# acceleration after resuming from sleep.
+set_sysctl \
+  dev.acpi_ibm.0.handlerevents='0x10 0x11' \
+  kern.vt.suspendswitch=0
+
+install_file -m 0555 /usr/local/libexec/thinkpad-brightness
+install_file -m 0644 /etc/devd/thinkpad-brightness.conf
+
+service devd restart
+
+pw usershow cullum || \
+  pw useradd cullum -c "Cullum Smith" -d /home/cullum -G wheel,operator,video -s /bin/sh -m -M 700

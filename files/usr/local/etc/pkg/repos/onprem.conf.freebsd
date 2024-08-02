@@ -1,0 +1,6 @@
+${site}: {
+  enabled: yes,
+  url: "http://${pkg_host}/\${ABI}/latest",
+  signature_type: "pubkey",
+  pubkey: "/usr/local/etc/ssl/repo.crt"
+}

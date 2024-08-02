@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Configure sudoers.
+install_file -m 0600 \
+  /usr/local/etc/sudoers \
+  /usr/local/etc/sudoers.d/networkmgr

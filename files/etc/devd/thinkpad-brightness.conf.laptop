@@ -1,0 +1,13 @@
+notify 20 {
+  match "system"    "ACPI";
+  match "subsystem" "IBM";
+  match "notify"    "0x10";
+  action            "/usr/local/libexec/thinkpad-brightness up";
+};
+
+notify 20 {
+  match "system"    "ACPI";
+  match "subsystem" "IBM";
+  match "notify"    "0x11";
+  action            "/usr/local/libexec/thinkpad-brightness down";
+};

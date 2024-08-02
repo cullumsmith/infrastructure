@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Install MIT kerberos.
+pkg install -y krb5
+
+if is_primary_server; then
+  # ou=kdc,dc=example,dc=com
+  ldap_add "$kdc_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$dns_basedn")
+EOF
+fi

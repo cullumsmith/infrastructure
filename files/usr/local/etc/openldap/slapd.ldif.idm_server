@@ -1,0 +1,225 @@
+# Top-level cn=config attributes.
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcArgsFile: /var/run/openldap/slapd.args
+olcPidFile: /var/run/openldap/slapd.pid
+olcSaslHost: ${fqdn}
+olcSaslSecProps: noanonymous,minssf=56
+olcDisallows: bind_anon
+olcSecurity: ssf=56
+olcLocalSSF: 128
+olcTLSCACertificateFile: ${site_cacert_path}
+olcTLSCertificateFile: ${slapd_tls_cert}
+olcTLSCertificateKeyFile: ${slapd_tls_key}
+olcTLSVerifyClient: allow
+$(echo "$idm_server_list" | while read -r _hostname id ipv4; do
+    echo "olcServerID: ${id} ldaps://${ipv4}/"
+done)
+olcAuthzRegexp: {0}^gidNumber=[0-9]+\+uidNumber=0,cn=peercred,cn=external,cn=auth$ ${slapd_root_dn}
+olcAuthzRegexp: {1}^gidNumber=[0-9]+\+uidNumber=([^,]+),cn=peercred,cn=external,cn=auth$ ldap:///${accounts_basedn}??sub?(uidNumber=\$1)
+olcAuthzRegexp: {2}^uid=([^,]+),cn=(gssapi|plain|login),cn=auth$ ldap:///${accounts_basedn}??sub?(krbPrincipalName=\$1@${realm})
+
+# Load dynamic modules.
+dn: cn=module,cn=config
+objectClass: olcModuleList
+cn: module
+olcModulepath: /usr/local/libexec/openldap
+olcModuleload: back_mdb.la
+olcModuleload: pw-sha2.la
+olcModuleload: accesslog.la
+olcModuleload: dynlist.la
+olcModuleload: unique.la
+olcModuleload: refint.la
+
+# Frontend configuration. Individual databases can override these settings.
+dn: olcDatabase=frontend,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcFrontendConfig
+olcDatabase: frontend
+olcPasswordHash: {SSHA512}
+olcSizeLimit: ${slapd_result_size_limit}
+olcRequires: authc
+olcAccess: {0}to dn.base="" by * read
+olcAccess: {1}to dn.base="cn=Subschema" by * read
+olcAccess: {2}to *
+  by users read
+  by anonymous auth
+
+# Load schemas.
+dn: cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: schema
+
+include: file://${slapd_conf_dir}/schema/core.ldif
+include: file://${slapd_conf_dir}/schema/cosine.ldif
+include: file://${slapd_conf_dir}/schema/inetorgperson.ldif
+include: file://${slapd_conf_dir}/schema/dyngroup.ldif
+include: file://${slapd_conf_dir}/schema/rfc2307bis.ldif
+include: file://${slapd_conf_dir}/schema/kerberos.ldif
+include: file://${slapd_conf_dir}/schema/openssh-lpk.ldif
+include: file://${slapd_conf_dir}/schema/sudo.ldif
+include: file://${slapd_conf_dir}/schema/dnsdomain2.ldif
+include: file://${slapd_conf_dir}/schema/mailservice.ldif
+
+# cn=config database configuration.
+dn: olcDatabase={0}config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: config
+olcRootDN: ${slapd_root_dn}
+
+# Default database configuration.
+dn: olcDatabase={1}mdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: mdb
+olcDbMaxSize: ${slapd_db_max_size}
+olcSuffix: ${basedn}
+olcRootDN: ${slapd_root_dn}
+olcDbDirectory: ${slapd_data_dir}
+$(echo "$idm_server_list" | while read -r _hostname id ipv4; do
+echo "olcSyncrepl: rid=00${id}
+  provider=ldaps://${ipv4}/
+  searchbase=${basedn}
+  bindmethod=sasl
+  saslmech=external
+  tls_cert=${slapd_replicator_tls_cert}
+  tls_key=${slapd_replicator_tls_key}
+  tls_cacert=${site_cacert_path}
+  tls_reqcert=demand
+  type=refreshAndPersist
+  retry=\"5 5 60 +\"
+  logfilter=\"(&(objectClass=auditWriteObject)(reqResult=0))\"
+  timeout=5
+  logbase=cn=accesslog
+  syncdata=accesslog"
+done)
+olcMultiProvider: TRUE
+olcDbIndex: objectClass eq
+olcDbIndex: cn,uid,uidNumber,gidNumber,member,memberUid,mail,mailAddress,mailAlternateAddress,mailPrivateAddress,mailContactAddress eq
+olcDbIndex: sudoUser eq
+olcDbIndex: automountMapName eq
+olcDbIndex: krbPrincipalName eq,pres
+olcDbIndex: entryCSN,entryUUID eq
+olcDbIndex: associatedDomain pres,eq,sub
+olcDbIndex: description pres,eq,sub
+olcLimits: {0}dn.exact=${slapd_replicator_dn}
+  time.soft=unlimited
+  time.hard=unlimited
+  size.soft=unlimited
+  size.hard=unlimited
+olcLimits: {1}*
+  size.soft=${slapd_result_size_limit}
+  size.hard=${slapd_result_size_limit}
+  size.pr=${slapd_result_size_limit}
+  size.prtotal=unlimited
+olcAccess: {0}to dn.base=""
+  by * read
+olcAccess: {1}to dn.base="cn=Subschema"
+  by * read
+olcAccess: {3}to *
+  by dn.exact=${slapd_replicator_dn} read
+  by dn.exact=uid=${idm_admin_username},${robots_basedn} manage
+  by group/groupOfMembers/member=cn=${idm_admin_groupname},${groups_basedn} manage
+  by * break
+olcAccess: {4}to dn.subtree=${sudo_basedn}
+  by dn.children=${hosts_basedn} read
+  by * none
+olcAccess: {5}to dn.subtree=${kdc_basedn}
+  by * none
+olcAccess: {6}to attrs=userPassword
+  by self write
+  by anonymous auth
+  by * none
+olcAccess: {7}to attrs=shadowLastChange,sshPublicKey
+  by self write
+  by * read
+olcAccess: {8}to attrs=krbPrincipalKey
+  by * none
+olcAccess: {9}to *
+  by * read
+
+# Accesslog database (for syncprov).
+dn: olcDatabase={2}mdb,cn=config
+objectClass: olcDatabaseConfig
+objectClass: olcMdbConfig
+olcDatabase: mdb
+olcDbDirectory: ${slapd_data_dir}/accesslog
+olcSuffix: cn=accesslog
+olcRootDN: ${slapd_root_dn}
+olcDbMaxSize: ${slapd_accesslog_db_max_size}
+olcDbIndex: entryCSN,objectClass,reqEnd,reqResult,reqStart,reqDN eq
+olcAccess: {0}to *
+  by dn.exact=${slapd_replicator_dn} read
+  by * break
+olcLimits: {0}dn.exact=${slapd_replicator_dn}
+  time.soft=unlimited
+  time.hard=unlimited
+  size.soft=unlimited
+  size.hard=unlimited
+
+# Monitoring database.
+dn: olcDatabase={3}monitor,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: monitor
+olcRootDN: ${slapd_root_dn}
+olcMonitoring: FALSE
+
+# Syncprov overlay.
+dn: olcOverlay={0}syncprov,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov
+olcSpCheckpoint: ${slapd_syncrepl_checkpoint_ops} ${slapd_syncrepl_checkpoint_minutes}
+olcSpSessionLog: ${slapd_syncrepl_session_log}
+
+# Accesslog overlay (for syncrepl).
+dn: olcOverlay={1}accesslog,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcAccessLogConfig
+olcOverlay: accesslog
+olcAccessLogDB: cn=accesslog
+olcAccessLogOps: writes
+olcAccessLogSuccess: TRUE
+olcAccessLogPurge: ${slapd_syncrepl_cleanup_age}+00:00 ${slapd_syncrepl_cleanup_interval}+00:00
+
+# Dynlist overlay.
+dn: olcOverlay={2}dynlist,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcDynamicList
+olcOverlay: dynlist
+olcDynListAttrSet: {0}groupOfURLs memberURL member+memberOf@groupOfMembers*
+olcDynListAttrSet: {1}labeledURIObject labeledURI uniqueMember+seeAlso@groupOfUniqueNames
+
+# Unique overlay.
+dn: olcOverlay={3}unique,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcUniqueConfig
+olcOverlay: unique
+olcUniqueURI: ldap:///${accounts_basedn}?uid?sub
+olcUniqueURI: ldap:///${accounts_basedn}?uidNumber?sub
+olcUniqueURI: ldap:///${accounts_basedn}?krbPrincipalName?sub
+olcUniqueURI: ldap:///${accounts_basedn}?mail?sub
+olcUniqueURI: ldap:///${accounts_basedn}?mailAddress,mailAlternateAddress,mailPrivateAddress,mailContactAddress?sub
+olcUniqueURI: ldap:///${groups_basedn}?cn?sub
+olcUniqueURI: ldap:///${groups_basedn}?gidNumber?sub
+olcUniqueURI: ldap:///${hosts_basedn}?cn,dc?sub
+olcUniqueURI: ldap:///${services_basedn}?cn?sub
+olcUniqueURI: ldap:///${sudo_basedn}?cn?sub
+olcUniqueURI: ldap:///${dns_basedn}?associatedDomain?sub
+
+# Refint overlay.
+dn: olcOverlay={4}refint,olcDatabase={1}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcRefintConfig
+olcOverlay: refint
+olcRefintAttribute: member
+olcRefintNothing: cn=config
+
+# Syncprov overlay for accesslog db.
+dn: olcOverlay=syncprov,olcDatabase={2}mdb,cn=config
+objectClass: olcOverlayConfig
+objectClass: olcSyncProvConfig
+olcOverlay: syncprov
+olcSpNoPresent: TRUE
+olcSpReloadHint: TRUE

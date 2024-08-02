@@ -12,11 +12,31 @@ root_mail_alias="you@${email_domain}"
 smtp_host_ip=1.2.3.4
 timezone=America/New_York
 
+# hostname  id  ipv4
+idm_server_list="\
+idm1      1   1.2.3.4
+idm2      2   5.6.7.8"
+
+reverse_dns_zones="0.168.192.in-addr.arpa  12.11.10.in-addr.arpa"
+
+
+###############################################################################
+# Variables following this line do not (generally) need to be changed.
+###############################################################################
 nproc=$(nproc)
 
 allowed_tcp_ports=ssh
 bootstrap_resolvers='1.1.1.1'
+desktop_type=kde
 fqdn="${BOXCONF_HOSTNAME}.${domain}"
+graphics_type=intel
+idm_admin_username='s-boxconf'
+idm_admin_uid='20000'
+idm_admin_groupname='sysadmins'
+idm_admin_gid='30000'
+nslcd_min_uid=1000
+nscd_ttl=600
+nscd_negative_ttl=20
 smtp_host="smtp.${domain}"
 ssh_authzkeys_user=_authzkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE
@@ -27,8 +47,4 @@ if $(( nproc > 4 )); then
   nginx_worker_processes=4
 else
   nginx_worker_processes=$nproc
-fi
-
-if [ "${idm_bootstrap:-}" = true ]; then
-  resolvers=$bootstrap_resolvers
 fi

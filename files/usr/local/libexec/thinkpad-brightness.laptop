@@ -1,0 +1,31 @@
+#!/bin/sh
+
+cur=$(/usr/bin/backlight -q)
+
+case $1 in
+  up)
+      if [ "$cur" -ge 50 ]; then
+        delta=10
+      elif [ "$cur" -ge 10 ]; then
+        delta=5
+      else
+        delta=2
+      fi
+
+      /usr/bin/backlight incr "$delta"
+    ;;
+  down)
+      if [ "$cur" -le 10 ]; then
+        delta=2
+      elif [ "$cur" -le 50 ]; then
+        delta=5
+      else
+        delta=10
+      fi
+
+      /usr/bin/backlight decr "$delta"
+    ;;
+  *)
+    exit 1
+    ;;
+esac

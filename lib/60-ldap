@@ -1,0 +1,56 @@
+#!/bin/sh
+
+ldap_add(){
+  # Add a DN if it doesn't already exist. Takes ldif-formatted attributes on stdin.
+  # $1 = the DN
+  _ldap_add_dn=$1; shift
+  if ldapsearch -QLLL -s base -b "$_ldap_add_dn" dn > /dev/null 2>&1; then
+    log "${_ldap_add_dn} already exists"
+  else
+    { printf 'dn: %s\n' "$_ldap_add_dn"; cat; } | ldapadd -Q "$@"
+  fi
+}
+
+ldap_modify(){
+  # Modify a DN. Takes ldif-formatted attributes on stdin.
+  # $1 = the DN
+  _ldap_modify_dn=$1; shift
+  { printf 'dn: %s\nchangetype: modify\n' "$_ldap_modify_dn"; cat; } | ldapmodify -Q "$@"
+}
+
+ldap_delete(){
+  # Delete a DN.
+  # $1 = the DN
+  ldapdelete -Q "$@"
+}
+
+ldap_add_attribute(){
+  # Add a single attribute value to an object if it's not already present.
+  # $1 = DN
+  # $2 = attribute
+  # $3 = value
+  ldap_search -b "$1" -s base "(${2}=${3})" dn | grep -q '^dn:' || ldap_modify "$1" <<EOF
+add: ${2}
+${2}: ${3}
+EOF
+}
+
+ldap_replace_attribute(){
+  # Replace all values for a single attribute.
+  # $1 = DN
+  # $2 = attribute
+  # $3..$N = values
+  _ldap_replattr_dn=$1; shift
+  _ldap_replattr_attr=$1; shift
+
+  ldap_modify "$_ldap_replattr_dn" <<EOF
+replace: ${ldap_replattr_attr}
+$(printf "${ldap_replattr_attr}: %s\n" "$@")
+EOF
+}
+
+ldap_rdn_value(){
+  # Get the leftmost attribute value from a DN.
+  # $1 = DN
+  echo "$1" | sed -E 's/^[^=]+=([^,]+),.*$/\1/'
+}

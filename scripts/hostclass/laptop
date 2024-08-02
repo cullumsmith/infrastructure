@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Set USB power savings
+usbconfig | awk -F: '{ print $1 }' | xargs -rtn1 -I% usbconfig -d % power_save ||:
+install_file /etc/rc.local
+
+# Create devd rule for lid close.
+install_file -m 0555 /usr/local/libexec/lid-close
+install_file -m 0644 /etc/devd/lid-close.conf
+service devd restart
+
+# Configure wireless card.
+sysrc -v \
+  create_args_wlan0='country US regdomain FCC' \
+  ifconfig_wlan0="WPA DHCP powersave"

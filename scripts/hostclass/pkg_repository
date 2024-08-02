@@ -28,7 +28,9 @@ pkg install -y \
 install_template -m 0644 \
   /usr/local/etc/poudriere.conf \
  "${poudriere_conf_dir}/make.conf" \
- "${poudriere_conf_dir}/pkglist"
+ "${poudriere_conf_dir}/idm-make.conf" \
+ "${poudriere_conf_dir}/pkglist" \
+ "${poudriere_conf_dir}/idm-pkglist"
 install_file -m 0400 /usr/local/etc/ssl/repo.key
 install_directory -m 0755 /usr/ports/distfiles
 install_directory -m 0755 -o nobody -g nobody "${poudriere_data_dir}/ccache"
@@ -57,10 +59,12 @@ for version in $poudriere_versions; do
 
   [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
   poudriere jail -u -j "$jail"
+  poudriere bulk -v -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
   poudriere bulk -v -j "$jail" -f "${poudriere_conf_dir}/pkglist" -p latest
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
   ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
+  ln -snfv "../${jail}-latest-idm" "${poudriere_data_dir}/data/packages/${abi}/latest-idm"
 done
 
 # Clean stale distfiles and logs.

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+/usr/bin/pkill -USR1 xidle
+/usr/sbin/acpiconf -s3
