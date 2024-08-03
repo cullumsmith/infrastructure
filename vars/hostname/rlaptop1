@@ -1,3 +1,7 @@
 #!/bin/sh
 
 desktop_type=i3
+wireless_type=iwm8265
+console_font=spleen-12x24
+laptop_type=thinkpad
+vt_suspendswitch=0

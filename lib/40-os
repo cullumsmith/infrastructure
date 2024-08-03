@@ -49,7 +49,7 @@ x
 
 load_kernel_module(){
   # Ensure the given kernel modules are loaded.
-  # $1..$N = bootloader options (as "name=value" strings)
+  # $1..$N = module names
   case $BOXCONF_OS in
     freebsd)
       while [ $# -gt 0 ]; do
@@ -59,6 +59,61 @@ load_kernel_module(){
       ;;
     *)
       die "load_kernel_module unimplemented for ${BOXCONF_OS}"
+      ;;
+  esac
+}
+
+add_local_user(){
+  _bcalu_homedir_mode=700
+  _bcalu_create_homedir=
+  _bcalu_homedir=
+  _bcalu_comment=
+  _bcalu_shell=/sbin/nologin
+  _bcalu_pgroup=
+  _bcalu_grouplist=
+  _bcalu_uid=
+
+  # Add a local user if it doesn't exist.
+  while getopts c:d:G:g:mM:s:u: _bcalu_opt; do
+    case $_bcalu_opt in
+      c) _bcalu_comment=$OPTARG ;;
+      d) _bcalu_homedir=$OPTARG ;;
+      G) _bcalu_grouplist=$OPTARG ;;
+      g) _bcalu_pgroup=$OPTARG ;;
+      M) _bcalu_homedir_mode=$OPTARG ;;
+      m) _bcalu_create_homedir=true ;;
+      s) _bcalu_shell=$OPTARG ;;
+      u) _bcalu_uid=$OPTARG ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+
+  _bcalu_username=$1
+  : ${_bcalu_homedir:="/home/${_bcalu_username}"}
+  : ${_bcalu_comment:="${_bcalu_username} user"}
+
+  case $BOXCONF_OS in
+    freebsd)
+      if pw usershow "$_bcalu_username" > /dev/null 2>&1; then
+        log "local user ${_bcalu_username} already exists"
+        return 0
+      fi
+
+      pw useradd \
+        -n "$_bcalu_username" \
+        -c "$_bcalu_comment" \
+        -s "$_bcalu_shell" \
+        -M "$_bcalu_homedir_mode" \
+        -d "$_bcalu_homedir" \
+        ${_bcalu_create_homedir:+-m} \
+        ${_bcalu_grouplist:+-G ${_bcalu_grouplist}} \
+        ${_bcalu_pgroup:+-g ${_bcalu_pgroup}} \
+        ${_bcalu_uid:+-u ${_bcalu_uid}}
+
+        log "added local user ${_bcalu_username}"
+      ;;
+    *)
+      die "add_local_user unimplemented for ${BOXCONF_OS}"
       ;;
   esac
 }

@@ -9,7 +9,36 @@ install_file -m 0555 /usr/local/libexec/lid-close
 install_file -m 0644 /etc/devd/lid-close.conf
 service devd restart
 
+case ${wireless_type:-} in
+  iwm*)
+    set_loader_conf \
+      if_iwm_load=YES \
+      "${wireless_type}fw_load=YES"
+
+    load_kernel_module \
+      if_iwm \
+      "${wireless_type}fw"
+
+    sysrc -v wlans_iwm0='wlan0'
+    ;;
+esac
+
 # Configure wireless card.
 sysrc -v \
   create_args_wlan0='country US regdomain FCC' \
   ifconfig_wlan0="WPA DHCP powersave"
+
+# On some graphics cards, kern.vt.suspendswitch=1 (the default) breaks graphics
+# acceleration after resuming from sleep.
+set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
+
+# Hardware-specific fixes.
+case ${laptop_type:-} in
+  thinkpad)
+    # Set brightness using function keys.
+    set_sysctl dev.acpi_ibm.0.handlerevents='0x10 0x11'
+    install_file -m 0555 /usr/local/libexec/thinkpad-brightness
+    install_file -m 0644 /etc/devd/thinkpad-brightness.conf
+    service devd restart
+    ;;
+esac
