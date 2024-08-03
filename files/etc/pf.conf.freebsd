@@ -1,4 +1,8 @@
-egress = "${BOXCONF_DEFAULT_INTERFACE}"
+$(if [ -n "${pf_egress_interfaces:-}" ]; then
+    printf 'egress = "{ %s }"\n' "$(join ', ' $pf_egress_interfaces)"
+  else
+    printf 'egress = "%s"\n' "$BOXCONF_DEFAULT_INTERFACE"
+  fi)
 allowed_tcp_ports = "{ $(join ', ' ${allowed_tcp_ports:-}) }"
 allowed_udp_ports = "{ $(join ', ' ${allowed_udp_ports:-}) }"
 acme_standalone_port = ${acme_standalone_port}
@@ -7,6 +11,9 @@ nfscbd_port = ${nfscbd_port}
 
 set block-policy return
 set skip on lo
+$([ -n "${pf_skip_interfaces:-}" ] && printf \
+  'set skip on %s\n' $pf_skip_interfaces)
+
 scrub in on \$egress all fragment reassemble no-df
 
 $([ "${acme_standalone:-}" = true ] && echo \

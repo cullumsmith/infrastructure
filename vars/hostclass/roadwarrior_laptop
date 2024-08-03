@@ -1,2 +1,3 @@
 #!/bin/sh
 resolvers=$bootstrap_resolvers
+pf_skip_interfaces=wg

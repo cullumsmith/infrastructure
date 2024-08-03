@@ -9,6 +9,11 @@ install_file -m 0555 /usr/local/libexec/lid-close
 install_file -m 0644 /etc/devd/lid-close.conf
 service devd restart
 
+# Enable kernel module for Android USB tethering.
+load_kernel_module if_urndis
+set_loader_conf if_urndis_load=YES
+sysrc -v ifconfig_ue0='DHCP'
+
 case ${wireless_type:-} in
   iwm*)
     set_loader_conf \

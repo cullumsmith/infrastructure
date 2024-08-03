@@ -1,5 +1,6 @@
 #!/bin/sh
 
+pf_egress_interfaces='wlan0 em0 ue0'
 desktop_type=i3
 wireless_type=iwm8265
 console_font=spleen-12x24
