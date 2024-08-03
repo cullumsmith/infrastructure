@@ -28,10 +28,6 @@ sysrc -v \
   create_args_wlan0='country US regdomain FCC' \
   ifconfig_wlan0="WPA DHCP powersave"
 
-# On some graphics cards, kern.vt.suspendswitch=1 (the default) breaks graphics
-# acceleration after resuming from sleep.
-set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
-
 # Hardware-specific fixes.
 case ${laptop_type:-} in
   thinkpad)

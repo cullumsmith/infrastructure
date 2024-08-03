@@ -96,3 +96,7 @@ case $graphics_type in
     load_kernel_module i915kms
     ;;
 esac
+
+# On some graphics cards, kern.vt.suspendswitch=1 (the default) breaks graphics
+# acceleration after resuming from sleep.
+set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
