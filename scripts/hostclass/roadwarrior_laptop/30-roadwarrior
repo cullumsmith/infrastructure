@@ -4,3 +4,7 @@
 install_file -m 0600 \
   /usr/local/etc/sudoers \
   /usr/local/etc/sudoers.d/networkmgr
+
+# Configure devd for Android USB tethering.
+install_file -m 0644 /etc/devd/usb-tether.conf
+service devd restart
