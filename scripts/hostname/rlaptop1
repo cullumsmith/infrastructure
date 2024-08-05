@@ -1,8 +1,9 @@
 #!/bin/sh
 
-add_local_user \
+add_user \
   -c "Cullum Smith" \
   -G wheel,operator,video \
   -s /bin/sh \
   -m \
+  -p changeme \
   cullum
