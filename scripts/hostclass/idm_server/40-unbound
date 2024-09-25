@@ -1,0 +1,40 @@
+#!/bin/sh
+
+unbound_user=unbound
+unbound_conf_dir=/usr/local/etc/unbound
+unbound_blocklist_dir="${unbound_conf_dir}/blocklists"
+unbound_blocklist_url_file="${unbound_conf_dir}/blocklist_urls"
+
+: ${unbound_blocklist_urls:=''}
+: ${unbound_cache_max_negative_ttl:='60'}
+: ${unbound_rrset_cache_size:='104857600'} # 100 MB
+: ${unbound_msg_cache_size:='52428800'} # 50 MB
+: ${unbound_slabs:='2'}
+: ${unbound_insecure_domains:=''}
+: ${unbound_local_zones:=''}
+: ${unbound_local_data:=''}
+: ${unbound_blocklists:=''}
+: ${unbound_threads:="$nproc"}
+
+# Install unbound recursive resolver.
+pkg install -y unbound
+
+# Generate unbound configuration.
+install_directory -m 0755 -o "$unbound_user" "$unbound_blocklist_dir"
+install_template -m 0644 "${unbound_conf_dir}/unbound.conf"
+
+# Download blocklists.
+echo "$unbound_blocklists" | tee "$unbound_blocklist_url_file"
+install_file -m 0755 /usr/local/libexec/idm-update-unbound-blocklists
+su -m "$unbound_user" -c "/usr/local/libexec/idm-update-unbound-blocklists ${unbound_blocklist_dir} < ${unbound_blocklist_url_file}"
+
+# Enable and start unbound.
+sysrc -v unbound_enable=YES
+service unbound restart
+
+# Now we are ready to us unbound as the local resolver.
+install_template -m 0644 /etc/resolv.conf
+
+# Update blocklists with a cron job.
+echo "@daily root su -m ${unbound_user} -c \"/usr/local/libexec/idm-update-unbound-blocklists ${unbound_blocklist_dir} < ${unbound_blocklist_url_file}\" && service unbound reload" \
+  | tee /etc/cron.d/idm-update-unbound-blocklists

@@ -10,10 +10,13 @@
 : ${slapd_syncrepl_session_log:='1000'}
 : ${slapd_syncrepl_cleanup_age:='7'}
 : ${slapd_syncrepl_cleanup_interval:='1'}
+: ${slapd_admin_role:='role-ldap-admin'}
 
 slapd_user=ldap
 slapd_data_dir=/var/db/openldap-data
 slapd_conf_dir=/usr/local/etc/openldap
+slapd_socket=/var/run/openldap/ldapi
+slapd_ldapi_uri="ldapi://$(echo "$slapd_socket" | sed 's|/|%2f|g')"
 slapd_tls_cert="${slapd_conf_dir}/slapd.crt"
 slapd_tls_key="${slapd_conf_dir}/slapd.key"
 slapd_replicator_tls_cert="${slapd_conf_dir}/replicator.crt"
@@ -72,8 +75,8 @@ fi
 sysrc -v \
   slapd_enable=YES \
   slapd_cn_config=YES \
-  slapd_flags="-h 'ldapi://%2fvar%2frun%2fopenldap%2fldapi/ ldap://0.0.0.0/ ldaps://0.0.0.0/ ldaps://${BOXCONF_DEFAULT_IPV4}/'" \
-  slapd_sockets="/var/run/openldap/ldapi" \
+  slapd_flags="-h '${slapd_ldapi_uri}/ ldap://0.0.0.0/ ldaps://0.0.0.0/ ldaps://${BOXCONF_DEFAULT_IPV4}/'" \
+  slapd_sockets="$slapd_socket" \
   slapd_krb5_ktname="$slapd_keytab"
 
 service slapd restart
@@ -149,6 +152,12 @@ EOF
   ldap_add "$roles_basedn" <<EOF
 objectClass: organizationalUnit
 ou: $(ldap_rdn_value "$roles_basedn")
+EOF
+
+  # cn=role-ldap-admin,ou=roles,ou=groups,ou=accounts,dc=example,dc=com
+  ldap_add "cn=${slapd_admin_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${slapd_admin_role}
 EOF
 
   # ou=automount,dc=example,dc=com

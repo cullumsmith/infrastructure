@@ -1,12 +1,43 @@
 #!/bin/sh
 
+kdc_conf_dir=/usr/local/var/krb5kdc
+kdc_master_key_path="${kdc_conf_dir}/master_key"
+
+: ${kdc_max_life:='24h'}
+: ${kdc_max_renewable_life:='7d'}
+
 # Install MIT kerberos.
 pkg install -y krb5
 
+# Generate the system kerberos configuration.
+install_template -m 0644 /etc/krb5.conf
+ln -snfv /etc/krb5.conf /usr/local/etc/krb5.conf
+
+# Generate KDC configuration files.
+install_template -m 0644 \
+  "${kdc_conf_dir}/kdc.conf" \
+  "${kdc_conf_dir}/kadm5.acl"
+
+# If the realm does not exist in LDAP, create it. Otherwise, stash the master key.
+if is_primary_server && ! ldap_dn_exists "$kdc_basedn"; then
+  kdb5_ldap_util -P "$kdc_master_key" create -subtrees "$accounts_basedn" -sscope SUB -s
+elif ! [ -f "$kdc_master_key_path" ]; then
+  kdb5_util -P "$kdc_master_key" stash
+fi
+
+# Start the KDC and kadmind.
+sysrc -v \
+  kdc_program=/usr/local/sbin/krb5kdc \
+  kadmind_program=/usr/local/sbin/kadmind \
+  kdc_flags="" \
+  kdc_enable=YES \
+  kadmind_enable=YES
+
+service kdc restart
+service kadmind restart
+
+# Create the boxconf administrative user.
 if is_primary_server; then
-  # ou=kdc,dc=example,dc=com
-  ldap_add "$kdc_basedn" <<EOF
-objectClass: organizationalUnit
-ou: $(ldap_rdn_value "$dns_basedn")
-EOF
+  kadmin.local get_principal -terse "$boxconf_username" \
+    || kadmin.local add_principal -pw "$boxconf_password" -x "containerdn=${robots_basedn}" "$boxconf_username"
 fi

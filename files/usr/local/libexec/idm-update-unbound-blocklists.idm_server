@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -eu -o pipefail
+
+prog=$(basename "$(readlink -f "$0")")
+usage="${prog} BLOCKLIST_DIR
+       Blocklist URLs are read from stdin."
+
+die() {
+  printf '%s: %s\n' "$prog" "$*" 1>&2
+  exit 1
+}
+
+usage(){
+  printf 'usage: %s\n' "$usage" 1>&2
+  exit 2
+}
+
+[ $# -eq 1 ] || usage
+case $1 in
+  -h|--help) usage ;;
+esac
+
+[ -d "$1" ] || die "not a directory: ${1}"
+
+cd "$1"
+
+find . -maxdepth 1 -type f -exec rm {} +
+
+while read -r name url; do
+  [ -n "$url" ] && curl -sSfL -o "${name}.zone" "$url"
+done

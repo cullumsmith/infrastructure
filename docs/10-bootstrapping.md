@@ -70,7 +70,7 @@ are also set with this command.
 Now you are ready to build all the packages and create the repository. `boxconf`
 assumes that any host named `pkg[0-1]` has the `pkg_repository` hostclass.
 
-    ./boxconf -e idm_bootstrap=true 10.99.99.4
+    ./boxconf -e idm_bootstrap=true -s 10.99.99.4 pkg1
 
 Substitute whatever IP you chose for the `pkg1` jail as necessary. Note that it
 will take a while to build all the packages for the first time.

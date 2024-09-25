@@ -6,6 +6,7 @@ email_domain=example.com
 locale=en_US.UTF-8
 ntp_pools='pool.ntp.org'
 root_password=changeme
+boxconf_password=changeme
 root_authorized_keys='ssh-ed25519 changeme
 ssh-ed25519 changeme'
 root_mail_alias="you@${email_domain}"
@@ -28,16 +29,13 @@ nproc=$(nproc)
 allowed_tcp_ports=ssh
 bootstrap_resolvers='1.1.1.1'
 desktop_type=kde
-fqdn="${BOXCONF_HOSTNAME}.${domain}"
 graphics_type=intel
-idm_admin_username='s-boxconf'
-idm_admin_uid='20000'
-idm_admin_groupname='sysadmins'
-idm_admin_gid='30000'
+boxconf_username='s-boxconf'
+krb5_ticket_lifetime=24h
+krb5_renew_lifetime=7d
 nslcd_min_uid=1000
 nscd_ttl=600
 nscd_negative_ttl=20
-smtp_host="smtp.${domain}"
 ssh_authzkeys_user=_authzkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE
 

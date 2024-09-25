@@ -12,6 +12,7 @@ net/py-python-ldap
 net/rsync
 security/cyrus-sasl2-saslauthd
 security/krb5
+security/openssh-portable
 security/pam_krb5@mit
 security/pam_mkhomedir
 security/sudo

@@ -6,12 +6,14 @@ cx_lowest=Cmax
 enable_pf=true
 install_packages='sudo tmux vim'
 intel_epp=50
+see_other_uids=0
 
 export ASSUME_ALWAYS_YES=yes
 acme_standalone_port=9080
 acme_uid=169
 keytab_dir=/var/db/keytabs
 nfscbd_port=7745
+nslcd_user=nslcd
 python_version=311
 saslauthd_runtime_dir=/var/run/saslauthd
 saslauthd_user=cyrus

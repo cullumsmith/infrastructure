@@ -1,0 +1,51 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Net::LDAP::Util qw(escape_filter_value);
+use Authen::SASL;
+
+sub quit {
+  # Prints an error message and exits with code 0.
+  # NB: If KnownHostsCommand returns nonzero, the entire SSH connection aborts,
+  #     which isn't what we want.
+  print STDERR "$0: $_[0]" if @_ > 0;
+  exit 0
+}
+
+@ARGV == 1 or die "usage: $0 HOSTNAME\n";
+my $hostname = $ARGV[0];
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or quit($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech   = $config{SASL_MECH} // 'GSSAPI';
+my $uri    = $config{URI}  // quit('URI not specified');
+my $basedn = $config{BASE} // quit('BASE not specified');
+
+my $conn = Net::LDAP->new($uri, version => '3') or quit($@);
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and quit($status->error);
+
+my $search = $conn->search(
+  scope  => 'sub',
+  base   => "ou=hosts,ou=accounts,$basedn",
+  filter => '(&(sshPublicKey=*)(associatedDomain=' . escape_filter_value($hostname) . '))',
+  attrs  => ['sshPublicKey']);
+$search->code and quit($search->error);
+
+quit if $search->entries == 0;
+quit("multiple LDAP entries returned for host: $hostname\n") if $search->entries > 1;
+
+print "$hostname $_\n" foreach (($search->entries)[0]->get_value('sshPublicKey'));

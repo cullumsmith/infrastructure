@@ -40,7 +40,7 @@ objectClass: domainRelatedObject
 dc: ${domain}
 ${pdns_soa_record}
 ${pdns_ns_records}
-$(echo "$idm_server_list" | awk '{print "aRecord: "$2}')
+$(echo "$idm_server_list" | awk '{print "aRecord: "$3}')
 associatedDomain: ${domain}
 EOF
 

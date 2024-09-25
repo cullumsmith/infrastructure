@@ -1,4 +1,4 @@
-URI            ldapi:///
+URI            ${slapd_ldapi_uri}
 BASE           ${basedn}
 USE_SASL       yes
 ROOTUSE_SASL   yes

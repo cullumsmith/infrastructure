@@ -1,0 +1,27 @@
+enable-cache           passwd     yes
+positive-time-to-live  passwd     ${nscd_ttl}
+negative-time-to-live  passwd     ${nscd_negative_ttl}
+
+enable-cache           group      yes
+positive-time-to-live  group      ${nscd_ttl}
+negative-time-to-live  group      ${nscd_negative_ttl}
+
+enable-cache           hosts      yes
+positive-time-to-live  hosts      ${nscd_ttl}
+negative-time-to-live  hosts      ${nscd_negative_ttl}
+
+enable-cache           services   yes
+positive-time-to-live  services   ${nscd_ttl}
+negative-time-to-live  services   ${nscd_negative_ttl}
+
+enable-cache           protocols  yes
+positive-time-to-live  protocols  ${nscd_ttl}
+negative-time-to-live  protocols  ${nscd_negative_ttl}
+
+enable-cache           rpc        yes
+positive-time-to-live  rpc        ${nscd_ttl}
+negative-time-to-live  rpc        ${nscd_negative_ttl}
+
+enable-cache           networks   yes
+positive-time-to-live  networks   ${nscd_ttl}
+negative-time-to-live  networks   ${nscd_negative_ttl}

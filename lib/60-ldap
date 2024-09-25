@@ -24,6 +24,12 @@ ldap_delete(){
   ldapdelete -Q "$@"
 }
 
+ldap_search(){
+  # Perform an LDAP search
+  # $1..$N = same as ldapsearch.
+  ldapsearch -QLLL "$@"
+}
+
 ldap_add_attribute(){
   # Add a single attribute value to an object if it's not already present.
   # $1 = DN
@@ -53,4 +59,10 @@ ldap_rdn_value(){
   # Get the leftmost attribute value from a DN.
   # $1 = DN
   echo "$1" | sed -E 's/^[^=]+=([^,]+),.*$/\1/'
+}
+
+ldap_dn_exists(){
+  # Return 0 if DN exists, else 1.
+  # $1 = DN
+  ldap_search -s base -b "$1" dn > /dev/null 2>&1
 }

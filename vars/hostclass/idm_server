@@ -3,7 +3,9 @@
 allowed_tcp_ports='ssh ldap ldaps domain kerberos-sec kerberos-adm'
 allowed_udp_ports='domain kerberos-sec kpasswd'
 
+kdc_master_key='changeme'
+
 ssh_authorized_keys_user=nobody
 
 unbound_blocklists="\
-https://raw.githubusercontent.com/hagezi/dns-blocklists/main/unbound/pro.plus.blacklist.conf"
+hagezi-pro  https://raw.githubusercontent.com/hagezi/dns-blocklists/main/rpz/pro.txt"

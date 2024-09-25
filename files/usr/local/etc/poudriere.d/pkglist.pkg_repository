@@ -19,6 +19,7 @@ security/cyrus-sasl2-saslauthd
 security/kstart
 security/krb5@default
 security/krb5@ldap
+security/openssh-portable
 security/pam_krb5@mit
 security/pam_mkhomedir
 security/sshpass

@@ -4,7 +4,7 @@
 #
 # You must set ldap-bindmethod=gssapi (?!) for this to work. This behavior doesn't
 # seem to be documented anywhere, but hey, it's nice!
-ldap-host=ldapi:///
+ldap-host=${slapd_ldapi_uri}
 ldap-bindmethod=gssapi
 
 ldap-basedn=${dns_basedn}

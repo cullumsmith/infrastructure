@@ -9,6 +9,9 @@ fi
 
 idm_hostnames=$(echo "$idm_server_list" | awk '{print $1}')
 
+fqdn="${BOXCONF_HOSTNAME}.${domain}"
+: ${smtp_host:="smtp.${domain}"}
+
 realm=$(echo "$domain" | tr '[:lower:]' '[:upper:]')
 
 basedn=$(echo "$domain" | sed -e 's/^/dc=/' -e 's/\./,dc=/g')
@@ -26,6 +29,6 @@ roles_basedn="ou=roles,${groups_basedn}"
 automount_basedn="ou=automount,${basedn}"
 sudo_basedn="ou=sudo,${basedn}"
 dns_basedn="ou=dns,${basedn}"
-kdc_basedn="ou=dns,${basedn}"
+kdc_basedn="cn=kdc,${basedn}"
 mail_basedn="ou=mail,${basedn}"
 mail_domains_basedn="ou=domains,${mail_basedn}"

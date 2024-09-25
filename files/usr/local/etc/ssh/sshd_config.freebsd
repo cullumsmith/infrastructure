@@ -13,4 +13,4 @@ GSSAPICleanupCredentials yes
 UsePAM yes
 UseDNS no
 
-Subsystem	sftp	/usr/libexec/sftp-server
+Subsystem	sftp	/usr/local/libexec/sftp-server

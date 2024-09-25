@@ -1,9 +1,91 @@
 #!/bin/sh
 
-# Create host object for this server
-# Create ldap service principal for this server
-# Create A record
-# Create PTR record
-# Create boxconf user
-# Create sudo rules
-# Create admin group
+# Create host object.
+ldap_add "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+objectClass: device
+objectClass: domainRelatedObject
+objectClass: ldapPublicKey
+cn: ${BOXCONF_HOSTNAME}
+associatedDomain: ${fqdn}
+$(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+EOF
+
+# Update attributes that may have changed.
+ldap_modify "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+replace: sshPublicKey
+$(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+-
+replace: description
+description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+EOF
+
+# Create A record.
+ldap_add "dc=${BOXCONF_HOSTNAME},dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${BOXCONF_HOSTNAME}
+aRecord: ${BOXCONF_DEFAULT_IPV4}
+associatedDomain: ${fqdn}
+EOF
+
+# Create PTR record.
+rdns=$(ip2rdns "$BOXCONF_DEFAULT_IPV4")
+ldap_add "dc=${rdns%%.*},dc=${rdns#*.},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+dc: ${rdns%%.*}
+pTRRecord: ${fqdn}
+associatedDomain: ${rdns}
+EOF
+
+# Create host principal.
+kadmin.local get_principal -terse "host/${fqdn}" \
+  || kadmin.local add_principal -nokey -x "dn=cn=${BOXCONF_HOSTNAME},${hosts_basedn}" "host/${fqdn}"
+
+# Create ldap service principal.
+kadmin.local get_principal -terse "ldap/${fqdn}" \
+  || kadmin.local add_principal -nokey -x "containerdn=${services_basedn}" "ldap/${fqdn}"
+
+# Create state dataset to persist keytabs across OS rebuilds.
+create_dataset -o "mountpoint=${keytab_dir}" "${state_dataset}/keytabs"
+
+# Export host keytab.
+[ -f "${keytab_dir}/host.keytab" ] || kadmin.local ktadd -k "${keytab_dir}/host.keytab" -q "host/${fqdn}"
+ln -snfv "${keytab_dir}/host.keytab" /etc/krb5.keytab
+
+# Export slapd keytab.
+[ -f "$slapd_keytab" ] || kadmin.local ktadd -k "$slapd_keytab" -q "ldap/${fqdn}"
+chown "$slapd_user" "$slapd_keytab"
+
+# Install PAM/NSS integration packages.
+pkg install -y \
+  nss-pam-ldapd-sasl \
+  pam_krb5 \
+  perl5 \
+  p5-perl-ldap \
+  p5-Authen-SASL
+
+# Configure PAM/NSS integration.
+install_file -m 0644 \
+  /etc/nsswitch.conf \
+  /etc/pam.d/sshd
+
+install_template -m 0644 \
+  /usr/local/etc/nslcd.conf \
+  /etc/nscd.conf
+
+sysrc -v \
+  nslcd_enable=YES \
+  nscd_enable=YES
+
+service nslcd restart
+service nscd restart
+
+# Create ldap.conf symlink.
+ln -snfs "${slapd_conf_dir}/ldap.conf" /usr/local/etc/ldap.conf
+
+# Copy IDM helper scripts for SSH.
+install_file -m 0555 \
+  /usr/local/libexec/idm-ssh-known-hosts \
+  /usr/local/libexec/idm-ssh-authorized-keys

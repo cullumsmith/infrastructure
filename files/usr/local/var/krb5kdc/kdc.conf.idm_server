@@ -1,0 +1,23 @@
+[realms]
+  ${realm} = {
+    database_module = openldap_ldapconf
+    key_stash_file = ${kdc_master_key_path}
+    max_life = ${kdc_max_life}
+    max_renewable_life = ${kdc_max_renewable_life}
+    default_principal_flags = +preauth
+  }
+
+[dbdefaults]
+  ldap_kerberos_container_dn = ${kdc_basedn}
+  ldap_kdc_sasl_mech = EXTERNAL
+  ldap_kadmind_sasl_mech = EXTERNAL
+  ldap_conns_per_server = 5
+
+[dbmodules]
+  openldap_ldapconf = {
+    ldap_servers = ${slapd_ldapi_uri}
+    db_library = kldap
+  }
+
+[logging]
+  default = SYSLOG

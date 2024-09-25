@@ -1,0 +1,68 @@
+server:
+  module-config: "respip validator iterator"
+  verbosity: 1
+  num-threads: ${unbound_threads}
+  interface: 0.0.0.0
+  interface: ::0
+  do-ip6: no
+  prefer-ip6: no
+  prefetch: yes
+  prefetch-key: yes
+  so-rcvbuf: 425984
+  do-not-query-localhost: no
+  access-control: 0.0.0.0/0 allow
+  access-control: ::0/0 allow
+
+  cache-max-negative-ttl: ${unbound_cache_max_negative_ttl}
+  rrset-cache-size: ${unbound_rrset_cache_size}
+  msg-cache-size: ${unbound_msg_cache_size}
+  msg-cache-slabs: ${unbound_slabs}
+  rrset-cache-slabs: ${unbound_slabs}
+  infra-cache-slabs: ${unbound_slabs}
+  key-cache-slabs: ${unbound_slabs}
+
+  private-address: 192.168.0.0/16
+  private-address: 169.254.0.0/16
+  private-address: 172.16.0.0/12
+  private-address: 10.0.0.0/8
+
+  domain-insecure: "${domain}"
+$([ -z "$unbound_insecure_domains" ] || printf '  domain-insecure: "%s"\n' $unbound_insecure_domains)
+
+  local-zone: "10.in-addr.arpa" nodefault
+  local-zone: "16.172.in-addr.arpa" nodefault
+  local-zone: "17.172.in-addr.arpa" nodefault
+  local-zone: "18.172.in-addr.arpa" nodefault
+  local-zone: "19.172.in-addr.arpa" nodefault
+  local-zone: "20.172.in-addr.arpa" nodefault
+  local-zone: "21.172.in-addr.arpa" nodefault
+  local-zone: "22.172.in-addr.arpa" nodefault
+  local-zone: "23.172.in-addr.arpa" nodefault
+  local-zone: "24.172.in-addr.arpa" nodefault
+  local-zone: "25.172.in-addr.arpa" nodefault
+  local-zone: "26.172.in-addr.arpa" nodefault
+  local-zone: "27.172.in-addr.arpa" nodefault
+  local-zone: "28.172.in-addr.arpa" nodefault
+  local-zone: "29.172.in-addr.arpa" nodefault
+  local-zone: "30.172.in-addr.arpa" nodefault
+  local-zone: "31.172.in-addr.arpa" nodefault
+  local-zone: "168.192.in-addr.arpa" nodefault
+
+$([ -z "$unbound_local_zones" ] || printf '  local-zone: "%s" typetransparent\n' $unbound_local_zones)
+
+  private-domain: "${domain}"
+$([ -z "$unbound_local_zones" ] || printf '  private-domain: "%s"\n' $unbound_local_zones)
+
+$([ -z "$unbound_local_data" ] || printf '  local-data: "%s"\n' $unbound_local_data)
+
+$(echo "$unbound_blocklists" | while read -r name _url; do
+    [ -n "$name" ] && printf "rpz:\n  name: %s\n  zonefile: ${unbound_blocklist_dir}/%s.zone\n" "$name" "$name"; done)
+
+stub-zone:
+  name: "${domain}"
+  stub-addr: 127.0.0.1@${pdns_port}
+$(printf "\
+stub-zone:
+  name: \"%s\"
+  stub-addr: 127.0.0.1@${pdns_port}
+" $reverse_dns_zones)

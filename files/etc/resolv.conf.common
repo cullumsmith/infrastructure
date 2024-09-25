@@ -1,3 +1,2 @@
 $(printf 'nameserver %s\n' $resolvers)
 domain ${domain}
-options timeout:1

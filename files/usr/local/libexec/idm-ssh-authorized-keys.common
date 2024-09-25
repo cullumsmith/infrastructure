@@ -1,0 +1,43 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Net::LDAP::Util qw(escape_filter_value);
+use Authen::SASL;
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or quit($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech   = $config{SASL_MECH} // 'GSSAPI';
+my $uri    = $config{URI}  // quit('URI not specified');
+my $basedn = $config{BASE} // quit('BASE not specified');
+
+@ARGV == 1 or die "usage: $0 USERNAME\n";
+my $username = $ARGV[0];
+
+my $conn = Net::LDAP->new($uri, version => '3') or die "$0: $@";
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and die "$0: ".$status->error;
+
+my $search = $conn->search(
+  scope  => 'sub',
+  base   => "ou=accounts,$basedn",
+  filter => '(&(objectClass=posixAccount)(sshPublicKey=*)(uid=' . escape_filter_value($username) . '))',
+  attrs  => ['sshPublicKey']);
+$search->code and die "$0: ".$search->error;
+
+exit 0 if $search->entries == 0;
+die "$0: multiple LDAP entries returned for user: $username\n" if $search->entries > 1;
+
+print "$_\n" foreach (($search->entries)[0]->get_value('sshPublicKey'));
