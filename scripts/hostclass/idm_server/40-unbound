@@ -32,7 +32,7 @@ su -m "$unbound_user" -c "/usr/local/libexec/idm-update-unbound-blocklists ${unb
 sysrc -v unbound_enable=YES
 service unbound restart
 
-# Now we are ready to us unbound as the local resolver.
+# Now we are ready to use unbound as the local resolver.
 install_template -m 0644 /etc/resolv.conf
 
 # Update blocklists with a cron job.
