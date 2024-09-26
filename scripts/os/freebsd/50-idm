@@ -86,16 +86,27 @@ add_principal -nokey -x "dn=cn=${BOXCONF_HOSTNAME},${hosts_basedn}" "host/${fqdn
 ktadd -k "${keytab_dir}/host.keytab" "host/${fqdn}"
 ln -snfv "${keytab_dir}/host.keytab" /etc/krb5.keytab
 
-# Create symlinks so host keytab can be used to aquire a TGT on-the-fly.
-ln -snfv host.keytab "${keytab_dir}/$(id -u "$nslcd_user").keytab"
-ln -snfv host.keytab "${keytab_dir}/${ssh_authzkeys_uid}.keytab"
-ln -snfv host.keytab "${keytab_dir}/0.keytab"
-
 # Create local group for host keytab access.
 add_group -g "$host_keytab_gid" "$host_keytab_groupname"
 chgrp "$host_keytab_groupname" "${keytab_dir}/host.keytab"
 chmod 640 "${keytab_dir}/host.keytab"
 pw usermod -n "$nslcd_user" -G "$host_keytab_groupname"
+
+# Create symlinks so host keytab can be used to aquire a TGT on-the-fly.
+nslcd_uid=$(id -u "$nslcd_user")
+install_directory -m 0755 \
+  /var/krb5 \
+  /var/krb5/user
+
+install_directory -o "$nslcd_user" -m 0700 "/var/krb5/user/${nslcd_uid}"
+ln -snfv "${keytab_dir}/host.keytab" "/var/krb5/user/${nslcd_uid}/client.keytab"
+
+install_directory -o "$ssh_authzkeys_uid" -m 0700 "/var/krb5/user/${ssh_authzkeys_uid}"
+ln -snfv "${keytab_dir}/host.keytab" "/var/krb5/user/${ssh_authzkeys_uid}/client.keytab"
+
+install_directory -o root -m 0700 /var/krb5/user/0
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/keytab
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/client.keytab
 
 # Copy IDM helper scripts for SSH.
 install_file -m 0555 \

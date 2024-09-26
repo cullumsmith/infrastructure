@@ -4,7 +4,8 @@
   dns_lookup_realm = false
   allow_weak_crypto = false
   permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96
-  default_client_keytab_name = /var/db/keytabs/%{euid}.keytab
+  default_keytab_name = FILE:/var/krb5/user/%{euid}/keytab
+  default_client_keytab_name = FILE:/var/krb5/user/%{euid}/client.keytab
 
 [appdefaults]
   pam = {
