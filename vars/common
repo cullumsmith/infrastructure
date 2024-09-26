@@ -31,12 +31,15 @@ bootstrap_resolvers='1.1.1.1'
 desktop_type=kde
 graphics_type=intel
 boxconf_username='s-boxconf'
+host_keytab_groupname=hostkeytab
+host_keytab_gid=788
 krb5_ticket_lifetime=24h
 krb5_renew_lifetime=7d
 nslcd_min_uid=1000
 nscd_ttl=600
 nscd_negative_ttl=20
-ssh_authzkeys_user=_authzkeys
+ssh_authzkeys_uid=789
+ssh_authzkeys_username=sshkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE
 
 nginx_nofile=2048

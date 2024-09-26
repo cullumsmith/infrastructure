@@ -4,7 +4,7 @@ default:\\
 	:welcome=/var/run/motd:\\
 	:setenv=BLOCKSIZE=K:\\
 	:mail=/var/mail/$:\\
-	:path=/sbin /bin /usr/sbin /usr/bin /usr/local/sbin /usr/local/bin ~/bin:\\
+	:path=/sbin /bin /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin ~/bin:\\
 	:nologin=/var/run/nologin:\\
 	:cputime=unlimited:\\
 	:datasize=unlimited:\\
@@ -59,6 +59,7 @@ dialer:\\
 # N.B.  login_getpwclass(3) will use this entry for the root account,
 #       in preference to 'default'.
 root:\\
+	:path=/sbin /bin /usr/sbin /usr/bin /usr/local/sbin /usr/local/bin ~/bin:\\
 	:ignorenologin:\\
 	:memorylocked=unlimited:\\
 	:tc=default:

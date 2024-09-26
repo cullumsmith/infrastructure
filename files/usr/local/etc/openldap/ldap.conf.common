@@ -1,0 +1,9 @@
+URI            ${ldap_uri}
+BASE           ${basedn}
+USE_SASL       yes
+ROOTUSE_SASL   yes
+SASL_MECH      GSSAPI
+SASL_REALM     ${realm}
+GSSAPI_SIGN    yes
+GSSAPI_ENCRYPT yes
+SUDOERS_BASE   ${sudo_basedn}

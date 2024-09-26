@@ -5,6 +5,7 @@ if [ "${idm_bootstrap:-}" = true ]; then
   pkg_host=$pkg_host_ip
 else
   : ${resolvers:="$(echo "$idm_server_list" | awk '{print $3}')"}
+  : ${pkg_host:="pkg.${domain}"}
 fi
 
 idm_hostnames=$(echo "$idm_server_list" | awk '{print $1}')
@@ -32,3 +33,5 @@ dns_basedn="ou=dns,${basedn}"
 kdc_basedn="cn=kdc,${basedn}"
 mail_basedn="ou=mail,${basedn}"
 mail_domains_basedn="ou=domains,${mail_basedn}"
+
+boxconf_dn="krbPrincipalName=${boxconf_username}@${realm},${robots_basedn}"

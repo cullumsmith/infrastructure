@@ -3,7 +3,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 PermitRootLogin prohibit-password
 AuthorizedKeysFile .ssh/authorized_keys
 AuthorizedKeysCommand /usr/local/libexec/idm-ssh-authorized-keys %u
-AuthorizedKeysCommandUser ${ssh_authzkeys_user}
+AuthorizedKeysCommandUser ${ssh_authzkeys_username}
 
 KbdInteractiveAuthentication no
 PasswordAuthentication yes

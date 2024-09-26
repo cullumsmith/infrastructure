@@ -1,0 +1,2 @@
+[libdefaults]
+  default_keytab_name = FILE:${slapd_keytab}

@@ -1,0 +1,14 @@
+uid ${nslcd_user}
+gid ${nslcd_user}
+
+uri ${ldap_uri}
+
+base ${basedn}
+base passwd ${accounts_basedn}
+base group ${groups_basedn}
+
+sasl_mech GSSAPI
+
+nss_min_uid ${nslcd_min_uid}
+nss_initgroups_ignoreusers ALLLOCAL
+nss_nested_groups yes

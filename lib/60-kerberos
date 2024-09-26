@@ -1,0 +1,51 @@
+#!/bin/sh
+
+_boxconf_kadmin() {
+  case $BOXCONF_OS in
+    freebsd) _boxconf_kadmin=/usr/local/bin/kadmin ;;
+    *)       _boxconf_kadmin=kadmin ;;
+  esac
+
+  "$_boxconf_kadmin" -p "$boxconf_username" -w "$boxconf_password" "$@"
+}
+
+_boxconf_kinit(){
+  case $BOXCONF_OS in
+    freebsd) /usr/local/bin/kinit "$@" ;;
+    *)       kinit "$@" ;;
+  esac
+}
+
+add_principal(){
+  # Create a kerberos principal, if it doesn't already exist.
+  # Arguments are the same as MIT kadmin' add_principal.
+  # Final argument must be the principal name.
+  eval "_kap_princ=\$$#"
+  _boxconf_kadmin get_principal "$_kap_princ" \
+    || _boxconf_kadmin add_principal "$@"
+}
+
+ktadd(){
+  # Add a principal's keys to a keytab.
+  # Arguments are the same as MIT kadmin's ktadd.
+  _kkta_ktarg=false
+  _kkta_keytab=/etc/krb5.keytab
+  eval "_kkta_princ=\$$#"
+
+  # Extract the keytab argument from $@.
+  for _kkta_arg; do
+    if [ "$_kkta_ktarg" = true ]; then
+      _kkta_keytab=$_kkta_arg
+      break
+    else
+      case $_kkta_arg in
+        -k|-keytab) _kkta_ktarg=true ;;
+      esac
+    fi
+  done
+
+  # Check if we can kinit with the keytab. If not, get fresh keys.
+  if ! _boxconf_kinit -kt "$_kkta_keytab" -c MEMORY: "$_kkta_princ" 2>/dev/null; then
+    _boxconf_kadmin ktadd "$@"
+  fi
+}

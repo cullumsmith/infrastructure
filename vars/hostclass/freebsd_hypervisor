@@ -1,5 +1,6 @@
 #!/bin/sh
 
 enable_pf=false
+enable_idm=false
 smtp_host=${smtp_host_ip}
 resolvers=$bootstrap_resolvers

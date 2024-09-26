@@ -1,2 +1,2 @@
-*/admin@${realm} * * -maxlife 1h -postdateable
-${boxconf_username}@${realm} * * -maxlife 5m -postdateable
+*/admin@${realm} * *
+${boxconf_username}@${realm} * *

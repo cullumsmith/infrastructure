@@ -1,0 +1,29 @@
+[libdefaults]
+  default_realm = ${realm}
+  dns_lookup_kdc = true
+  dns_lookup_realm = false
+  allow_weak_crypto = false
+  permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96
+  default_client_keytab_name = /var/db/keytabs/%{euid}.keytab
+  # Breaks screenlockers
+  # verify_ap_req_nofail = true
+
+[appdefaults]
+  pam = {
+    minimum_uid = 1000
+    ccache = FILE:/tmp/krb5cc_%u_XXXXXX
+    forwardable = true
+    ticket_lifetime = ${krb5_ticket_lifetime}
+    renew_lifetime = ${krb5_renew_lifetime}
+  }
+
+[realms]
+  ${realm} = {
+$(for host in $ldap_hosts; do echo "\
+    admin_server = ${host}"; done)
+    default_domain = ${domain}
+  }
+
+[domain_realm]
+  .${domain} = ${realm}
+  ${domain}  = ${realm}

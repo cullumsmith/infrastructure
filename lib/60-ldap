@@ -4,10 +4,16 @@ ldap_add(){
   # Add a DN if it doesn't already exist. Takes ldif-formatted attributes on stdin.
   # $1 = the DN
   _ldap_add_dn=$1; shift
-  if ldapsearch -QLLL -s base -b "$_ldap_add_dn" dn > /dev/null 2>&1; then
+  if ldap_search -s base -b "$_ldap_add_dn" dn > /dev/null 2>&1; then
     log "${_ldap_add_dn} already exists"
   else
-    { printf 'dn: %s\n' "$_ldap_add_dn"; cat; } | ldapadd -Q "$@"
+    { printf 'dn: %s\n' "$_ldap_add_dn"; cat; } | {
+      if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
+        ldapadd -Q "$@"
+      else
+        ldapadd -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+      fi
+    }
   fi
 }
 
@@ -15,19 +21,33 @@ ldap_modify(){
   # Modify a DN. Takes ldif-formatted attributes on stdin.
   # $1 = the DN
   _ldap_modify_dn=$1; shift
-  { printf 'dn: %s\nchangetype: modify\n' "$_ldap_modify_dn"; cat; } | ldapmodify -Q "$@"
+  { printf 'dn: %s\nchangetype: modify\n' "$_ldap_modify_dn"; cat; } | {
+    if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
+      ldapmodify -Q "$@"
+    else
+      ldapmodify -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+    fi
+  }
 }
 
 ldap_delete(){
   # Delete a DN.
   # $1 = the DN
-  ldapdelete -Q "$@"
+  if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
+    ldapdelete -Q "$@"
+  else
+    ldapdelete -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+  fi
 }
 
 ldap_search(){
   # Perform an LDAP search
   # $1..$N = same as ldapsearch.
-  ldapsearch -QLLL "$@"
+  if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
+    ldapsearch -QLLL "$@"
+  else
+    ldapsearch -o ldif_wrap=no -LLLZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+  fi
 }
 
 ldap_add_attribute(){

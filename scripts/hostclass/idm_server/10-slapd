@@ -37,6 +37,17 @@ pkg install -y \
 # Create ZFS dataset for OpenLDAP DB.
 create_dataset -o "mountpoint=${slapd_data_dir}" "${state_dataset}/openldap-data"
 
+# To prevent a circular dependency in poudriere, we have to make a special "set"
+# of packages for the IDM hosts in which cyrus-sasl-gssapi is built with the
+# Heimdal libraries in base, rather than MIT.
+#
+# Heimdal does not support the KRB5_KTNAME environment variable with slapd.
+# However, you *can* specify a keytab by creating a ~/.krb5/config file in
+# the slapd user's home directory.
+pw user mod "$slapd_user" -d "$slapd_conf_dir"
+install_directory -m 0755 "${slapd_conf_dir}/.krb5"
+install_template -m 0644 "${slapd_conf_dir}/.krb5/config"
+
 # Copy TLS certificate for LDAP server.
 install_certificate     -o "$slapd_user" -g "$slapd_user" slapd "$slapd_tls_cert"
 install_certificate_key -o "$slapd_user" -g "$slapd_user" slapd "$slapd_tls_key"
@@ -69,18 +80,6 @@ if [ ! -d "${slapd_conf_dir}/slapd.d" ]; then
   chown -R "${slapd_user}:${slapd_user}" "${slapd_conf_dir}/slapd.d"
 fi
 
-# Enable OpenLDAP in /etc/rc.conf, and start it.
-# Note: whatever LDAP IP you specified in $slapd_server_list must be present in
-# the `-h` argument to slapd. That's how slapd figures out its own server ID.
-sysrc -v \
-  slapd_enable=YES \
-  slapd_cn_config=YES \
-  slapd_flags="-h '${slapd_ldapi_uri}/ ldap://0.0.0.0/ ldaps://0.0.0.0/ ldaps://${BOXCONF_DEFAULT_IPV4}/'" \
-  slapd_sockets="$slapd_socket" \
-  slapd_krb5_ktname="$slapd_keytab"
-
-service slapd restart
-
 # Copy the LDAP client configs.
 install_template -m 0644 "${slapd_conf_dir}/ldap.conf"
 
@@ -90,11 +89,20 @@ install_template -m 0644 /usr/local/lib/sasl2/slapd.conf
 # Allow slapd to read the saslauthd socket.
 install_directory -m 0750 -o "$saslauthd_user" -g "$slapd_user" "$saslauthd_runtime_dir"
 
-# Enable and start saslauthd.
+# Enable OpenLDAP in /etc/rc.conf, and start it.
+# Note: whatever LDAP IP you specified in $slapd_server_list must be present in
+# the `-h` argument to slapd. That's how slapd figures out its own server ID.
 sysrc -v \
+  slapd_enable=YES \
+  slapd_cn_config=YES \
+  slapd_flags="-h '${slapd_ldapi_uri}/ ldap://0.0.0.0/ ldaps://0.0.0.0/ ldaps://${BOXCONF_DEFAULT_IPV4}/'" \
+  slapd_sockets="$slapd_socket" \
+  slapd_krb5_ktname="$slapd_keytab" \
   saslauthd_flags='-a kerberos5' \
   saslauthd_enable=YES
+
 service saslauthd restart
+service slapd restart
 
 # Create directory tree.
 if is_primary_server; then

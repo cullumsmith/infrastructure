@@ -35,9 +35,3 @@ sysrc -v \
 
 service kdc restart
 service kadmind restart
-
-# Create the boxconf administrative user.
-if is_primary_server; then
-  kadmin.local get_principal -terse "$boxconf_username" \
-    || kadmin.local add_principal -pw "$boxconf_password" -x "containerdn=${robots_basedn}" "$boxconf_username"
-fi

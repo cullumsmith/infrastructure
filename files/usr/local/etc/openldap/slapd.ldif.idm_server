@@ -119,7 +119,7 @@ olcAccess: {1}to dn.base="cn=Subschema"
   by * read
 olcAccess: {3}to *
   by dn.exact=${slapd_replicator_dn} read
-  by dn.exact=krbPrincipalName=${boxconf_username},${robots_basedn} manage
+  by dn.exact=${boxconf_dn} manage
   by set="[cn=${slapd_admin_role},${roles_basedn}]/member* & user" manage
   by * break
 olcAccess: {4}to dn.subtree=${sudo_basedn}

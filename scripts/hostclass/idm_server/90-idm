@@ -40,11 +40,11 @@ associatedDomain: ${rdns}
 EOF
 
 # Create host principal.
-kadmin.local get_principal -terse "host/${fqdn}" \
+kadmin.local get_principal "host/${fqdn}" \
   || kadmin.local add_principal -nokey -x "dn=cn=${BOXCONF_HOSTNAME},${hosts_basedn}" "host/${fqdn}"
 
 # Create ldap service principal.
-kadmin.local get_principal -terse "ldap/${fqdn}" \
+kadmin.local get_principal "ldap/${fqdn}" \
   || kadmin.local add_principal -nokey -x "containerdn=${services_basedn}" "ldap/${fqdn}"
 
 # Create state dataset to persist keytabs across OS rebuilds.
@@ -89,3 +89,15 @@ ln -snfs "${slapd_conf_dir}/ldap.conf" /usr/local/etc/ldap.conf
 install_file -m 0555 \
   /usr/local/libexec/idm-ssh-known-hosts \
   /usr/local/libexec/idm-ssh-authorized-keys
+
+# Create the boxconf administrative user.
+if is_primary_server && ! ldap_dn_exists "$boxconf_dn"; then
+  ldap_add "$boxconf_dn" <<EOF
+objectClass: krbPrincipal
+objectClass: simpleSecurityObject
+krbPrincipalName: ${boxconf_username}@${realm}
+userPassword: {SASL}${boxconf_username}@${realm}
+EOF
+
+  kadmin.local change_password -pw "$boxconf_password" "$boxconf_username"
+fi

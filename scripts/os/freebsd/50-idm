@@ -1,0 +1,114 @@
+#!/bin/sh
+
+if [ "${idm_bootstrap:-}" = true ] || [ "${enable_idm:-}" = false ]; then
+  return 0
+fi
+
+# Create state dataset to persist keytabs across OS rebuilds.
+create_dataset -o "mountpoint=${keytab_dir}" "${state_dataset}/keytabs"
+
+# Install packages.
+pkg install -y \
+  cyrus-sasl-gssapi \
+  nss-pam-ldapd-sasl \
+  openldap26-client \
+  pam_krb5 \
+  perl5 \
+  p5-perl-ldap \
+  p5-Authen-SASL
+
+# Configure PAM/NSS integration.
+install_file -m 0644 \
+  /etc/nsswitch.conf \
+  /etc/pam.d/sshd
+
+install_template -m 0644 \
+  /etc/krb5.conf \
+  /etc/nscd.conf \
+  /usr/local/etc/openldap/ldap.conf  \
+  /usr/local/etc/nslcd.conf
+
+# Create ldap.conf symlink.
+ln -snfv /usr/local/etc/openldap/ldap.conf /usr/local/etc/ldap.conf
+
+# Create host object (if it doesn't exist).
+ldap_add "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+objectClass: device
+objectClass: domainRelatedObject
+objectClass: ldapPublicKey
+cn: ${BOXCONF_HOSTNAME}
+associatedDomain: ${fqdn}
+$(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+EOF
+
+# Create A record.
+ldap_add "dc=${BOXCONF_HOSTNAME},dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${BOXCONF_HOSTNAME}
+aRecord: ${BOXCONF_DEFAULT_IPV4}
+associatedDomain: ${fqdn}
+EOF
+
+# Create PTR record.
+rdns=$(ip2rdns "$BOXCONF_DEFAULT_IPV4")
+ldap_add "dc=${rdns%%.*},dc=${rdns#*.},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+dc: ${rdns%%.*}
+pTRRecord: ${fqdn}
+associatedDomain: ${rdns}
+EOF
+
+# Create CNAME records.
+for cname in ${cnames:-}; do
+  ldap_add "dc=${cname},dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${cname}
+cNAMERecord: ${fqdn}
+associatedDomain: ${cname}.${domain}
+EOF
+done
+
+# Update attributes that may have changed.
+ldap_modify "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+replace: sshPublicKey
+$(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+-
+replace: description
+description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+EOF
+
+# Create host principal and keytab.
+add_principal -nokey -x "dn=cn=${BOXCONF_HOSTNAME},${hosts_basedn}" "host/${fqdn}"
+ktadd -k "${keytab_dir}/host.keytab" "host/${fqdn}"
+ln -snfv "${keytab_dir}/host.keytab" /etc/krb5.keytab
+
+# Create symlinks so host keytab can be used to aquire a TGT on-the-fly.
+ln -snfv host.keytab "${keytab_dir}/$(id -u "$nslcd_user").keytab"
+ln -snfv host.keytab "${keytab_dir}/${ssh_authzkeys_uid}.keytab"
+ln -snfv host.keytab "${keytab_dir}/0.keytab"
+
+# Create local group for host keytab access.
+add_group -g "$host_keytab_gid" "$host_keytab_groupname"
+chgrp "$host_keytab_groupname" "${keytab_dir}/host.keytab"
+chmod 640 "${keytab_dir}/host.keytab"
+pw usermod -n "$nslcd_user" -G "$host_keytab_groupname"
+
+# Copy IDM helper scripts for SSH.
+install_file -m 0555 \
+  /usr/local/libexec/idm-ssh-known-hosts \
+  /usr/local/libexec/idm-ssh-authorized-keys
+
+# Create user for running SSH AuthorizedKeysCommand.
+add_user -u "$ssh_authzkeys_uid" -g "$host_keytab_groupname" "$ssh_authzkeys_username"
+
+# Enable and start nslcd/nscd.
+sysrc -v \
+  nslcd_enable=YES \
+  nscd_enable=YES
+
+service nslcd restart
+service nscd restart
