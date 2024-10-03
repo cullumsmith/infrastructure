@@ -1,0 +1,103 @@
+#!/bin/sh
+
+: ${rspamd_processes:="$nproc"}
+: ${rspamd_dkim_selector:='dkim'}
+: ${rspamd_domain_whitelist:=''}
+: ${rspamd_port:='11334'}
+: ${rspamd_redis_maxmemory:='1g'}
+: ${postfix_virtual_domains:="$email_domain"}
+
+postfix_user=postfix
+postfix_home_dir=/var/spool/postfix
+
+redis_user=redis
+redis_data_dir=/var/db/redis
+rspamd_user=rspamd
+rspamd_conf_dir=/usr/local/etc/rspamd
+rspamd_milter_sock="${postfix_home_dir}/rspamd.sock"
+rspamd_data_dir=/var/db/rspamd
+rspamd_redis_sock=/var/run/redis/rspamd.sock
+rspamd_bayes_redis_sock=/var/run/redis/rspamd-bayes.sock
+rspamd_redis_data_dir="${redis_data_dir}/rspamd"
+rspamd_bayes_redis_data_dir="${redis_data_dir}/rspamd-bayes"
+rspamd_tls_cert=/usr/local/etc/nginx/rspamd.crt
+rspamd_tls_key=/usr/local/etc/nginx/rspamd.key
+
+pkg install -y \
+  postfix \
+  redis \
+  rspamd \
+  nginx
+
+# Create ZFS dataset for Redis DBs.
+create_dataset -o "mountpoint=${redis_data_dir}" "${state_dataset}/redis"
+
+# Generate config files for redis instances.
+install_template -m 0644 \
+  /usr/local/etc/redis-rspamd.conf \
+  /usr/local/etc/redis-rspamd-bayes.conf
+
+# Create data directories for each redis instance.
+install_directory -o "$redis_user" -m 0700 \
+  "$rspamd_redis_data_dir" \
+  "$rspamd_bayes_redis_data_dir"
+
+# Enable and start redis instances.
+sysrc -v \
+  redis_enable=YES \
+  redis_profiles='rspamd rspamd-bayes'
+service redis restart
+
+# Copy rspamd config files.
+install_directory -m 0755 \
+  "${rspamd_conf_dir}/local.d" \
+  "${rspamd_conf_dir}/local.d/maps.d"
+
+install_directory -m 0750 -g "$rspamd_user" "${rspamd_data_dir}/dkim"
+
+install_file -m 0640 -g "$rspamd_user" \
+  "${rspamd_conf_dir}/local.d/logging.inc" \
+  "${rspamd_conf_dir}/local.d/multimap.conf" \
+  "${rspamd_conf_dir}/local.d/phishing.conf" \
+  "${rspamd_conf_dir}/local.d/replies.conf" \
+  "${rspamd_conf_dir}/local.d/worker-normal.inc"
+
+rspamd_ro_password_hash=$(rspamadm pw -p "$rspamd_ro_password")
+rspamd_rw_password_hash=$(rspamadm pw -p "$rspamd_rw_password")
+
+install_template -m 0640 -g "$rspamd_user" \
+  "${rspamd_conf_dir}/local.d/classifier-bayes.conf" \
+  "${rspamd_conf_dir}/local.d/dkim_signing.conf" \
+  "${rspamd_conf_dir}/local.d/redis.conf" \
+  "${rspamd_conf_dir}/local.d/worker-controller.inc" \
+  "${rspamd_conf_dir}/local.d/worker-proxy.inc"
+
+printf '%s\n' ${rspamd_domain_whitelist} | tee "${rspamd_conf_dir}/local.d/maps.d/domain-whitelist.map"
+
+# Copy DKIM keys.
+for domain in $postfix_virtual_domains; do
+  install_file -m 0640 -g "$rspamd_user" "${rspamd_data_dir}/dkim/${domain}.key"
+done
+
+# Add rspamd user to redis group, so it can write to the redis unix socket.
+pw groupmod "$redis_user" -m "$rspamd_user"
+
+# Generate nginx configuration.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/acme.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$rspamd_tls_cert"
+install_certificate_key nginx "$rspamd_tls_key"
+
+# Enable and start rspamd and nginx.
+sysrc -v \
+  rspamd_enable=YES \
+  nginx_enable=YES
+
+# The rspamd rc script seems to hold onto open descriptors, which causes
+# the parent boxconf SSH process to never close.
+service rspamd restart > /dev/null 2>&1 < /dev/null
+service nginx restart

@@ -11,6 +11,7 @@ root_authorized_keys='ssh-ed25519 changeme
 ssh-ed25519 changeme'
 root_mail_alias="you@${email_domain}"
 smtp_host_ip=1.2.3.4
+pkg_host_ip=1.2.3.4
 timezone=America/New_York
 
 # hostname  id  ipv4
@@ -19,6 +20,11 @@ idm1      1   1.2.3.4
 idm2      2   5.6.7.8"
 
 reverse_dns_zones="0.168.192.in-addr.arpa  12.11.10.in-addr.arpa"
+
+rspamd_privkey='changeme with: rspamadm keypair'
+rspamd_pubkey='changeme with: rspamadm keypair'
+rspamd_ro_password='changeme'
+rspamd_rw_password='changeme'
 
 
 ###############################################################################
@@ -38,6 +44,7 @@ krb5_renew_lifetime=7d
 nslcd_min_uid=1000
 nscd_ttl=600
 nscd_negative_ttl=20
+rspamd_port=11334
 ssh_authzkeys_uid=789
 ssh_authzkeys_username=sshkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE

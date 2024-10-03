@@ -20,8 +20,9 @@ ldap_uri=$(printf "ldap://%s.${domain}/ " $idm_hostnames)
 ldaps_uri=$(printf "ldaps://%s.${domain}/ " $idm_hostnames)
 ldap_hosts=$(printf "%s.${domain} " $idm_hostnames)
 accounts_basedn="ou=accounts,${basedn}"
-people_basedn="ou=people,${accounts_basedn}"
-robots_basedn="ou=robots,${accounts_basedn}"
+users_basedn="ou=users,${accounts_basedn}"
+people_basedn="ou=people,${users_basedn}"
+robots_basedn="ou=robots,${users_basedn}"
 hosts_basedn="ou=hosts,${accounts_basedn}"
 services_basedn="ou=services,${accounts_basedn}"
 groups_basedn="ou=groups,${accounts_basedn}"
@@ -31,7 +32,5 @@ automount_basedn="ou=automount,${basedn}"
 sudo_basedn="ou=sudo,${basedn}"
 dns_basedn="ou=dns,${basedn}"
 kdc_basedn="cn=kdc,${basedn}"
-mail_basedn="ou=mail,${basedn}"
-mail_domains_basedn="ou=domains,${mail_basedn}"
 
 boxconf_dn="krbPrincipalName=${boxconf_username}@${realm},${robots_basedn}"

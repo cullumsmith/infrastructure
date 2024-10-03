@@ -1,0 +1,87 @@
+#!/bin/sh
+
+: ${postfix_public_fqdn:="$fqdn"}
+: ${postfix_cipherlist:='ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305'}
+: ${postfix_myorigin:="$email_domain"}
+: ${postfix_mynetworks:=''}
+: ${postfix_recipient_delimiter:='+'}
+: ${postfix_message_size_limit:='67108864'} # 64 MB
+: ${postfix_virtual_domains:="$email_domain"}
+: ${postfix_lmtp_port:='24'}
+: ${postfix_quota_port:='10993'}
+
+: ${imap_host='imap'}
+: ${lmtp_port='25'}
+: ${quota_status_port='10993'}
+
+postfix_conf_dir=/usr/local/etc/postfix
+postfix_user=postfix
+postfix_keytab="${keytab_dir}/postfix.keytab"
+postfix_public_tls_cert="${acme_cert_dir}/postfix.crt"
+postfix_public_tls_key="${acme_cert_dir}/postfix.key"
+postfix_local_tls_cert="${postfix_conf_dir}/postfix.crt"
+postfix_local_tls_key="${postfix_conf_dir}/postfix.key"
+postfix_dhparams="${postfix_conf_dir}/dhparams.pem"
+
+# Install packages.
+pkg install -y \
+  postfix \
+  cyrus-sasl-saslauthd
+
+# Create SMTP service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "smtp/${fqdn}"
+
+ktadd -k "$postfix_keytab" "smtp/${fqdn}"
+chgrp "$postfix_user" "$postfix_keytab"
+chmod 640 "$postfix_keytab"
+
+postfix_uid=$(id -u "$postfix_user")
+install_directory -o "$postfix_user" -m 0700 "/var/krb5/user/${postfix_uid}"
+ln -snfv "$postfix_keytab" "/var/krb5/user/${postfix_uid}/keytab"
+ln -snfv "$postfix_keytab" "/var/krb5/user/${postfix_uid}/client.keytab"
+
+# Generate postfix configuration.
+install_template -m 0644 \
+  "${postfix_conf_dir}/main.cf" \
+  "${postfix_conf_dir}/virtual_mailboxes.cf" \
+  "${postfix_conf_dir}/virtual_aliases.cf" \
+  /usr/local/lib/sasl2/smtpd.conf
+install_file -m 0644 "${postfix_conf_dir}/master.cf"
+
+# Allow postfix to read the saslauthd socket.
+install_directory -m 0750 -o "$saslauthd_user" -g "$postfix_user" "$saslauthd_runtime_dir"
+
+# Copy internal TLS certificate.
+install_certificate     -m 0644 -o root -g "$postfix_user" postfix "$postfix_local_tls_cert"
+install_certificate_key -m 0640 -o root -g "$postfix_user" postfix "$postfix_local_tls_key"
+
+# Generate dhparams.
+[ -f "$postfix_dhparams" ] || openssl dhparam -out "$postfix_dhparams" 2048
+
+if [ "$postfix_public_fqdn" != "$fqdn" ]; then
+  # Acquire public TLS certificate.
+  install_file /usr/local/etc/sudoers.d/acme
+  get_acme_certificate \
+    -c "$postfix_public_tls_cert" \
+    -k "$postfix_public_tls_key" \
+    -g "$postfix_user" \
+    -r 'sudo service postfix reload' \
+    "$postfix_public_fqdn"
+fi
+
+# Enable and start postfix and saslauthd.
+sysrc -v \
+  saslauthd_flags='-a kerberos5' \
+  saslauthd_enable=YES \
+  postfix_enable=YES
+
+service saslauthd restart
+service postfix restart
+
+# Use postfix as the system MTA.
+install_directory -m 0755 /usr/local/etc/mail
+install_file -m 0644 /usr/local/etc/mail/mailer.conf
+
+# Configure local aliases.
+install_template -m 0644 /etc/aliases
+newaliases

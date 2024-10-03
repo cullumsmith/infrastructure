@@ -11,6 +11,7 @@ see_other_uids=0
 export ASSUME_ALWAYS_YES=yes
 acme_standalone_port=9080
 acme_uid=169
+acme_webroot=/usr/local/www/acme
 keytab_dir=/var/db/keytabs
 nfscbd_port=7745
 nslcd_user=nslcd

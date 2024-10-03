@@ -1,7 +1,7 @@
 freebsd_hypervisor       ^alcatraz[0-9]
 pkg_repository           ^pkg[0-9]
 idm_server               ^idm[0-9]
-smtp_server              ^mx[0-9]
+smtp_server              ^smtp[0-9]
 imap_server              ^imap[0-9]
 dev_server               ^dev[0-9]
 radius_server            ^radius[0-9]

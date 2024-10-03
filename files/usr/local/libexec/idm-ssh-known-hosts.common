@@ -31,7 +31,7 @@ close($fh);
 
 my $mech   = $config{SASL_MECH} // 'GSSAPI';
 my $uri    = $config{URI}  // quit('URI not specified');
-my $basedn = $config{BASE} // quit('BASE not specified');
+my $basedn = $config{HOSTS_BASE} // quit('HOSTS_BASE not specified');
 
 my $conn = Net::LDAP->new($uri, version => '3') or quit($@);
 my $sasl = Authen::SASL->new($mech);
@@ -40,7 +40,7 @@ $status->code and quit($status->error);
 
 my $search = $conn->search(
   scope  => 'sub',
-  base   => "ou=hosts,ou=accounts,$basedn",
+  base   => $basedn,
   filter => '(&(sshPublicKey=*)(associatedDomain=' . escape_filter_value($hostname) . '))',
   attrs  => ['sshPublicKey']);
 $search->code and quit($search->error);

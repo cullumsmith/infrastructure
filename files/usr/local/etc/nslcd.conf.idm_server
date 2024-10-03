@@ -4,7 +4,7 @@ gid ${nslcd_user}
 uri ${slapd_ldapi_uri}
 
 base ${basedn}
-base passwd ${accounts_basedn}
+base passwd ${users_basedn}
 base group ${groups_basedn}
 
 sasl_mech EXTERNAL

@@ -7,3 +7,7 @@ SASL_REALM     ${realm}
 GSSAPI_SIGN    yes
 GSSAPI_ENCRYPT yes
 SUDOERS_BASE   ${sudo_basedn}
+ACCOUNTS_BASE  ${accounts_basedn}
+USERS_BASE     ${users_basedn}
+GROUPS_BASE    ${groups_basedn}
+HOSTS_BASE     ${hosts_basedn}

@@ -1,3 +1,4 @@
+databases/redis
 devel/ccache
 devel/git@lite
 dns/bind-tools
@@ -7,6 +8,13 @@ dns/unbound
 editors/vim@console
 editors/vim@tiny
 lang/python
+mail/dovecot
+mail/dovecot-pigeonhole
+mail/isync
+mail/mutt
+mail/postfix
+mail/rspamd
+mail/sieve-connect
 net/nss-pam-ldapd-sasl
 net/openldap26-client
 net/openldap26-server

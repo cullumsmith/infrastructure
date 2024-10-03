@@ -1,0 +1,7 @@
+version = 3
+bind = sasl
+sasl_mechs = gssapi
+server_host = ${ldap_uri}
+search_base = ${users_basedn}
+query_filter = (mailAddress=%s)
+result_attribute = mailAddress

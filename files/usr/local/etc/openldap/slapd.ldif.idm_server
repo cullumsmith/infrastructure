@@ -17,7 +17,7 @@ $(echo "$idm_server_list" | while read -r _hostname id ipv4; do
     echo "olcServerID: ${id} ldaps://${ipv4}/"
 done)
 olcAuthzRegexp: {0}^gidNumber=[0-9]+\+uidNumber=0,cn=peercred,cn=external,cn=auth$ ${slapd_root_dn}
-olcAuthzRegexp: {1}^gidNumber=[0-9]+\+uidNumber=([^,]+),cn=peercred,cn=external,cn=auth$ ldap:///${accounts_basedn}??sub?(uidNumber=\$1)
+olcAuthzRegexp: {1}^gidNumber=[0-9]+\+uidNumber=([^,]+),cn=peercred,cn=external,cn=auth$ ldap:///${users_basedn}??sub?(uidNumber=\$1)
 olcAuthzRegexp: {2}^uid=([^,]+),cn=(gssapi|plain|login),cn=auth$ ldap:///${accounts_basedn}??sub?(krbPrincipalName=\$1@${realm})
 
 # Load dynamic modules.
@@ -196,15 +196,11 @@ dn: olcOverlay={3}unique,olcDatabase={1}mdb,cn=config
 objectClass: olcOverlayConfig
 objectClass: olcUniqueConfig
 olcOverlay: unique
-olcUniqueURI: ldap:///${accounts_basedn}?uid?sub
-olcUniqueURI: ldap:///${accounts_basedn}?uidNumber?sub
+olcUniqueURI: ldap:///${users_basedn}?uid,uidNumber?sub
+olcUniqueURI: ldap:///${groups_basedn}?cn,gidNumber?sub
 olcUniqueURI: ldap:///${accounts_basedn}?krbPrincipalName?sub
-olcUniqueURI: ldap:///${accounts_basedn}?mail?sub
-olcUniqueURI: ldap:///${accounts_basedn}?mailAddress,mailAlternateAddress,mailPrivateAddress,mailContactAddress?sub
-olcUniqueURI: ldap:///${groups_basedn}?cn?sub
-olcUniqueURI: ldap:///${groups_basedn}?gidNumber?sub
-olcUniqueURI: ldap:///${hosts_basedn}?cn,dc?sub
-olcUniqueURI: ldap:///${services_basedn}?cn?sub
+olcUniqueURI: ldap:///${accounts_basedn}?mail,mailAddress,mailAlternateAddress,mailPrivateAddress,mailContactAddress?sub
+olcUniqueURI: ldap:///${hosts_basedn}?cn,dc,associatedDomain?sub
 olcUniqueURI: ldap:///${sudo_basedn}?cn?sub
 olcUniqueURI: ldap:///${dns_basedn}?associatedDomain?sub
 

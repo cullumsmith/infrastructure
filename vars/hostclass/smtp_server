@@ -1,0 +1,4 @@
+#!/bin/sh
+
+allowed_tcp_ports="ssh smtp submission ${rspamd_port} http https"
+postfix_mynetworks='127.0.0.1/8'

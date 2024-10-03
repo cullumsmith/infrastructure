@@ -20,7 +20,7 @@ close($fh);
 
 my $mech   = $config{SASL_MECH} // 'GSSAPI';
 my $uri    = $config{URI}  // quit('URI not specified');
-my $basedn = $config{BASE} // quit('BASE not specified');
+my $basedn = $config{USERS_BASE} // quit('USERS_BASE not specified');
 
 @ARGV == 1 or die "usage: $0 USERNAME\n";
 my $username = $ARGV[0];
@@ -32,7 +32,7 @@ $status->code and die "$0: ".$status->error;
 
 my $search = $conn->search(
   scope  => 'sub',
-  base   => "ou=accounts,$basedn",
+  base   => $basedn,
   filter => '(&(objectClass=posixAccount)(sshPublicKey=*)(uid=' . escape_filter_value($username) . '))',
   attrs  => ['sshPublicKey']);
 $search->code and die "$0: ".$search->error;

@@ -120,13 +120,19 @@ objectClass: organizationalUnit
 ou: $(ldap_rdn_value "$accounts_basedn")
 EOF
 
-  # ou=people,ou=accounts,dc=example,dc=com
+  # ou=users,ou=accounts,dc=example,dc=com
+  ldap_add "$users_basedn" <<EOF
+objectClass: organizationalUnit
+ou: $(ldap_rdn_value "$users_basedn")
+EOF
+
+  # ou=people,ou=users,ou=accounts,dc=example,dc=com
   ldap_add "$people_basedn" <<EOF
 objectClass: organizationalUnit
 ou: $(ldap_rdn_value "$people_basedn")
 EOF
 
-  # ou=robots,ou=accounts,dc=example,dc=com
+  # ou=robots,ou=users,ou=accounts,dc=example,dc=com
   ldap_add "$robots_basedn" <<EOF
 objectClass: organizationalUnit
 ou: $(ldap_rdn_value "$robots_basedn")

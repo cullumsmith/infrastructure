@@ -1,0 +1,8 @@
+version = 3
+bind = sasl
+sasl_mechs = gssapi
+server_host = ${ldap_uri}
+search_base = ${accounts_basedn}
+query_filter = (|(mailAddress=%s)(mailAlternateAddress=%s))
+special_result_attribute = member
+leaf_result_attribute = mailAddress

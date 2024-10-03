@@ -1,0 +1,3 @@
+backend = "redis";
+servers = "${rspamd_bayes_redis_sock}";
+autolearn = true;
