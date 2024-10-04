@@ -5,6 +5,7 @@
 : ${rspamd_domain_whitelist:=''}
 : ${rspamd_port:='11334'}
 : ${rspamd_redis_maxmemory:='1g'}
+: ${rspamd_admin_users:=''}
 : ${postfix_virtual_domains:="$email_domain"}
 
 postfix_user=postfix
@@ -22,6 +23,7 @@ rspamd_redis_data_dir="${redis_data_dir}/rspamd"
 rspamd_bayes_redis_data_dir="${redis_data_dir}/rspamd-bayes"
 rspamd_tls_cert=/usr/local/etc/nginx/rspamd.crt
 rspamd_tls_key=/usr/local/etc/nginx/rspamd.key
+nginx_keytab="${keytab_dir}/nginx.keytab"
 
 pkg install -y \
   postfix \
@@ -85,8 +87,14 @@ pw groupmod "$redis_user" -m "$rspamd_user"
 # Generate nginx configuration.
 install_template -m 0644 \
   /usr/local/etc/nginx/nginx.conf \
-  /usr/local/etc/nginx/acme.conf \
   /usr/local/etc/nginx/vhosts.conf
+
+# Create HTTP service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+
+ktadd -k "$nginx_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$nginx_keytab"
+chmod 640 "$nginx_keytab"
 
 # Copy TLS certificate for nginx.
 install_certificate     nginx "$rspamd_tls_cert"

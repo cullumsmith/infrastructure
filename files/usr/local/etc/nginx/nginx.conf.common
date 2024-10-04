@@ -1,5 +1,6 @@
 worker_processes      ${nginx_worker_processes};
 worker_rlimit_nofile  ${nginx_nofile};
+$([ "${nginx_gssapi:-}" = true ] && echo 'load_module "/usr/local/libexec/nginx/ngx_http_auth_spnego_module.so";')
 
 events {
   worker_connections  ${nginx_worker_connections};
@@ -40,5 +41,28 @@ http {
     '' keep-alive;
   }
 
-	include vhosts.conf;
+$([ "${nginx_gssapi:-}" = true ] && cat <<EOF
+  auth_gss_realm ${realm};
+  auth_gss_force_realm on;
+EOF
+)
+
+$([ "${nginx_acme:-}" = true ] && cat <<EOF
+  server {
+    listen       0.0.0.0:80 default_server;
+    listen       [::]:80 default_server;
+
+    location /.well-known/acme-challenge/ {
+      root ${acme_webroot};
+      default_type text/plain;
+    }
+
+    location / {
+      return 301 https://\$host\$request_uri;
+    }
+  }
+EOF
+)
+
+  include vhosts.conf;
 }

@@ -9,14 +9,19 @@ server {
 
   add_header Strict-Transport-Security "max-age=63072000" always;
 
+$(if [ -n "$rspamd_admin_users" ]; then
+echo   '  auth_gss on;'
+echo   "  auth_gss_keytab ${nginx_keytab};"
+printf '  auth_gss_authorized_principal %s;\n' $rspamd_admin_users
+fi)
+
   location / {
     proxy_http_version 1.1;
-
     proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
-
+$(if [ -z "$rspamd_admin_users" ]; then
+echo '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+fi)
     proxy_pass http://127.0.0.1:${rspamd_port}/;
   }
 }

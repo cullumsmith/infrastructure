@@ -21,7 +21,6 @@ postfix_public_tls_cert="${acme_cert_dir}/postfix.crt"
 postfix_public_tls_key="${acme_cert_dir}/postfix.key"
 postfix_local_tls_cert="${postfix_conf_dir}/postfix.crt"
 postfix_local_tls_key="${postfix_conf_dir}/postfix.key"
-postfix_dhparams="${postfix_conf_dir}/dhparams.pem"
 
 # Install packages.
 pkg install -y \
@@ -54,9 +53,6 @@ install_directory -m 0750 -o "$saslauthd_user" -g "$postfix_user" "$saslauthd_ru
 # Copy internal TLS certificate.
 install_certificate     -m 0644 -o root -g "$postfix_user" postfix "$postfix_local_tls_cert"
 install_certificate_key -m 0640 -o root -g "$postfix_user" postfix "$postfix_local_tls_key"
-
-# Generate dhparams.
-[ -f "$postfix_dhparams" ] || openssl dhparam -out "$postfix_dhparams" 2048
 
 if [ "$postfix_public_fqdn" != "$fqdn" ]; then
   # Acquire public TLS certificate.

@@ -11,10 +11,16 @@
 
 poudriere_data_dir=/usr/local/poudriere
 poudriere_conf_dir=/usr/local/etc/poudriere.d
+poudriere_patch_dir="${poudriere_conf_dir}/patches"
 
 # Create poudriere datasets.
 create_dataset -o "mountpoint=${poudriere_data_dir}" "${state_dataset}/poudriere"
 create_dataset -o "mountpoint=${poudriere_conf_dir}" "${state_dataset}/poudriere-config"
+
+# Since we're doing a ton of compilation, disable sync on the poudriere dataset.
+# Possibly snakeoil, but my hope is that most file I/O will end up in the ARC cache
+# and not thrash the disks.
+zfs set sync=disabled "${poudriere_dataset}/poudriere"
 
 # These packages are needed to bootstrap poudriere. On the first run, they'll
 # be installed from the public FreeBSD repos.
@@ -45,12 +51,20 @@ service nginx restart
 
 # Create and update the `latest` ports tree.
 [ -d "${poudriere_data_dir}/ports/latest" ] || poudriere ports -c -v -p latest
+git -C "${poudriere_data_dir}/ports/latest" restore :/
+git -C "${poudriere_data_dir}/ports/latest" clean -f
 poudriere ports -v -u -p latest
 
-# Since we're doing a ton of compilation, disable sync on the poudriere dataset.
-# Possibly snakeoil, but my hope is that most file I/O will end up in the ARC cache
-# and not thrash the disks.
-zfs set sync=disabled "${poudriere_dataset}/poudriere"
+# Apply custom patches.
+install_directory -m 0755 "$poudriere_patch_dir"
+rm -f "${poudriere_patch_dir}/"*.patch
+install_file -m 0644 \
+  "${poudriere_patch_dir}/postgresql16-gssapi.patch"
+
+for patch in "${poudriere_patch_dir}/"*.patch; do
+  [ -f "$patch" ] || continue
+  patch -d "${poudriere_data_dir}/ports/latest" -u < "$patch"
+done
 
 # For each specified FreeBSD version, build all packages.
 for version in $poudriere_versions; do

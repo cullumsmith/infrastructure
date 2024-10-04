@@ -56,24 +56,23 @@ smtpd_tls_chain_files =
   ${postfix_local_tls_key},
   ${postfix_local_tls_cert}
 EOF
-)
+fi)
 
 smtpd_tls_security_level        = may
 smtpd_tls_auth_only             = yes
 smtpd_tls_mandatory_protocols   = >=TLSv1.2
 smtpd_tls_mandatory_ciphers     = medium
-smtpd_tls_dh1024_param_file     = ${postfix_dhparams}
 smtpd_tls_loglevel              = 1
 smtpd_sasl_security_options     = noanonymous, noplaintext
 smtpd_sasl_tls_security_options = noanonymous
 smtpd_helo_required             = yes
 
-smtp_tls_CApath                 = ${system_ca_dir}
+smtp_tls_CApath                 = ${system_cacert_path}
 smtp_tls_security_level         = may
 smtp_tls_session_cache_database = btree:\$data_directory/smtp_scache
 smtp_tls_loglevel               = 1
 
-lmtp_tls_CApath                 = ${system_ca_dir}
+lmtp_tls_CApath                 = ${system_cacert_path}
 lmtp_tls_security_level         = encrypt
 lmtp_tls_wrappermode            = yes
 lmtp_tls_session_cache_database = btree:\$data_directory/lmtp_scache

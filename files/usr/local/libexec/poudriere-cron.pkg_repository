@@ -5,7 +5,14 @@ set -eu -o pipefail
 ports_tree=latest
 
 # update ports tree
+git -C /usr/local/poudriere/ports/latest restore :/
+git -C /usr/local/poudriere/ports/latest clean -f
 poudriere ports -u -p "$ports_tree" > /dev/null
+
+for patch in /usr/local/etc/poudriere.d/patches/*.patch; do
+  [ -f "$patch" ] || continue
+  patch -s -d /usr/local/poudriere/ports/latest -u < "$patch"
+done
 
 for jail in "$@"; do
   poudriere jail -u -j "$jail" > /dev/null

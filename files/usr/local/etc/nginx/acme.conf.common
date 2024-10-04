@@ -1,4 +1,0 @@
-location /.well-known/acme-challenge/ {
-  root ${acme_webroot};
-  default_type text/plain;
-}
