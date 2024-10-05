@@ -1,0 +1,32 @@
+plugin {
+  quota = count:User quota
+  quota_vsizes = yes
+  quota_rule = *:storage=${dovecot_default_quota}
+  quota_grace = ${dovecot_quota_grace_percent}%%
+
+  quota_status_success = DUNNO
+  quota_status_nouser = DUNNO
+  quota_status_overquota = "552 5.2.2 Mailbox is full"
+
+  quota_warning  = storage=95%% quota-warning 95 %u ${dovecot_quota_mail_from}
+  quota_warning2 = storage=90%% quota-warning 90 %u ${dovecot_quota_mail_from}
+  quota_warning3 = storage=80%% quota-warning 80 %u ${dovecot_quota_mail_from}
+}
+
+service quota-warning {
+  executable = script ${dovecot_script_dir}/quota-warning.sh
+  user = ${dovecot_vmail_user}
+  unix_listener quota-warning {
+    user = dovecot
+    group = ${dovecot_vmail_user}
+    mode = 0660
+  }
+}
+
+service quota-status {
+  executable = quota-status -p postfix
+  inet_listener {
+    port = ${quota_status_port}
+  }
+  client_limit = 5
+}

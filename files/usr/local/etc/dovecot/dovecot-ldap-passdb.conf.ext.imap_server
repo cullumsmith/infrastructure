@@ -1,0 +1,11 @@
+uris = ${ldap_uri}
+
+sasl_bind = yes
+sasl_mech = gssapi
+sasl_realm = ${realm}
+
+base = ${users_basedn}
+
+auth_bind = yes
+pass_attrs = uid=user
+user_filter = (uid=%u)

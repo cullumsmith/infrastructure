@@ -1,0 +1,76 @@
+#!/bin/sh
+
+# PROVIDE: solr
+# REQUIRE: LOGIN
+# BEFORE: dovecot
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=solr
+rcvar=solr_enable
+
+load_rc_config "$name"
+
+: ${solr_enable:='NO'}
+: ${solr_host:='127.0.0.1'}
+: ${solr_port:='8983'}
+: ${solr_syslog_priority:='info'}
+: ${solr_syslog_facility:='daemon'}
+: ${solr_heap_size:='512m'}
+: ${solr_softcommit_ms:='60000'}
+
+solr_java_home=/usr/local/openjdk21
+solr_syslog_tag=solr
+solr_data_dir=/var/db/solr
+solr_install_dir=/usr/local/solr
+solr_conf_dir=/usr/local/etc/solr
+solr_config_file="${solr_conf_dir}/solrconfig.xml"
+solr_log4j_config_file="${solr_conf_dir}/log4j2.xml"
+solr_jar="${solr_install_dir}/server/start.jar"
+
+solr_user=solr
+solr_chdir="${solr_install_dir}/server"
+
+pidfile=/var/run/solr/solr.pid
+command=/usr/sbin/daemon
+
+command_args="-f \
+-s ${solr_syslog_priority} \
+-l ${solr_syslog_facility} \
+-T ${solr_syslog_tag} \
+-p ${pidfile} \
+-t solr \
+${solr_java_home}/bin/java \
+-server \
+-Xmx${solr_heap_size} \
+-XX:+UseG1GC \
+-XX:+PerfDisableSharedMem \
+-XX:+ParallelRefProcEnabled \
+-XX:MaxGCPauseMillis=250 \
+-XX:+AlwaysPreTouch \
+-XX:+ExplicitGCInvokesConcurrent \
+-XX:+CrashOnOutOfMemoryError \
+-Djava.awt.headless=true \
+-Dlog4j.configurationFile=${solr_log4j_config_file} \
+-Djetty.host=${solr_host} \
+-Djetty.port=${solr_port} \
+-Djetty.home=${solr_install_dir}/server \
+-Dsolr.autoSoftCommit.maxTime=${solr_softcommit_ms} \
+-Dsolr.solr.home=${solr_data_dir} \
+-Dsolr.data.home= \
+-Dsolr.install.dir=${solr_install_dir} \
+-Dsolr.default.confdir=${solr_conf_dir} \
+-jar ${solr_jar} \
+--module=http \
+--module=gzip"
+
+required_files="${solr_config_file} ${solr_log4j_config_file} ${solr_jar}"
+procname="${solr_java_home}/bin/java"
+start_precmd=solr_prestart
+
+solr_prestart(){
+  install -d -m 0755 -o ${solr_user} /var/run/solr
+}
+
+run_rc_command "$1"

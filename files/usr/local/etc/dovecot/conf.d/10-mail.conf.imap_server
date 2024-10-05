@@ -1,0 +1,23 @@
+mail_location = mdbox:~/mdbox
+
+namespace inbox {
+  type = private
+  separator = /
+  inbox = yes
+  subscriptions = yes
+}
+
+mail_plugins = \$mail_plugins quota virtual fts fts_solr
+
+mail_privileged_group = ${dovecot_vmail_user}
+
+first_valid_uid = ${dovecot_vmail_uid}
+last_valid_uid = ${dovecot_vmail_uid}
+
+first_valid_gid = ${dovecot_vmail_uid}
+last_valid_gid = ${dovecot_vmail_uid}
+
+# recommended configuration for quota:count
+protocol !indexer-worker {
+  mail_vsize_bg_after_count = 100
+}

@@ -1,0 +1,38 @@
+#!/bin/sh
+
+: ${tika_version:='2.9.2'}
+: ${tika_uid:='787'}
+
+tika_user=tika
+tika_conf_dir=/usr/local/etc/tika
+tika_install_dir=/usr/local/tika
+tika_heap_size=2g
+tika_port=9998
+tika_url="https://dlcdn.apache.org/tika/${tika_version}/tika-server-standard-${tika_version}.jar"
+
+# Add local tika user.
+add_user \
+  -u "$tika_uid" \
+  -c 'Apache Tika' \
+  -d /nonexistent \
+  -s /usr/sbin/nologin \
+  "$tika_user"
+
+# Create tika install/config directories.
+install_directory -m 0755 \
+  "$tika_install_dir"     \
+  "$tika_conf_dir"
+
+# Download tika jar file.
+curl -fL -o "${tika_install_dir}/tika.jar" "$tika_url"
+
+# Copy tika rc script.
+install_file -m 0555 /usr/local/etc/rc.d/tika
+
+# Copy tika config files.
+install_template -m 0644 "${tika_conf_dir}/config.xml"
+install_file -m 0644 "${tika_conf_dir}/log4j2.xml"
+
+# Enable and start tika.
+sysrc -v tika_enable=YES
+service tika restart

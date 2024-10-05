@@ -7,12 +7,8 @@
 : ${postfix_recipient_delimiter:='+'}
 : ${postfix_message_size_limit:='67108864'} # 64 MB
 : ${postfix_virtual_domains:="$email_domain"}
-: ${postfix_lmtp_port:='24'}
-: ${postfix_quota_port:='10993'}
 
 : ${imap_host='imap'}
-: ${lmtp_port='25'}
-: ${quota_status_port='10993'}
 
 postfix_conf_dir=/usr/local/etc/postfix
 postfix_user=postfix
@@ -57,7 +53,7 @@ install_certificate_key -m 0640 -o root -g "$postfix_user" postfix "$postfix_loc
 if [ "$postfix_public_fqdn" != "$fqdn" ]; then
   # Acquire public TLS certificate.
   install_file /usr/local/etc/sudoers.d/acme
-  get_acme_certificate \
+  acme_install_certificate \
     -c "$postfix_public_tls_cert" \
     -k "$postfix_public_tls_key" \
     -g "$postfix_user" \

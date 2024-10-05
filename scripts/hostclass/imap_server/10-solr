@@ -1,0 +1,78 @@
+#!/bin/sh
+
+: ${solr_version:='9.7.0'}
+
+solr_uid=161
+solr_user=solr
+solr_data_dir=/var/db/solr
+solr_conf_dir=/usr/local/etc/solr
+solr_install_dir=/usr/local/solr
+solr_heap_size=2g
+solr_softcommit_ms=60000
+solr_url="https://dlcdn.apache.org/solr/solr/${solr_version}/solr-${solr_version}-slim.tgz"
+solr_port=8983
+
+# Install dependencies.
+pkg install -y \
+  curl \
+  openjdk21 \
+  bash
+
+# Add local solr user.
+add_user \
+  -u "$solr_uid" \
+  -c 'Apache Solr' \
+  -d "$solr_data_dir" \
+  -s /usr/sbin/nologin \
+  "$solr_user"
+
+# Create ZFS dataset for solr DB.
+create_dataset -o "mountpoint=${solr_data_dir}" "${state_dataset}/solr"
+
+# Set ownership on solr DB dir.
+install_directory -m 0770 -o "$solr_user" -g "$solr_user" "$solr_data_dir"
+
+# Create solr install/config directories.
+install_directory -m 0755 \
+  "$solr_install_dir" \
+  "$solr_conf_dir"
+
+# Download and extract the solr tarball.
+curl -fL "$solr_url" | tar xf - -C "$solr_install_dir" --strip-components 1
+
+# Copy solr rc script.
+install_file -m 0555 /usr/local/etc/rc.d/solr
+
+# Copy solr config files.
+install_file -m 0644 \
+  "${solr_conf_dir}/solrconfig.xml" \
+  "${solr_conf_dir}/log4j2.xml"
+
+# Copy the default solr config from the distribution.
+install -v -m 0644 -o "$solr_user" -g "$solr_user" \
+  "${solr_install_dir}/server/solr/solr.xml" \
+  "${solr_data_dir}/solr.xml"
+
+# Enable and start solr.
+sysrc -v \
+  solr_enable=YES \
+  solr_heap_size="$solr_heap_size"
+
+# Start solr.
+service solr restart
+
+# Create solr collection for dovecot.
+if ! [ -d "${solr_data_dir}/dovecot" ]; then
+  log "waiting a few seconds for solr to finish starting up"
+  sleep 3
+  JAVA_TOOL_OPTIONS='-Xmx64m' su -m "$solr_user" -c "${solr_install_dir}/bin/solr create --name dovecot --solr-url http://127.0.0.1:${solr_port}"
+fi
+
+# Copy solr configs for dovecot.
+install_file -m 0644 -o "$solr_user" -g "$solr_user" \
+  "${solr_data_dir}/dovecot/conf/schema.xml" \
+  "${solr_data_dir}/dovecot/conf/solrconfig.xml"
+rm -f "${solr_data_dir}/dovecot/conf/managed-schema.xml"
+
+# Restart solr.
+service solr restart

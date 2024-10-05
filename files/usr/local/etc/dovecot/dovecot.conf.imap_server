@@ -1,0 +1,5 @@
+protocols = imap lmtp
+
+import_environment = \$import_environment KRB5_KTNAME=${dovecot_keytab} KRB5_CLIENT_KTNAME=${dovecot_keytab}
+
+!include conf.d/*.conf

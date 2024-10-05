@@ -47,7 +47,7 @@ $([ "${nginx_gssapi:-}" = true ] && cat <<EOF
 EOF
 )
 
-$([ "${nginx_acme:-}" = true ] && cat <<EOF
+$([ "${acme:-}" = true ] && [ "${acme_standalone:-}" != true ] && cat <<EOF
   server {
     listen       0.0.0.0:80 default_server;
     listen       [::]:80 default_server;

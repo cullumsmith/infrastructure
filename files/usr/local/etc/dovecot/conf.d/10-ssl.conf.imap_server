@@ -1,0 +1,8 @@
+ssl = required
+
+ssl_cert = <${dovecot_tls_cert}
+ssl_key = <${dovecot_tls_key}
+
+ssl_min_protocol = TLSv1.2
+ssl_cipher_list = ${dovecot_cipherlist}
+ssl_prefer_server_ciphers = no

@@ -14,6 +14,7 @@ dns/unbound
 editors/vim@console
 editors/vim@tiny
 ftp/php${php_version}-curl
+java/openjdk21
 lang/python
 lang/php${php_version}
 mail/dovecot
@@ -50,9 +51,6 @@ sysutils/stow
 sysutils/tmux
 sysutils/tree
 textproc/php${php_version}-xml
-www/apache${apache_version}
-www/mod_auth_gssapi
-www/mod_php${php_version}
 www/nginx
 www/php${php_version}-opcache
 www/php${php_version}-session

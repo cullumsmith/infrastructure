@@ -1,0 +1,7 @@
+auth_default_realm = ${realm}
+auth_gssapi_hostname = "\$ALL"
+auth_username_format = %Ln
+auth_mechanisms = gssapi plain login
+auth_cache_size = 10M
+
+!include auth-ldap.conf.ext

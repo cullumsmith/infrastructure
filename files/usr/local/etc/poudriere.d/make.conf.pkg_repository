@@ -74,7 +74,6 @@ sysutils_htop_SET=LSOF
 sysutils_k3b_UNSET=EMOVIX VCDIMAGER
 sysutils_rsyslog8_SET=GSSAPI RELP OPENSSL
 sysutils_rsyslog8_UNSET=GCRYPT
-www_apache${apache_version}_SET=AUTHNZ_LDAP LDAP SUEXEC SUEXEC_SYSLOG
 www_chromium_SET=WIDEVINE
 www_firefox_UNSET=PROFILE JACK
 www_nginx_SET=HTTPV3 HTTPV3_QTLS HTTP_AUTH_KRB5 HTTP_AUTH_LDAP

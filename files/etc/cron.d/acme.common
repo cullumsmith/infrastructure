@@ -1,0 +1,2 @@
+MAILTO=root
+00 15 * * * ${acme_user} lockf -t 0 /tmp/acme-cron.lock acme.sh --cron --home ${acme_home} --syslog 6 > /dev/null

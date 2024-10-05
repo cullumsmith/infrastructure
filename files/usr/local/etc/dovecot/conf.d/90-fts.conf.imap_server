@@ -1,0 +1,6 @@
+plugin {
+  fts_autoindex = yes
+  fts = solr
+  fts_solr = url=http://127.0.0.1:${solr_port}/solr/dovecot/
+  fts_tika = http://127.0.0.1:${tika_port}/tika/
+}

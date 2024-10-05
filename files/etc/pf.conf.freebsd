@@ -5,8 +5,12 @@ $(if [ -n "${pf_egress_interfaces:-}" ]; then
   fi)
 allowed_tcp_ports = "{ $(join ', ' ${allowed_tcp_ports:-}) }"
 allowed_udp_ports = "{ $(join ', ' ${allowed_udp_ports:-}) }"
+
+$([ "${acme_standalone:-}" = true ] && cat <<EOF
 acme_standalone_port = ${acme_standalone_port}
-acme_standalone_user = ${acme_uid}
+acme_standalone_user = $(id -u "$acme_user")
+EOF
+)
 nfscbd_port = ${nfscbd_port}
 
 set block-policy return

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+allowed_tcp_ports="ssh imaps ${lmtp_port} ${quota_status_port}"

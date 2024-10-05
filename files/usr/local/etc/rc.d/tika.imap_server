@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# PROVIDE: tika
+# REQUIRE: LOGIN
+# BEFORE: dovecot
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=tika
+rcvar=tika_enable
+
+load_rc_config "$name"
+
+: ${tika_enable:='NO'}
+: ${tika_host:='127.0.0.1'}
+: ${tika_port:='9998'}
+: ${tika_syslog_priority:='info'}
+: ${tika_syslog_facility:='daemon'}
+
+tika_user=tika
+tika_java_home=/usr/local/openjdk21
+tika_syslog_tag=tika
+tika_jar=/usr/local/tika/tika.jar
+tika_config_file=/usr/local/etc/tika/config.xml
+tika_log4j_config_file=/usr/local/etc/tika/log4j2.xml
+
+pidfile=/var/run/tika/tika.pid
+command=/usr/sbin/daemon
+
+command_args="-f \
+-s ${tika_syslog_priority} \
+-l ${tika_syslog_facility} \
+-T ${tika_syslog_tag} \
+-p ${pidfile} \
+-t tika \
+${tika_java_home}/bin/java \
+-server \
+-Xmx64m \
+-Djava.awt.headless=true \
+-Dlog4j.configurationFile=${tika_log4j_config_file} \
+-jar ${tika_jar} \
+-c ${tika_config_file} \
+-h ${tika_host} \
+-p ${tika_port}"
+
+required_files="${tika_config_file} ${tika_log4j_config_file} ${tika_jar}"
+procname="${tika_java_home}/bin/java"
+start_precmd=tika_prestart
+
+tika_prestart(){
+  install -d -m 0755 -o ${tika_user} /var/run/tika
+}
+
+run_rc_command "$1"

@@ -1,0 +1,3 @@
+plugin {
+  sieve_pipe_bin_dir = ${dovecot_sieve_pipe_bin_dir}
+}

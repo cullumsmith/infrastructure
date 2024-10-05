@@ -1,0 +1,75 @@
+#!/bin/sh
+
+[ "${acme:-}" = true ] || return 0
+
+: ${acme_email:="root@${email_domain}"}
+: ${acme_keylength:='ec-256'}
+
+acme_cert_dir=/usr/local/etc/ssl/acme
+acme_standalone_port=9080
+acme_user=acme
+acme_home=/var/db/acme
+acme_webroot=/usr/local/www/acme
+
+pkg install -y acme.sh
+
+install_directory -m 0775 -o root -g "$acme_user" "$acme_cert_dir"
+install_template -m 0644 /etc/cron.d/acme
+
+if [ -n "${acme_eab_kid:-}" ]; then
+  su -m "$acme_user" -c "acme.sh --home ${acme_home} --register-account --eab-kid ${acme_eab_kid} --eab-hmac-key ${acme_eab_hmac_key}"
+else
+  su -m "$acme_user" -c "acme.sh --home ${acme_home} --register-account --email ${acme_email}"
+fi
+
+acme_install_certificate(){
+  _aic_group=0
+  _aic_cert_path=
+  _aic_key_path=
+  _aic_reload_cmd=
+
+  while getopts c:g:k:r: _aic_opt; do
+    case $_aic_opt in
+      c) _aic_cert_path=$OPTARG ;;
+      g) _aic_group=$OPTARG ;;
+      k) _aic_key_path=$OPTARG ;;
+      r) _aic_reload_cmd=$OPTARG ;;
+    esac
+  done
+
+  shift $((OPTIND - 1))
+  _aic_name=$1
+
+  # Acquire the certificate via HTTP ACME challenge.
+  _aic_domain_args=''
+  for _aic_domain; do
+    _aic_domain_args="${_aic_domain_args} -d ${_aic_domain}"
+  done
+
+  if [ -n "${acme_standalone:-}" ]; then
+     su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} --standalone --httport ${acme_standalone_port} ${_aic_domain_args}" && _aic_rc=$? || _aic_rc=$?
+  else
+    install_directory -o root -g "$acme_user" -m 0775 "$acme_webroot"
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} -w ${acme_webroot} ${_aic_domain_args}" && _aic_rc=$? || _aic_rc=$?
+  fi
+
+  case $_aic_rc in
+    0) ;; # New cert was issued.
+    2) ;; # Cert was unchanged.
+    *) die "failed to issue ACME certificate for: $*" ;;
+  esac
+
+  # Install the certificate to the requested location.
+  if [ -f "$_aic_key_path" ]; then
+    chmod 640 "$_aic_key_path"
+    chown "${acme_user}:${_aic_group}" "$_aic_key_path"
+  else
+    install -o "$acme_user" -g "$_aic_group" -m 0640 /dev/null "$_aic_key_path"
+  fi
+
+  if [ -n "$_aic_reload_cmd" ]; then
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --reloadcmd '${_aic_reload_cmd}'"
+  else
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path}"
+  fi
+}

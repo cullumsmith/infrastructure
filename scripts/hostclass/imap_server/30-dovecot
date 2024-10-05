@@ -1,0 +1,108 @@
+#!/bin/sh
+
+: ${dovecot_recipient_delimiter:='+'}
+: ${dovecot_default_quota:='10G'}
+: ${dovecot_quota_grace_percent:='5'}
+: ${dovecot_quota_mail_from:="postmaster@${email_domain}"}
+: ${rspamd_host:='smtp'}
+
+dovecot_user=dovecot
+dovecot_login_user=dovenull
+dovecot_vmail_user=vmail
+dovecot_vmail_uid=793
+dovecot_vmail_dir=/var/db/vmail
+dovecot_conf_dir=/usr/local/etc/dovecot
+dovecot_script_dir=/usr/local/libexec/dovecot
+dovecot_sieve_before_dir="${dovecot_conf_dir}/sieve-before.d"
+dovecot_sieve_pipe_bin_dir="${dovecot_script_dir}/sieve-pipe"
+dovecot_keytab="${keytab_dir}/dovecot.keytab"
+dovecot_tls_cert="${dovecot_conf_dir}/dovecot.crt"
+dovecot_tls_key="${dovecot_conf_dir}/dovecot.key"
+dovecot_cipherlist='ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305'
+
+pkg install -y \
+  dovecot \
+  dovecot-pigeonhole \
+  rspamd
+
+# Add local vmail user.
+add_user \
+  -u "$dovecot_vmail_uid" \
+  -c 'Virtual Mail User' \
+  -d "$dovecot_vmail_dir" \
+  -s /usr/sbin/nologin \
+  "$dovecot_vmail_user"
+
+# Create ZFS dataset for virtual maildirs.
+create_dataset -o "mountpoint=${dovecot_vmail_dir}" "${state_dataset}/mailboxes"
+
+# Set ownership on vmail dir.
+install_directory -m 0770 -o "$dovecot_vmail_user" -g "$dovecot_vmail_user" "$dovecot_vmail_dir"
+
+# Create service principals and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "imap/${fqdn}"
+add_principal -nokey -x "containerdn=${services_basedn}" "sieve/${fqdn}"
+
+ktadd -k "$dovecot_keytab" "imap/${fqdn}"
+ktadd -k "$dovecot_keytab" "sieve/${fqdn}"
+chgrp "$dovecot_user" "$dovecot_keytab"
+chmod 640 "$dovecot_keytab"
+
+dovecot_uid=$(id -u "$dovecot_user")
+install_directory -o "$dovecot_user" -m 0700 "/var/krb5/user/${dovecot_uid}"
+ln -snfv "$dovecot_keytab" "/var/krb5/user/${dovecot_uid}/keytab"
+ln -snfv "$dovecot_keytab" "/var/krb5/user/${dovecot_uid}/client.keytab"
+
+# Create dovecot directories.
+install_directory -m 0755 \
+  "${dovecot_conf_dir}/conf.d" \
+  "$dovecot_sieve_before_dir" \
+  "$dovecot_sieve_pipe_bin_dir"
+
+# Generate dovecot configuration.
+install_template -m 0644 \
+  "${dovecot_conf_dir}/dovecot.conf" \
+  "${dovecot_conf_dir}/dovecot-ldap-userdb.conf.ext" \
+  "${dovecot_conf_dir}/dovecot-ldap-passdb.conf.ext" \
+  "${dovecot_conf_dir}/conf.d/10-auth.conf" \
+  "${dovecot_conf_dir}/conf.d/10-mail.conf" \
+  "${dovecot_conf_dir}/conf.d/10-master.conf" \
+  "${dovecot_conf_dir}/conf.d/10-ssl.conf" \
+  "${dovecot_conf_dir}/conf.d/15-lda.conf" \
+  "${dovecot_conf_dir}/conf.d/90-fts.conf" \
+  "${dovecot_conf_dir}/conf.d/90-quota.conf" \
+  "${dovecot_conf_dir}/conf.d/90-sieve.conf" \
+  "${dovecot_conf_dir}/conf.d/90-sieve-extprograms.conf" \
+  "${dovecot_conf_dir}/conf.d/auth-ldap.conf.ext"
+
+install_template -m 0550 -o root -g "$dovecot_user" \
+  "${dovecot_sieve_pipe_bin_dir}/report-spam.sh" \
+  "${dovecot_sieve_pipe_bin_dir}/report-ham.sh" \
+
+install_file -m 0555 \
+  "${dovecot_script_dir}/quota-warning.sh"
+
+install_file -m 0644 \
+  "${dovecot_conf_dir}/conf.d/15-mailboxes.conf" \
+  "${dovecot_conf_dir}/conf.d/20-imap.conf" \
+  "${dovecot_conf_dir}/conf.d/20-lmtp.conf" \
+  "${dovecot_conf_dir}/conf.d/20-managesieve.conf" \
+  "${dovecot_conf_dir}/report-ham.sieve" \
+  "${dovecot_conf_dir}/report-spam.sieve" \
+  "${dovecot_sieve_before_dir}/10-rspamd.sieve"
+
+# Compile sieve scripts.
+sievec "${dovecot_conf_dir}/report-ham.sieve"
+sievec "${dovecot_conf_dir}/report-spam.sieve"
+sievec "${dovecot_sieve_before_dir}/10-rspamd.sieve"
+
+# Copy TLS certificate for dovecot.
+install_certificate     -m 0644 -o root -g "$dovecot_user" dovecot "$dovecot_tls_cert"
+install_certificate_key -m 0640 -o root -g "$dovecot_user" dovecot "$dovecot_tls_key"
+
+# Enable and start dovecot and dependencies.
+sysrc -v dovecot_enable=YES
+service dovecot restart
+
+# Disable rspamd log rotation (we don't actually run rspamd here).
+echo '# intentionally empty' >  /usr/local/etc/newsyslog.conf.d/rspamd.newsyslog.conf
