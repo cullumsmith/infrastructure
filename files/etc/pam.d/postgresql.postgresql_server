@@ -1,0 +1,2 @@
+auth  required  /usr/local/lib/security/pam_krb5.so try_first_pass keytab=${postgres_keytab} no_ccache ignore_k5login no_update_user minimum_uid=0
+account required pam_permit.so

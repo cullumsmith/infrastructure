@@ -1,0 +1,3 @@
+# MAPNAME     SYSTEM-USERNAME     PG-USERNAME
+postgres      postgres            postgres
+postgres      root                postgres

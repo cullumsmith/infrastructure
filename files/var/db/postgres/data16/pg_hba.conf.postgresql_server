@@ -1,0 +1,5 @@
+# TYPE      DATABASE        USER        ADDRESS   METHOD
+local       all             postgres              peer map=postgres
+local       all             all                   peer
+hostgssenc  all             all         all       gss  include_realm=0 krb_realm=${realm}
+hostssl     all             all         all       pam

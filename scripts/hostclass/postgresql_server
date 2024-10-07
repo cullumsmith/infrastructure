@@ -1,0 +1,75 @@
+#!/bin/sh
+
+: ${postgres_max_connections:='128'}
+: ${postgres_shared_buffers:="$(( memsize  / 2 ))"}
+: ${postgres_work_mem:="$(( memsize / 4 / ${postgres_max_connections} ))"}
+: ${postgres_maintenance_work_mem:="$(( memsize / 20 ))"}
+: ${postgres_temp_buffers:="$((32 * 1024 * 1024))"}
+: ${postgres_effective_cache_size:="$(( memsize * 3 / 4 ))"}
+
+postgres_user=postgres
+postgres_home=/var/db/postgres
+postgres_data_dir="${postgres_home}/data${postgres_version}"
+postgres_tls_cert="${postgres_home}/postgres.crt"
+postgres_tls_key="${postgres_home}/postgres.key"
+postgres_keytab="${keytab_dir}/postgres.keytab"
+
+psql(){
+  command psql --quiet --no-align --echo-all --tuples-only --no-password --username=postgres --dbname=postgres "$@"
+}
+
+pkg install -y postgresql${postgresql_version}-server
+
+# Create ZFS dataset for postgresql data.
+create_dataset \
+  -o "mountpoint=${postgres_home}" \
+  -o recordsize=16k \
+  -o primarycache=metadata \
+  -o atime=off \
+  "${state_dataset}/postgres"
+install_directory -m 0755 -o "$postgres_user" -g "$postgres_user" "$postgres_home"
+
+# Initialize the database.
+sysrc -v postgresql_enable=YES
+[ -d "${postgres_data_dir}" ] || service postgresql initdb
+
+# Create service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "postgres/${fqdn}"
+
+ktadd -k "$postgres_keytab" "postgres/${fqdn}"
+chgrp "$postgres_user" "$postgres_keytab"
+chmod 640 "$postgres_keytab"
+
+postgres_uid=$(id -u "$postgres_user")
+install_directory -o "$postgres_user" -m 0700 "/var/krb5/user/${postgres_uid}"
+ln -snfv "$postgres_keytab" "/var/krb5/user/${postgres_uid}/keytab"
+
+# Create postgresql PAM service.
+install_template -m 0644 /etc/pam.d/postgresql
+
+# Copy TLS certificate for postgres.
+install_certificate     -m 0644 -o root -g "$postgres_user" postgres "$postgres_tls_cert"
+install_certificate_key -m 0640 -o root -g "$postgres_user" postgres "$postgres_tls_key"
+
+# Generate postgresql configuration.
+install_template -m 0600 -o "$postgres_user" -g "$postgres_user" \
+  "${postgres_data_dir}/postgresql.conf"                         \
+  "${postgres_data_dir}/pg_hba.conf"
+install_file -m 0600 -o "$postgres_user" -g "$postgres_user" \
+  "${postgres_data_dir}/pg_ident.conf"
+
+# The postgresql rc script seems to hold onto open descriptors, which causes
+# the parent boxconf SSH process to never close.
+echo 'Restarting postgresql.'
+service postgresql restart > /dev/null 2>&1 < /dev/null
+
+# Create boxconf admin user.
+psql -c "DO
+\$$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${boxconf_user}') THEN
+    CREATE ROLE \"${boxconf_user}\" WITH LOGIN SUPERUSER;
+  END IF;
+END
+\$$"
+

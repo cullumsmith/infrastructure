@@ -8,6 +8,8 @@ install_packages='sudo tmux vim'
 intel_epp=50
 see_other_uids=0
 
+memsize=$(sysctl -n hw.physmem)
+
 export ASSUME_ALWAYS_YES=yes
 keytab_dir=/var/db/keytabs
 nfscbd_port=7745

@@ -1,0 +1,43 @@
+listen_addresses = '*'
+max_connections = ${postgres_max_connections}
+
+krb_server_keyfile = 'FILE:${postgres_keytab}'
+krb_caseins_users = on
+
+ssl = on
+ssl_ca_file = '${ca_cert}'
+ssl_cert_file = '${postgres_tls_cert}'
+ssl_key_file = '${postgres_tls_key}'
+ssl_min_protocol_version = 'TLSv1.3'
+
+shared_buffers = '${postgres_shared_buffers}B'
+temp_buffers = '${postgres_temp_buffers}B'
+work_mem = '${postgres_work_mem}B'
+maintenance_work_mem = '${postgres_maintenance_work_mem}B'
+dynamic_shared_memory_type = posix
+
+wal_sync_method = fdatasync
+full_page_writes = off
+wal_compression = off
+wal_init_zero = off
+wal_recycle = off
+max_wal_size = 1GB
+min_wal_size = 80MB
+
+effective_cache_size = '${postgres_effective_cache_size}B'
+
+log_destination = 'syslog'
+syslog_sequence_numbers = off
+
+log_min_messages = info
+log_min_error_statement = warning
+log_line_prefix = '[%p] %q%u@%d '
+log_timezone = 'US/Eastern'
+
+datestyle = 'iso, mdy'
+timezone = 'US/Eastern'
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'en_US.UTF-8'
+lc_numeric = 'en_US.UTF-8'
+lc_time = 'en_US.UTF-8'
+default_text_search_config = 'pg_catalog.english'
