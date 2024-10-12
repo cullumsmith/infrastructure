@@ -1,0 +1,1 @@
+${acme_user} ALL=(root) NOPASSWD: /usr/sbin/service asterisk reload

@@ -4,8 +4,8 @@ server {
 
   http2 on;
 
-  ssl_certificate      ${rspamd_tls_cert};
-  ssl_certificate_key  ${rspamd_tls_key};
+  ssl_certificate      ${rspamd_https_cert};
+  ssl_certificate_key  ${rspamd_https_key};
 
   add_header Strict-Transport-Security "max-age=63072000" always;
 

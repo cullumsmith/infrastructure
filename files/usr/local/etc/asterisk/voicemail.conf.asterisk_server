@@ -1,0 +1,31 @@
+[general]
+format=wav49|gsm|wav
+
+serveremail=${asterisk_from_email}
+attach=yes
+maxmsg=100
+maxsecs=300
+maxgreet=60
+skipms=3000
+maxsilence=10
+silencethreshold=128
+maxlogins=3
+
+emailsubject=New voicemail \${VM_MSGNUM} in mailbox \${VM_MAILBOX}
+emailbody=Hi \${VM_NAME},\n\nYou have a new voicemail in mailbox \${VM_MAILBOX}.\n\nFrom: \${VM_CALLERID}\nDate: \${VM_DATE}\nDuration: \${VM_DUR}\nMessage Number: \${VM_MSGNUM}
+emaildateformat=%A, %B %d, %Y at %r
+
+tz=myzone
+locale=${asterisk_locale}
+minpassword=4
+
+[zonemessages]
+myzone=${asterisk_timezone}|'vm-received' Q 'digits/at' IMp
+
+[default]
+$(for mailbox in ${asterisk_mailboxes:-}; do
+  eval "mailbox_password=\${asterisk_mailbox_${mailbox}_password:-${asterisk_default_mailbox_password}}"
+  eval "mailbox_name=\${asterisk_mailbox_${mailbox}_name:-}"
+  eval "mailbox_email=\${asterisk_mailbox_${mailbox}_email:-}"
+  echo "${mailbox} => ${mailbox_password},${mailbox_name},${mailbox_email},,,"
+done)

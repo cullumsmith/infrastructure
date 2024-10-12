@@ -1,0 +1,55 @@
+server {
+  listen 443      ssl default_server;
+  listen [::]:443 ssl default_server;
+  http2 on;
+
+  root ${davical_webroot};
+  index index.html index.php;
+
+  ssl_certificate      ${davical_https_cert};
+  ssl_certificate_key  ${davical_https_key};
+
+  add_header Strict-Transport-Security "max-age=63072000" always;
+
+  auth_gss_keytab ${davical_keytab};
+  auth_gss_allow_basic_fallback off;
+
+  location / {
+    auth_gss on;
+    satisfy any;
+$(printf '    deny %s;\n' $kerberized_cidrs)
+    allow all;
+    try_files \$uri \$uri/ /caldav.php\$uri?\$query_string;
+  }
+
+  location /.well-known/ {
+    try_files \$uri \$uri/ /caldav.php\$uri?\$query_string;
+  }
+
+  location ~ ^/caldav\.php/\.well-known/ {
+    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+    if (!-f \$document_root\$fastcgi_script_name) {
+      return 404;
+    }
+    fastcgi_index index.php;
+    fastcgi_intercept_errors on;
+    include fastcgi_params;
+    fastcgi_pass unix:${davical_fpm_socket};
+  }
+
+  location ~ [^/]\.php(/|$) {
+    auth_gss on;
+    satisfy any;
+$(printf '    deny %s;\n' $kerberized_cidrs)
+    allow all;
+
+    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+    if (!-f \$document_root\$fastcgi_script_name) {
+      return 404;
+    }
+    fastcgi_index index.php;
+    fastcgi_intercept_errors on;
+    include fastcgi_params;
+    fastcgi_pass unix:${davical_fpm_socket};
+  }
+}

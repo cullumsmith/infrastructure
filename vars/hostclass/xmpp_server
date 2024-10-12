@@ -1,0 +1,5 @@
+#!/bin/sh
+
+acme=true
+allowed_tcp_ports='ssh http https xmpp-client xmpp-server'
+nginx_public=true

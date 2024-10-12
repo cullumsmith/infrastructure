@@ -33,8 +33,22 @@ http {
   ssl_session_timeout        1d;
   ssl_session_cache          shared:SSL:10m;
   ssl_session_tickets        off;
-  ssl_protocols              TLSv1.3;
-  ssl_prefer_server_ciphers  off;
+$(if [ "${nginx_public:-}" = true ]; then <<EOF
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305;
+  ssl_dhparam ${dhparams_path};
+  ssl_stapling on;
+  ssl_stapling_verify on;
+  resolver ${resolvers};
+  resolver_timeout 5s;
+EOF
+else
+  cat <<EOF
+  ssl_protocols TLSv1.3;
+EOF
+fi
+)
+  ssl_prefer_server_ciphers off;
 
   map \$http_upgrade \$connection_upgrade {
     default upgrade;
@@ -47,10 +61,11 @@ $([ "${nginx_gssapi:-}" = true ] && cat <<EOF
 EOF
 )
 
-$([ "${acme:-}" = true ] && [ "${acme_standalone:-}" != true ] && cat <<EOF
+$(if [ "${acme:-}" = true ] && [ "${acme_standalone:-}" != true ]; then
+cat <<EOF
   server {
-    listen       0.0.0.0:80 default_server;
-    listen       [::]:80 default_server;
+    listen       0.0.0.0:80;
+    listen       [::]:80;
 
     location /.well-known/acme-challenge/ {
       root ${acme_webroot};
@@ -62,6 +77,18 @@ $([ "${acme:-}" = true ] && [ "${acme_standalone:-}" != true ] && cat <<EOF
     }
   }
 EOF
+  elif [ "${nginx_redirect:-}" != false ]; then
+cat <<EOF
+  server {
+    listen       0.0.0.0:80;
+    listen       [::]:80;
+
+    location / {
+      return 301 https://\$host\$request_uri;
+    }
+  }
+EOF
+  fi
 )
 
   include vhosts.conf;

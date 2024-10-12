@@ -1,0 +1,2 @@
+MAILTO=root
+0,15,30,45 * * * * ${nginx_user} ${davical_repo_dir}/scripts/cron-sync-ldap.php ${fqdn}

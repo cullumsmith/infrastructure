@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# acme_certs='site1 site2'
+# acme_site1_domains='example.net example.com'
+
+: ${acme_certs:=''}
+
+vhosts_dir=/usr/local/www
+
+# Install packages.
+pkg install -y \
+  nginx \
+  rsync
+
+# Create ZFS dataset for webroots.
+create_dataset -o "mountpoint=${vhosts_dir}" "${state_dataset}/vhosts"
+
+# Configure nginx.
+install_template -m 0644 /usr/local/etc/nginx/nginx.conf
+install -Cv -m 0644 /dev/null /usr/local/etc/nginx/vhosts.conf
+sysrc -v nginx_enable=YES
+service nginx restart
+
+# Acquire public TLS certificates.
+install_template -m 0600 /usr/local/etc/sudoers.d/acme
+for cert in $acme_certs; do
+  eval "acme_domains=\${acme_${cert}_domains}"
+  acme_install_certificate \
+    -C "${acme_cert_dir}/${cert}.ca.crt" \
+    -c "${acme_cert_dir}/${cert}.crt" \
+    -k "${acme_cert_dir}/${cert}.key" \
+    -g "$nginx_user" \
+    -r 'sudo service nginx reload' \
+    $acme_domains
+done
+
+# Now that we have the ACME certs, add the vhosts.
+install_template -m 0644 /usr/local/etc/nginx/vhosts.conf
+service nginx restart
+
+# If any acmeproxy_domains were specified, setup the SFTP proxy.
+acme_setup_proxy

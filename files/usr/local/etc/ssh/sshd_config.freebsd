@@ -1,4 +1,4 @@
-Include /etc/ssh/sshd_config.d/*.conf
+Include /usr/local/etc/ssh/sshd_config.d/*.conf
 
 PermitRootLogin prohibit-password
 AuthorizedKeysFile .ssh/authorized_keys

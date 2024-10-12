@@ -1,0 +1,29 @@
+#!/bin/sh
+
+: ${coturn_secret:="$turn_secret"}
+: ${coturn_external_ip:="$BOXCONF_DEFAULT_IPV4"}
+: ${coturn_realm:="$turn_domain"}
+: ${coturn_threads:="$nproc"}
+
+coturn_user=coturn
+coturn_uid=792
+
+add_user \
+  -u "$coturn_uid" \
+  -c 'Turnserver Psuedo-User' \
+  -d /nonexistent \
+  -s /usr/sbin/nologin \
+  "$coturn_user"
+
+# Install required packages.
+pkg install -y turnserver 
+
+# Copy coturn config file.
+install_template -o root -g "$coturn_user" -m 0640 /usr/local/etc/turnserver.conf
+
+# Start turnserver.
+sysrc -v \
+  turnserver_enable=YES \
+  turnserver_user="$coturn_user" \
+  turnserver_group="$coturn_user"
+service turnserver restart

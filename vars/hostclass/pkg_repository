@@ -1,3 +1,4 @@
 #!/bin/sh
 
 allowed_tcp_ports='ssh http'
+nginx_redirect=false

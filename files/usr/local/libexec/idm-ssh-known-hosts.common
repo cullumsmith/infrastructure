@@ -29,8 +29,8 @@ while (<$fh>) {
 }
 close($fh);
 
-my $mech   = $config{SASL_MECH} // 'GSSAPI';
-my $uri    = $config{URI}  // quit('URI not specified');
+my $mech   = $config{SASL_MECH}  // 'GSSAPI';
+my $uri    = $config{URI}        // quit('URI not specified');
 my $basedn = $config{HOSTS_BASE} // quit('HOSTS_BASE not specified');
 
 my $conn = Net::LDAP->new($uri, version => '3') or quit($@);

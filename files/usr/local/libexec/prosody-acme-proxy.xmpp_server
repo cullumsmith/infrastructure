@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# Retrieves ACME certificates from a different host over SFTP.
+# Reloads prosody if any certificates were changed.
+
+set -eu -o pipefail
+
+PROSODY_USER=prosody
+CERT_DIR=/usr/local/etc/prosody/certs
+CHECKSUM_FILE="${CERT_DIR}/certs.md5"
+
+prog=$(basename "$(readlink -f "$0")")
+usage="${prog} [-q] USER@TARGET_HOST DOMAIN..."
+
+usage(){
+  printf 'usage: %s\n' "$usage" 1>&2
+  exit 2
+}
+
+while getopts hq opt; do
+  case $opt in
+    h) usage ;;
+    q) exec 1>/dev/null ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ $# -ge 2 ] || usage
+acmeproxy_target=$1; shift
+
+# Get md5 of any existing certificates.
+touch "$CHECKSUM_FILE"
+md5_old=$(cat "$CHECKSUM_FILE")
+
+# Retrieve certs from the proxy host via SFTP.
+{ printf 'lcd %s\n' "$CERT_DIR"
+  printf 'get certs/%s.crt\n' "$@"
+  printf 'get certs/%s.key\n' "$@"
+  printf 'quit\n'
+} | sftp -b - "$acmeproxy_target"
+
+# Get md5 of the new certificates.
+md5_new=$(md5sum "$CERT_DIR"/*.crt "$CERT_DIR"/*.key | tee "$CHECKSUM_FILE")
+
+# If any certificates differ, reload prosody.
+if [ "$md5_old" != "$md5_new" ]; then
+  if prosodyctl status >/dev/null 2>&1; then
+    prosodyctl reload
+  else
+    echo 'prosody not running, not reloading'
+  fi
+else
+  echo 'certificates unchanged'
+fi

@@ -52,7 +52,7 @@ install_certificate_key -m 0640 -o root -g "$postfix_user" postfix "$postfix_loc
 
 if [ "$postfix_public_fqdn" != "$fqdn" ]; then
   # Acquire public TLS certificate.
-  install_file /usr/local/etc/sudoers.d/acme
+  install_template -m 0600 /usr/local/etc/sudoers.d/acme
   acme_install_certificate \
     -c "$postfix_public_tls_cert" \
     -k "$postfix_public_tls_key" \

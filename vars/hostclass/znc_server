@@ -1,0 +1,4 @@
+#!/bin/sh
+
+znc_irc_port=6697
+allowed_tcp_ports="ssh http https ${znc_irc_port}"

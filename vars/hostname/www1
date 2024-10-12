@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cnames='www'
+acmeproxy_client_group=$prosody_username
+acmeproxy_client_gid=$prosody_uid

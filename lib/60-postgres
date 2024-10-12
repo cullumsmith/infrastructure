@@ -1,0 +1,24 @@
+#!/bin/sh
+
+postgres_run(){
+  PGSSLMODE=require PGPASSWORD="$boxconf_password" psql \
+    --no-align \
+    --echo-all \
+    --tuples-only \
+    --username="$boxconf_username" \
+    -v ON_ERROR_STOP=1 \
+    "$@"
+}
+postgres_create_role(){
+  # $1 = postgres_host, $2 = username
+  cat <<EOF | postgres_run -h "${1}" -d postgres
+SELECT 'CREATE ROLE "${2}" WITH LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${2}')\\gexec
+EOF
+}
+
+postgres_create_database(){
+  # $1 = postgres_host, $2 = dbname, $3 = owner
+  cat <<EOF | postgres_run -h "${1}" -d postgres
+SELECT 'CREATE DATABASE "${2}" OWNER "${3:-postgres}"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${2}')\\gexec
+EOF
+}

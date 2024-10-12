@@ -1,0 +1,4 @@
+[global]
+pid = run/php-fpm.pid
+error_log = syslog
+include=/usr/local/etc/php-fpm.d/*.conf

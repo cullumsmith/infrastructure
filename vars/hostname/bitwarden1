@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cnames=bitwarden
+vaultwarden_fqdn="bitwarden.${domain}"

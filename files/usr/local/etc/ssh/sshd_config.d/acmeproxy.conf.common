@@ -1,0 +1,11 @@
+Match Group ${acmeproxy_client_group}
+  ChrootDirectory ${acmeproxy_home}
+  ForceCommand internal-sftp -R
+  DisableForwarding yes
+  PermitUserRC no
+  PermitTTY no
+  GSSAPIAuthentication yes
+  KbdInteractiveAuthentication no
+  PasswordAuthentication no
+  PubkeyAuthentication no
+  AuthenticationMethods gssapi-with-mic

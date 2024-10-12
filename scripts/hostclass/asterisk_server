@@ -1,0 +1,74 @@
+#!/bin/sh
+
+: ${asterisk_public_fqdn:='pbx.example.com'}
+: ${asterisk_public_ip:="$BOXCONF_DEFAULT_IPV4"}
+: ${asterisk_from_email:="asterisk-noreply@${email_domain}"}
+: ${asterisk_sip_domain:="${email_domain}"}
+: ${asterisk_locale:='en_US.UTF-8'}
+: ${asterisk_timezone:='America/New_York'}
+: ${asterisk_default_mailbox_password:='1234'}
+
+# asterisk_mailboxes='1001 1002'
+# asterisk_mailbox_1001_name='John Doe'
+# asterisk_mailbox_1001_email='johndoe@example.com'
+#
+# asterisk_trunks='upstream1 upstream2'
+# asterisk_trunk_upstream1_username=myusername
+# asterisk_trunk_upstream1_password=changeme
+# asterisk_trunk_upstream1_context=from-pstn
+# asterisk_trunk_upstream1_proto=tcp
+# asterisk_trunk_upstream1_remote='server.example.com:5060'
+#
+# asterisk_exts='1001 1002'
+# asterisk_ext_1001_password=changeme
+# asterisk_ext_1001_context=from-internal
+# asterisk_ext_1001_mailbox=1001
+# asterisk_ext_1001_cid_name='Bob Office'
+#
+# asterisk_queues=home
+# asterisk_queue_home_stragegy=ringall
+# asterisk_queue_home_timeout=30
+# asterisk_queue_home_retry=1
+# asterisk_queue_home_members='1001 1002'
+
+asterisk_public_tls_cert="${acme_cert_dir}/asterisk.crt"
+asterisk_public_tls_key="${acme_cert_dir}/asterisk.key"
+asterisk_conf_dir=/usr/local/etc/asterisk
+asterisk_db_dir=/var/db/asterisk
+asterisk_user=asterisk
+
+# Install packages.
+pkg install -y \
+  asterisk18 \
+  ca_root_nss
+
+# Create ZFS dataset for Asterisk DB.
+create_dataset -o "mountpoint=${asterisk_db_dir}" "${state_dataset}/asterisk"
+install_directory -o "$asterisk_user" -g "$asterisk_user" -m 0755 "$asterisk_db_dir"
+
+# Generate asterisk configuration.
+install_file -m 0644 \
+  "${asterisk_conf_dir}/extensions.conf" \
+  "${asterisk_conf_dir}/logger.conf" \
+  "${asterisk_conf_dir}/queues.conf" \
+  "${asterisk_conf_dir}/voicemail.conf"
+
+install_template -m 0644 \
+  "${asterisk_conf_dir}/voicemail.conf" \
+  "${asterisk_conf_dir}/pjsip.conf" \
+  "${asterisk_conf_dir}/rtp.conf"
+
+install_template -m 0640 \
+  "${asterisk_conf_dir}/pjsip_wizard.conf"
+
+# Acquire public TLS certificate.
+install_template -m 0600 /usr/local/etc/sudoers.d/acme
+acme_install_certificate \
+  -c "$asterisk_public_tls_cert" \
+  -k "$asterisk_public_tls_key" \
+  -r 'sudo service asterisk reload' \
+  "$asterisk_public_fqdn"
+
+# Enable and start asterisk.
+sysrc -v asterisk_enable=YES
+service asterisk restart

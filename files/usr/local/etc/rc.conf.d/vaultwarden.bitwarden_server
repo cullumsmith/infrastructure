@@ -1,0 +1,19 @@
+export ROCKET_ADDRESS=127.0.0.1
+export ROCKET_PORT="${vaultwarden_port}"
+export ROCKET_CLI_COLORS=false
+export LOG_LEVEL=warn
+export EXTENDED_LOGGING=true
+export IP_HEADER=X-Forwarded-For
+
+export DATABASE_URL="postgresql://${vaultwarden_username}@${vaultwarden_dbhost}/${vaultwarden_dbname}"
+
+export SIGNUPS_ALLOWED=true
+export SIGNUPS_VERIFY=true
+
+export INVITATIONS_ALLOWED=false
+
+export DOMAIN="https://${vaultwarden_fqdn}"
+
+export USE_SENDMAIL=true
+export SMTP_FROM="bitwarden-noreply@${email_domain}"
+export SMTP_FROM_NAME=Bitwarden

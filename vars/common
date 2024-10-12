@@ -3,6 +3,7 @@
 site=myhomelab
 domain=idm.example.com
 email_domain=example.com
+turn_domain=turn.example.com
 locale=en_US.UTF-8
 ntp_pools='pool.ntp.org'
 root_password=changeme
@@ -20,6 +21,8 @@ idm1      1   1.2.3.4
 idm2      2   5.6.7.8"
 
 reverse_dns_zones="0.168.192.in-addr.arpa  12.11.10.in-addr.arpa"
+
+kerberized_cidrs=192.168.0.0/24
 
 rspamd_privkey='changeme with: rspamadm keypair'
 rspamd_pubkey='changeme with: rspamadm keypair'
@@ -46,6 +49,8 @@ krb5_renew_lifetime=7d
 nslcd_min_uid=1000
 nscd_ttl=600
 nscd_negative_ttl=20
+prosody_username='s-prosody'
+prosody_uid=20005
 rspamd_port=11334
 ssh_authzkeys_uid=789
 ssh_authzkeys_username=sshkeys
@@ -53,7 +58,7 @@ tcp_buffer_size=2097152  # suitable for 1 GigE
 
 nginx_nofile=2048
 nginx_worker_connections=768
-if $(( nproc > 4 )); then
+if (( nproc > 4 )); then
   nginx_worker_processes=4
 else
   nginx_worker_processes=$nproc

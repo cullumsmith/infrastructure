@@ -1,0 +1,132 @@
+#!/bin/sh
+
+# The LDAP library used by prosody (lualdap) does not support SASL binds.
+# Therefore, you must specify the prosody_ldap_password variable.
+
+# prosody_acme_host=
+: ${prosody_admins:=''}
+: ${prosody_public_fqdn:="$fqdn"}
+: ${prosody_domains:="$email_domain"}
+: ${prosody_ldap_passwd:='changeme'}
+: ${prosody_dbname:='prosody'}
+: ${prosody_dbhost:="$postgres_host"}
+: ${prosody_access_role:='xmpp-access'}
+: ${prosody_archive_expiration:='1w'}
+: ${prosody_upload_sizelimit:='104857600'} # 100 MB
+: ${prosody_upload_expiration:='604800'}   # 1 week
+: ${prosody_upload_quota:='25769803776'}   # 24 GB
+: ${prosody_turn_port:='3478'}
+: ${prosody_turn_host:="$turn_domain"}
+: ${prosody_turn_realm:="$turn_domain"}
+: ${prosody_turn_secret="$turn_secret"}
+
+prosody_dn="uid=${prosody_username},${robots_basedn}"
+prosody_local_user=prosody
+prosody_conf_dir=/usr/local/etc/prosody
+prosody_certs_dir="${prosody_conf_dir}/certs"
+prosody_keytab="${keytab_dir}/prosody.keytab"
+prosody_roster_path="${prosody_conf_dir}/roster.ini"
+prosody_http_port=8080
+prosody_upload_dir=/var/db/prosody/http_upload
+
+prosody_https_cacert="${acme_cert_dir}/nginx.ca.crt"
+prosody_https_cert="${acme_cert_dir}/nginx.crt"
+prosody_https_key="${acme_cert_dir}/nginx.key"
+
+# Install required packages.
+pkg install -y \
+  prosody \
+  prosody-modules \
+  lua54-luadbi \
+  lua54-lualdap \
+  nginx
+
+# Create ZFS dataset for HTTP upload files.
+create_dataset -o "mountpoint=${prosody_upload_dir}" "${state_dataset}/http_upload"
+
+# Set ownership on http_upload directory.
+install_directory -o "$prosody_local_user" -g "$prosody_local_user" -m 0750 "$prosody_upload_dir"
+
+# Create prosody user private group.
+ldap_add "cn=${prosody_username},${private_groups_basedn}" <<EOF
+objectClass: groupOfMembers
+objectClass: posixGroup
+cn: ${prosody_username}
+gidNumber: ${prosody_uid}
+member: uid=${prosody_username},${robots_basedn}
+EOF
+
+# Create prosody user account.
+ldap_add "$prosody_dn" <<EOF
+objectClass: account
+objectClass: posixAccount
+uid: ${prosody_username}
+cn: ${prosody_username}
+uidNumber: ${prosody_uid}
+gidNumber: ${prosody_uid}
+gecos: Prosody Pseudo-User
+loginShell: /sbin/nologin
+homeDirectory: /nonexistent
+EOF
+
+# Create principal and keytab.
+add_principal -nokey -x "dn=${prosody_dn}" "$prosody_username"
+
+ktadd -k "$prosody_keytab" "$prosody_username"
+chgrp "$prosody_local_user" "$prosody_keytab"
+chmod 640 "$prosody_keytab"
+
+prosody_local_uid=$(id -u "$prosody_local_user")
+install_directory -o "$prosody_local_user" -m 0700 "/var/krb5/user/${prosody_local_uid}"
+ln -snfv "$prosody_keytab" "/var/krb5/user/${prosody_local_uid}/client.keytab"
+
+# Set LDAP password for prosody user.
+ldap_passwd "$prosody_dn" "$prosody_ldap_password"
+
+# Create postgres user and database.
+postgres_create_role "$prosody_dbhost" "$prosody_username"
+postgres_create_database "$prosody_dbhost" "$prosody_dbname" "$prosody_username"
+
+# Retrieve prosody certificates via ACME proxy.
+install_directory -o root -g "$prosody_local_user" -m 0770 "$prosody_certs_dir"
+install_file -m 0555 /usr/local/libexec/prosody-acme-proxy
+su -m "$prosody_local_user" -c "/usr/local/libexec/prosody-acme-proxy ${prosody_username}@${prosody_acme_host} ${prosody_domains}"
+
+# Copy prosody configuration.
+install_template -o root -g "$prosody_local_user" -m 0640 /usr/local/etc/prosody/prosody.cfg.lua
+
+# Configure automatic roster.
+install_file -m 0555 /usr/local/libexec/prosody-update-roster
+install -Cv -m 0640 -o "$prosody_local_user" -g "$prosody_local_user" /dev/null "${prosody_conf_dir}/roster.ini"
+su -m "$prosody_local_user" -c "/usr/local/libexec/prosody-update-roster ${prosody_access_role} > ${prosody_roster_path}"
+
+# Copy prosody crontab.
+install_template -m 0644 /etc/cron.d/prosody
+
+# Configure nginx.
+install_template -m 0644 /usr/local/etc/nginx/nginx.conf
+sysrc -v nginx_enable=YES
+service nginx restart
+
+install_template -m 0600 /usr/local/etc/sudoers.d/acme
+acme_install_certificate \
+  -C "$prosody_https_cacert" \
+  -c "$prosody_https_cert" \
+  -k "$prosody_https_key" \
+  -g "$nginx_user" \
+  -r 'sudo service nginx reload' \
+  "$prosody_public_fqdn"
+
+# Now that we have the ACME certs, add the nginx vhost.
+install_template -m 0644 /usr/local/etc/nginx/vhosts.conf
+
+# Enable and start daemons.
+sysrc -v prosody_enable=YES
+service prosody restart
+service nginx restart
+
+# Create access role.
+ldap_add "cn=${prosody_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${prosody_access_role}
+EOF

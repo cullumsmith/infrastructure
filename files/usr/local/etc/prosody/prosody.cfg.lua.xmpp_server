@@ -1,0 +1,106 @@
+$([ -n "${prosody_admins:-}" ] && echo "admins = { \"$(join '", "' $prosody_admins)\" }")
+pidfile = "/var/run/prosody/prosody.pid"
+
+plugin_paths = { "/usr/local/lib/prosody-modules" }
+
+modules_enabled = {
+
+  -- Generally required
+    "disco"; -- Service discovery
+    "roster"; -- Allow users to have a roster. Recommended ;)
+    "saslauth"; -- Authentication for clients and servers. Recommended if you want to log in.
+    "tls"; -- Add support for secure TLS on c2s/s2s connections
+
+  -- Not essential, but recommended
+    "blocklist"; -- Allow users to block communications with other users
+    "bookmarks"; -- Synchronise the list of open rooms between clients
+    "carbons"; -- Keep multiple online clients in sync
+    "dialback"; -- Support for verifying remote servers using DNS
+    "limits"; -- Enable bandwidth limiting for XMPP connections
+    "pep"; -- Allow users to store public and private data in their account
+    "private"; -- Legacy account storage mechanism (XEP-0049)
+    "smacks"; -- Stream management and resumption (XEP-0198)
+    "vcard4"; -- User profiles (stored in PEP)
+    "vcard_legacy"; -- Conversion between legacy vCard and PEP Avatar, vcard
+
+  -- Nice to have
+    "ping"; -- Replies to XMPP pings with pongs
+    "register"; -- Allow users to register on this server using a client and change passwords
+    "time"; -- Let others know the time here on this server
+    "uptime"; -- Report how long server has been running
+    "version"; -- Replies to server version requests
+    "mam"; -- Store recent messages to allow multi-device synchronization
+    "turn_external"; -- Provide external STUN/TURN service for e.g. audio/video calls
+
+  -- Admin interfaces
+    "admin_adhoc"; -- Allows administration via an XMPP client that supports ad-hoc commands
+    "admin_shell"; -- Allow secure administration via 'prosodyctl shell'
+
+  -- Other specific functionality
+    "groups"; -- Shared roster support
+    "csi_battery_saver";
+    "reload_modules";
+}
+
+reload_modules = { "groups", "tls" }
+
+groups_file = "${prosody_roster_path}"
+
+s2s_secure_auth = true
+
+limits = {
+  c2s = {
+    rate = "10kb/s";
+  };
+  s2sin = {
+    rate = "30kb/s";
+  };
+}
+
+authentication = "ldap"
+ldap_server = "${ldap_hosts}"
+ldap_tls = true
+ldap_base = "${users_basedn}"
+ldap_scope = "subtree"
+ldap_filter = "(&(memberOf=cn=${prosody_access_role},${roles_basedn})(mailAddress=\$user@\$host))"
+ldap_rootdn = "${prosody_dn}"
+ldap_password = "${prosody_ldap_password}"
+
+storage = "sql"
+sql = { driver = "PostgreSQL", database = "${prosody_dbname}", username = "${prosody_username}", host = "${prosody_dbhost}" }
+
+archive_expires_after = "${prosody_archive_expiration}"
+
+turn_external_host = "${prosody_turn_host}"
+turn_external_port = ${prosody_turn_port}
+turn_external_secret = "${prosody_turn_secret}"
+
+log = {
+  info = "*syslog";
+}
+
+certificates = "certs"
+
+http_ports = { ${prosody_http_port} }
+http_interfaces = { "127.0.0.1" }
+https_interfaces = { }
+https_ports = { }
+http_external_url = "https://${prosody_public_fqdn}/"
+https_external_url = "https://${prosody_public_fqdn}/"
+trusted_proxies = { "127.0.0.1" }
+http_max_content_size = ${prosody_upload_sizelimit}
+
+Component "${prosody_public_fqdn}" "http_upload"
+http_upload_file_size_limit = ${prosody_upload_sizelimit}
+http_upload_expire_after = ${prosody_upload_expiration}
+http_upload_quota = ${prosody_upload_quota}
+
+$(for vhost in $prosody_domains; do cat <<EOF
+VirtualHost "${vhost}"
+  disco_items = {
+    { "${prosody_public_fqdn}" }
+  }
+Component "conference.${vhost}" "muc"
+  modules_enabled = { "muc_mam"}
+EOF
+done)

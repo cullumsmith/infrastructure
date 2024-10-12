@@ -1,0 +1,137 @@
+#!/bin/sh
+
+: ${ttrss_username:='s-ttrss'}
+: ${ttrss_dbname:='ttrss'}
+: ${ttrss_dbhost:="$postgres_host"}
+: ${ttrss_fqdn:="$fqdn"}
+: ${ttrss_access_role:='ttrss-access'}
+: ${ttrss_admin_role:='ttrss-admin'}
+: ${ttrss_mail_from:="ttrss-noreply@${email_domain}"}
+
+ttrss_https_cert="${nginx_conf_dir}/ttrss.crt"
+ttrss_https_key="${nginx_conf_dir}/ttrss.key"
+ttrss_repo='https://git.tt-rss.org/fox/tt-rss.git/'
+ttrss_branch=master
+ttrss_repo_dir=/usr/local/www/tt-rss
+ttrss_keytab="${keytab_dir}/ttrss.keytab"
+ttrss_client_keytab="${keytab_dir}/ttrss.client.keytab"
+ttrss_fpm_socket=/var/run/fpm-ttrss.sock
+
+# Install required packages.
+pkg install -y \
+  ca_root_nss \
+  nginx \
+  git-lite \
+  php${php_version}-ctype \
+  php${php_version}-curl \
+  php${php_version}-dom \
+  php${php_version}-exif \
+  php${php_version}-fileinfo \
+  php${php_version}-filter \
+  php${php_version}-gd \
+  php${php_version}-iconv \
+  php${php_version}-intl \
+  php${php_version}-ldap \
+  php${php_version}-mbstring \
+  php${php_version}-opcache \
+  php${php_version}-pcntl \
+  php${php_version}-pdo \
+  php${php_version}-pdo_pgsql \
+  php${php_version}-pgsql \
+  php${php_version}-phar \
+  php${php_version}-posix \
+  php${php_version}-session \
+  php${php_version}-simplexml \
+  php${php_version}-sockets \
+  php${php_version}-tokenizer \
+  php${php_version}-xml \
+  php${php_version}-xmlwriter \
+  php${php_version}-zip
+
+# Create ttrss principal and keytab.
+add_principal -nokey -x "containerdn=${robots_basedn}" "$ttrss_username"
+
+ktadd -k "$ttrss_client_keytab" "$ttrss_username"
+chgrp "$nginx_user" "$ttrss_client_keytab"
+chmod 640 "$ttrss_client_keytab"
+
+nginx_uid=$(id -u "$nginx_user")
+install_directory -o "$nginx_user" -m 0700 "/var/krb5/user/${nginx_uid}"
+ln -snfv "$ttrss_client_keytab" "/var/krb5/user/${nginx_uid}/client.keytab"
+
+# Create HTTP principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+
+ktadd -k "$ttrss_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$ttrss_keytab"
+chmod 640 "$ttrss_keytab"
+
+ln -snfv "$ttrss_keytab" "/var/krb5/user/${nginx_uid}/keytab"
+
+# Install ttrss from git.
+[ -d "$ttrss_repo_dir" ] || git clone "$ttrss_repo" "$ttrss_repo_dir"
+
+# Update git repos.
+git -C "$ttrss_repo_dir" pull --ff-only
+git -C "$ttrss_repo_dir" switch "$ttrss_branch"
+
+# Fix permissions on writable directories.
+for dir in lock cache feed-icons ; do
+  chmod 755 "${ttrss_repo_dir}/${dir}"
+  chown -R "${nginx_user}:${nginx_user}" "${ttrss_repo_dir}/${dir}"
+done
+
+# Generate config.php.
+install_template -m 0644 "${ttrss_repo_dir}/config.php"
+
+# Create postgres user and database.
+postgres_create_role "$ttrss_dbhost" "$ttrss_username"
+postgres_create_database "$ttrss_dbhost" "$ttrss_dbname" "$ttrss_username"
+
+# Initialize the database schema.
+su -m "$nginx_user" -c "${ttrss_repo_dir}/update.php --update-schema=force-yes"
+
+# Copy tt-rss LDAP auth plugin.
+install_directory -m 0755 "${ttrss_repo_dir}/plugins.local/auth_idm"
+install_file -m 0644 "${ttrss_repo_dir}/plugins.local/auth_idm/init.php"
+
+# Copy tt-rss rc script.
+install_file -m 0555 /usr/local/etc/rc.d/ttrssd
+
+# Allow ttrss user to perform git queries.
+git config --system --replace-all safe.directory "$ttrss_repo_dir"
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$ttrss_https_cert"
+install_certificate_key nginx "$ttrss_https_key"
+
+# Generate nginx configuration.
+install_file -m 0644 /usr/local/etc/nginx/fastcgi_params
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Generate php-fpm configuration.
+install_file -m 0644 \
+  /usr/local/etc/php.ini \
+  /usr/local/etc/php-fpm.conf
+install_template -m 0644 \
+  /usr/local/etc/php-fpm.d/ttrss.conf
+> /usr/local/etc/php-fpm.d/www.conf
+
+# Enable and start daemons.
+sysrc -v \
+  nginx_enable=YES \
+  php_fpm_enable=YES \
+  ttrssd_enable=YES
+service nginx restart
+service php_fpm restart
+service ttrssd restart
+
+# Create roles.
+for role in "$ttrss_access_role" "$ttrss_admin_role"; do
+  ldap_add "cn=${role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${role}
+EOF
+done

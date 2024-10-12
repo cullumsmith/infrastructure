@@ -1,0 +1,65 @@
+;;;;;;;;;;;
+; Trunks
+;;;;;;;;;;;
+
+[trunk-defaults](!)
+type                                  = wizard
+sends_auth                            = yes
+sends_registrations                   = yes
+endpoint/rtp_symmetric                = yes
+endpoint/rewrite_contact              = yes
+endpoint/send_rpid                    = yes
+endpoint/from_domain                  = ${asterisk_sip_domain}
+endpoint/allow                        = !all,ulaw
+registration/max_retries              = 4294967295
+registration/auth_rejection_permanent = no
+aor/qualify_frequency                 = 30
+
+$(for trunk in ${asterisk_trunks:-}; do
+  eval "trunk_proto=\${asterisk_trunk_${trunk}_proto:-'tcp'}"
+  eval "trunk_remote=\${asterisk_trunk_${trunk}_remote}"
+  eval "trunk_username=\${asterisk_trunk_${trunk}_username}"
+  eval "trunk_password=\${asterisk_trunk_${trunk}_password}"
+  eval "trunk_context=\${asterisk_trunk_${trunk}_context}"
+  echo "\
+[${trunk}](trunk-defaults)
+transport                 = transport-${trunk_proto}
+remote_hosts              = ${trunk_remote}
+endpoint/context          = ${trunk_context}
+endpoint/media_encryption = no
+outbound_auth/username    = ${trunk_username}
+outbound_auth/password    = ${trunk_password}
+"; done)
+
+
+[extension-defaults](!)
+type                       = wizard
+accepts_registrations      = yes
+accepts_auth               = yes
+aor/remove_existing        = yes
+endpoint/allow             = !all,g722,ulaw
+endpoint/from_domain       = ${asterisk_sip_domain}
+endpoint/subscribe_context = subscribe
+
+$(for ext in ${asterisk_exts:-}; do
+  eval "ext_context=\${asterisk_ext_${ext}_context}"
+  eval "ext_password=\${asterisk_ext_${ext}_password}"
+  eval "ext_max_contacts=\${asterisk_ext_${ext}_max_contacts:-1}"
+  eval "ext_qualify_freq=\${asterisk_ext_${ext}_qualify_freq:-30}"
+  eval "ext_qualify_timeout=\${asterisk_ext_${ext}_qualify_timeout:-3.0}"
+  eval "ext_direct_media=\${asterisk_ext_${ext}_direct_media:-yes}"
+  eval "ext_cid_name=\${asterisk_ext_${ext}_cid_name}"
+  eval "ext_cid_number=\${asterisk_ext_${ext}_cid_number:-$ext}"
+  eval "ext_mailbox=\${asterisk_ext_${ext}_mailbox:-$ext}"
+  echo "\
+[${ext}](extension-defaults)
+endpoint/context     = ${ext_context}
+endpoint/mailboxes   = ${ext_mailbox}@default
+endpoint/callerid    = ${ext_cid_name} <${ext_cid_number}>
+inbound_auth/username = ${ext}
+inbound_auth/password = ${ext_password}
+aor/max_contacts      = ${ext_max_contacts}
+aor/qualify_frequency = ${ext_qualify_freq}
+aor/qualify_timeout   = ${ext_qualify_timeout}
+endpoint/direct_media = ${ext_direct_media}
+"; done)

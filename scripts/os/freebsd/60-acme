@@ -10,6 +10,9 @@ acme_standalone_port=9080
 acme_user=acme
 acme_home=/var/db/acme
 acme_webroot=/usr/local/www/acme
+acmeproxy_home=/var/spool/acmeproxy
+
+dhparams_path=/etc/ssl/dhparams.pem
 
 pkg install -y acme.sh
 
@@ -22,14 +25,20 @@ else
   su -m "$acme_user" -c "acme.sh --home ${acme_home} --register-account --email ${acme_email}"
 fi
 
+if [ "${nginx_public:-}" = true ] && ! [ -f "$dhparams_path" ]; then
+  openssl dhparam -out "$dhparams_path" 2048
+fi
+
 acme_install_certificate(){
   _aic_group=0
   _aic_cert_path=
   _aic_key_path=
+  _aic_ca_path=
   _aic_reload_cmd=
 
-  while getopts c:g:k:r: _aic_opt; do
+  while getopts C:c:g:k:r: _aic_opt; do
     case $_aic_opt in
+      C) _aic_ca_path=$OPTARG ;;
       c) _aic_cert_path=$OPTARG ;;
       g) _aic_group=$OPTARG ;;
       k) _aic_key_path=$OPTARG ;;
@@ -68,8 +77,28 @@ acme_install_certificate(){
   fi
 
   if [ -n "$_aic_reload_cmd" ]; then
-    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --reloadcmd '${_aic_reload_cmd}'"
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${aic_ca_path} --reloadcmd '${_aic_reload_cmd}'"
   else
-    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path}"
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${aic_ca_path} "
   fi
+}
+
+acme_setup_proxy(){
+  [ -n "${acmeproxy_domains:-}" ] || return 0
+
+  install_directory -o root -g wheel -m 0755 "$acmeproxy_home"
+  install_directory -o "$acme_user" -g "${acmeproxy_client_gid:-${acmeproxy_client_group}}" -m 0750 "${acmeproxy_home}/certs"
+
+  # Configure SSHD for acmeproxy.
+  install_template -m 0644 /usr/local/etc/ssh/sshd_config.d/acmeproxy.conf
+  service sshd reload
+
+  # Acquire ACME certificates for client SFTP.
+  for domain in $acmeproxy_domains; do
+    acme_install_certificate \
+      -c "${acmeproxy_home}/certs/${domain}.crt" \
+      -k "${acmeproxy_home}/certs/${domain}.key" \
+      -g "${acmeproxy_client_gid:-${acmeproxy_client_group}}" \
+      $domain
+  done
 }

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cnames=ttrss
+ttrss_hostname="ttrss.${domain}"

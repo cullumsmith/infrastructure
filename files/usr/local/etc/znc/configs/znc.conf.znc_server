@@ -1,0 +1,55 @@
+LoadModule = cyrusauth saslauthd
+LoadModule = webadmin
+LoadModule = corecaps
+SSLCertFile = ${znc_tls_cert}
+SSLKeyFile = ${znc_tls_key}
+Version = 1.9.0
+
+<Listener web>
+  AllowIRC = false
+  AllowWeb = true
+  IPv4 = true
+  IPv6 = false
+  Host = 127.0.0.1
+  Port = ${znc_http_port}
+  SSL = false
+</Listener>
+
+<Listener irc>
+  AllowIRC = true
+  AllowWeb = false
+  IPv4 = true
+  IPv6 = true
+  Port = ${znc_irc_port}
+  SSL = true
+</Listener>
+
+<User admin>
+  Admin = true
+  Nick = znc_admin
+  AltNick = znc_admin_
+  Ident = znc_admin
+  RealName = ZNC Administrator
+
+  <Pass password>
+    Hash = ::
+    Method = MD5
+    Salt = ::
+  </Pass>
+</User>
+
+<User ${znc_clone_user}>
+  Admin = false
+  Nick = znc_user
+  AltNick = znc_user_
+  Ident = znc_user
+  RealName = ZNC User
+  MaxNetworks = ${znc_max_networks}
+  LoadModule = chansaver
+
+  <Pass password>
+    Hash = ::
+    Method = MD5
+    Salt = ::
+  </Pass>
+</User>

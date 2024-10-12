@@ -5,7 +5,7 @@ krb_server_keyfile = 'FILE:${postgres_keytab}'
 krb_caseins_users = on
 
 ssl = on
-ssl_ca_file = '${ca_cert}'
+ssl_ca_file = '${site_cacert_path}'
 ssl_cert_file = '${postgres_tls_cert}'
 ssl_key_file = '${postgres_tls_key}'
 ssl_min_protocol_version = 'TLSv1.3'

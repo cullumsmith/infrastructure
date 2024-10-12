@@ -1,0 +1,26 @@
+[transport-defaults](!)
+type                       = transport
+bind                       = 0.0.0.0
+local_net                  = 127.0.0.0/8
+local_net                  = 10.0.0.0/8
+local_net                  = 172.16.0.0/12
+local_net                  = 192.168.0.0/16
+external_media_address     = ${asterisk_public_ip}
+external_signaling_address = ${asterisk_public_ip}
+
+[transport-udp](transport-defaults)
+protocol = udp
+
+[transport-tcp](transport-defaults)
+protocol = tcp
+
+[transport-tls](transport-defaults)
+protocol      = tls
+bind          = 0.0.0.0:5061
+method        = tlsv1_2
+cert_file     = ${asterisk_public_tls_cert}
+priv_key_file = ${asterisk_public_tls_key}
+ca_list_file  = ${ca_root_nss_bundle}
+verify_client = no
+verify_server = yes
+allow_reload  = yes

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# PostgreSQL jails need allow.sysvipc=1.
+
 : ${postgres_max_connections:='128'}
 : ${postgres_shared_buffers:="$(( memsize  / 2 ))"}
 : ${postgres_work_mem:="$(( memsize / 4 / ${postgres_max_connections} ))"}
@@ -9,7 +11,7 @@
 
 postgres_user=postgres
 postgres_home=/var/db/postgres
-postgres_data_dir="${postgres_home}/data${postgres_version}"
+postgres_data_dir="${postgres_home}/data${postgresql_version}"
 postgres_tls_cert="${postgres_home}/postgres.crt"
 postgres_tls_key="${postgres_home}/postgres.key"
 postgres_keytab="${keytab_dir}/postgres.keytab"
@@ -67,8 +69,8 @@ service postgresql restart > /dev/null 2>&1 < /dev/null
 psql -c "DO
 \$$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${boxconf_user}') THEN
-    CREATE ROLE \"${boxconf_user}\" WITH LOGIN SUPERUSER;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${boxconf_username}') THEN
+    CREATE ROLE \"${boxconf_username}\" WITH LOGIN SUPERUSER;
   END IF;
 END
 \$$"

@@ -1,0 +1,58 @@
+#!/bin/sh
+
+: ${vaultwarden_username:='s-vaultwarden'}
+: ${vaultwarden_dbname:='vaultwarden'}
+: ${vaultwarden_dbhost:="$postgres_host"}
+: ${vaultwarden_fqdn:="$fqdn"}
+
+vaultwarden_local_username=$nginx_user
+vaultwarden_uid=$(id -u "$vaultwarden_local_username")
+vaultwarden_https_cert="${nginx_conf_dir}/vaultwarden.crt"
+vaultwarden_https_key="${nginx_conf_dir}/vaultwarden.key"
+vaultwarden_home=/usr/local/www/vaultwarden
+vaultwarden_port=8080
+vaultwarden_client_keytab="${keytab_dir}/vaultwarden.client.keytab"
+
+pkg install -y \
+  vaultwarden \
+  nginx
+
+# Create vaultwarden principal and keytab.
+add_principal -nokey -x "containerdn=${robots_basedn}" "$vaultwarden_username"
+
+ktadd -k "$vaultwarden_client_keytab" "$vaultwarden_username"
+chgrp "$vaultwarden_local_username" "$vaultwarden_client_keytab"
+chmod 640 "$vaultwarden_client_keytab"
+
+install_directory -o "$vaultwarden_local_username" -m 0700 "/var/krb5/user/${vaultwarden_uid}"
+ln -snfv "$vaultwarden_client_keytab" "/var/krb5/user/${vaultwarden_uid}/client.keytab"
+
+# Create postgres user and database.
+postgres_create_role "$vaultwarden_dbhost" "$vaultwarden_username"
+postgres_create_database "$vaultwarden_dbhost" "$vaultwarden_dbname" "$vaultwarden_username"
+
+# Generate vaultwarden configuration.
+install_template -m 0644 /usr/local/etc/rc.conf.d/vaultwarden
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$vaultwarden_https_cert"
+install_certificate_key nginx "$vaultwarden_https_key"
+
+# Generate nginx configuration.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Enable and start daemons.
+sysrc -v \
+  vaultwarden_enable=YES \
+  vaultwarden_user="$vaultwarden_local_username" \
+  vaultwarden_group="$vaultwarden_local_username" \
+  nginx_enable=YES \
+
+service nginx restart
+
+# The vaultwarden rc script seems to hold onto open descriptors, which causes
+# the parent boxconf SSH process to never close.
+echo 'Restarting vaultwarden.'
+service vaultwarden restart > /dev/null 2>&1 < /dev/null

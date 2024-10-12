@@ -12,6 +12,7 @@ idm_hostnames=$(echo "$idm_server_list" | awk '{print $1}')
 
 fqdn="${BOXCONF_HOSTNAME}.${domain}"
 : ${smtp_host:="smtp.${domain}"}
+: ${postgres_host:="postgres.${domain}"}
 
 realm=$(echo "$domain" | tr '[:lower:]' '[:upper:]')
 

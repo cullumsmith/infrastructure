@@ -1,0 +1,5 @@
+#!/bin/sh
+
+RSPAMD_HOST="${rspamd_host}.${domain}"
+RSPAMD_PASSWORD="${rspamd_rw_password}"
+RSPAMD_KEY="${rspamd_pubkey}"

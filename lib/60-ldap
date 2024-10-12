@@ -11,7 +11,7 @@ ldap_add(){
       if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
         ldapadd -Q "$@"
       else
-        ldapadd -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+        ldapadd -ZZ -x -D "$boxconf_dn" -w "$boxconf_password" "$@"
       fi
     }
   fi
@@ -25,7 +25,7 @@ ldap_modify(){
     if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
       ldapmodify -Q "$@"
     else
-      ldapmodify -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+      ldapmodify -ZZ -x -D "$boxconf_dn" -w "$boxconf_password" "$@"
     fi
   }
 }
@@ -36,7 +36,7 @@ ldap_delete(){
   if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
     ldapdelete -Q "$@"
   else
-    ldapdelete -ZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+    ldapdelete -ZZ -x -D "$boxconf_dn" -w "$boxconf_password" "$@"
   fi
 }
 
@@ -46,7 +46,7 @@ ldap_search(){
   if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
     ldapsearch -QLLL "$@"
   else
-    ldapsearch -o ldif_wrap=no -LLLZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
+    ldapsearch -o ldif_wrap=no -x -LLLZZ -D "$boxconf_dn" -w "$boxconf_password" "$@"
   fi
 }
 
@@ -85,4 +85,14 @@ ldap_dn_exists(){
   # Return 0 if DN exists, else 1.
   # $1 = DN
   ldap_search -s base -b "$1" dn > /dev/null 2>&1
+}
+
+ldap_passwd(){
+  # Set the userPassword attribute on a DN.
+  # $1 = DN, $2 = password
+  if [ "${BOXCONF_LDAP_SASL:-}" = true ]; then
+    ldappasswd -Q -s "$2" "$1"
+  else
+    ldappasswd -ZZ -x -D "$boxconf_dn" -w "$boxconf_password" -s "$2" "$1"
+  fi
 }

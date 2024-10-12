@@ -1,0 +1,23 @@
+[ttrss]
+user = ${nginx_user}
+group = ${nginx_user}
+
+listen = ${ttrss_fpm_socket}
+
+listen.owner = ${nginx_user}
+listen.group = ${nginx_user}
+listen.mode = 0660
+
+pm = dynamic
+pm.max_children = 5
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+
+chdir = ${ttrss_repo_dir}
+
+catch_workers_output = yes
+decorate_workers_output = no
+
+; ttrss needs git to show its version info.
+env["PATH"] = "/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin"

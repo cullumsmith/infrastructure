@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# PROVIDE: ttrssd
+# REQUIRE: NETWORKING kstart
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name='ttrssd'
+rcvar='ttrssd_enable'
+
+load_rc_config "$name"
+: ${ttrssd_enable='NO'}
+: ${ttrssd_webroot='/usr/local/www/tt-rss'}
+: ${ttrssd_user='www'}
+: ${ttrssd_syslog_priority:='info'}
+: ${ttrssd_syslog_facility:='daemon'}
+
+ttrssd_syslog_tag=$name
+ttrssd_chdir=$ttrssd_webroot
+
+pidfile="/var/run/${name}/${name}.pid"
+procname=/usr/local/bin/php
+
+command=/usr/sbin/daemon
+command_args="-f \
+-s ${ttrssd_syslog_priority} \
+-l ${ttrssd_syslog_facility} \
+-T ${ttrssd_syslog_tag} \
+-p ${pidfile} \
+-t ${name} \
+/usr/local/bin/php \
+-d syslog.ident=${ttrssd_syslog_tag} \
+-d syslog.facility=${ttrssd_syslog_facility} \
+${ttrssd_webroot}/update_daemon2.php"
+
+required_files="${ttrssd_webroot}/config.php"
+start_precmd=ttrssd_prestart
+
+ttrssd_prestart(){
+  install -d -m 0755 -o ${ttrssd_user} "/var/run/${name}"
+}
+
+# ttrss needs git to show its version info.
+PATH='/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin'
+
+run_rc_command "$1"

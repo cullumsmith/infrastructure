@@ -1,0 +1,27 @@
+#!/bin/sh
+
+: ${nsd_zones:=''}
+: ${nsd_threads:='2'}
+
+# nsd_zones='example1 example2'
+# nsd_example1_domain=example.com
+# nsd_example1_slaves='1.2.3.4  5.6.7.8'
+
+nsd_conf_dir=/usr/local/etc/nsd
+nsd_run_dir=/var/run/nsd
+
+# Install packages.
+pkg install -y nsd
+
+# Generate nsd configuration.
+install_template -m 0644 /usr/local/etc/nsd/nsd.conf
+
+# Copy zone files.
+for zone in $nsd_zones; do
+  eval "zone_name=\${nsd_${zone}_zone}"
+  install_file -m 0644 "${nsd_conf_dir}/${zone_name}.zone"
+done
+
+# Enable and start nsd.
+sysrc -v nsd_enable=YES
+service nsd restart

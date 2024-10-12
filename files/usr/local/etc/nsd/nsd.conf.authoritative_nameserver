@@ -1,0 +1,22 @@
+server:
+  server-count: ${nsd_threads}
+  log-only-syslog: yes
+  verbosity: 1
+  hide-version: yes
+  minimal-responses: yes
+  refuse-any: yes
+$(for zone in ${nsd_zones:-}; do
+  eval "zone_name=\${nsd_${zone}_domain}"
+  eval "zone_slaves=\${nsd_${zone}_slaves:-}"
+  echo "zone:
+  name: ${zone_name}
+  zonefile: ${nsd_conf_dir}/${zone_name}.zone"
+  for slave in $zone_slaves; do
+    echo "  notify: ${slave} NOKEY"
+    echo "  provide-xfr: ${slave} NOKEY"
+  done
+done)
+
+remote-control:
+  control-enable: yes
+  control-interface: ${nsd_run_dir}/nsd.ctl

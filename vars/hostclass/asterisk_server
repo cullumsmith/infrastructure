@@ -1,0 +1,10 @@
+#!/bin/sh
+
+asterisk_rtp_port_start=10000
+asterisk_rtp_port_end=10999
+
+allowed_tcp_ports='ssh sip sip-tls'
+allowed_udp_ports="ssh sip sip-tls ${asterisk_rtp_port_start}:${asterisk_rtp_port_end}"
+
+acme=true
+acme_standalone=true

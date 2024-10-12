@@ -1,1 +1,1 @@
-acme ALL=(root) NOPASSWD: /usr/sbin/service postfix reload
+${acme_user} ALL=(root) NOPASSWD: /usr/sbin/service postfix reload

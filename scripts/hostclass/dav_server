@@ -1,0 +1,139 @@
+#!/bin/sh
+
+: ${davical_username:='s-davical'}
+: ${davical_dbname:='davical'}
+: ${davical_dbhost:="$postgres_host"}
+: ${davical_admin_email:="$root_mail_alias"}
+: ${davical_access_role:='dav-access'}
+: ${davical_repo:='https://gitlab.com/davical-project/davical.git'}
+: ${davical_branch:='master'}
+: ${davical_awl_repo:='https://gitlab.com/davical-project/awl.git'}
+: ${davical_awl_branch:='master'}
+
+davical_repo_dir=/usr/local/www/davical
+davical_awl_repo_dir=/usr/local/share/awl
+davical_webroot="${davical_repo_dir}/htdocs"
+
+davical_https_cert="${nginx_conf_dir}/davical.crt"
+davical_https_key="${nginx_conf_dir}/davical.key"
+davical_https_cacert="${nginx_conf_dir}/davical.ca.crt"
+davical_keytab="${keytab_dir}/davical.keytab"
+davical_client_keytab="${keytab_dir}/davical.client.keytab"
+davical_fpm_socket=/var/run/fpm-davical.sock
+
+davical_psql(){
+  postgres_run --host="$davical_dbhost" --dbname="$davical_dbname" "$@"
+}
+
+# Install required packages.
+pkg install -y \
+  git-lite \
+  nginx \
+  php${php_version} \
+  php${php_version}-calendar \
+  php${php_version}-curl \
+  php${php_version}-gettext \
+  php${php_version}-iconv \
+  php${php_version}-ldap \
+  php${php_version}-opcache \
+  php${php_version}-pdo_pgsql \
+  php${php_version}-pgsql \
+  php${php_version}-session \
+  php${php_version}-xml \
+  p5-DBD-Pg \
+  p5-DBI \
+  p5-YAML
+
+# Install davical from git.
+[ -d "$davical_repo_dir" ]     || git clone "$davical_repo"     "$davical_repo_dir"
+[ -d "$davical_awl_repo_dir" ] || git clone "$davical_awl_repo" "$davical_awl_repo_dir"
+
+# Update git repos.
+git -C "$davical_repo_dir"     pull --ff-only
+git -C "$davical_repo_dir"     switch "$davical_branch"
+git -C "$davical_awl_repo_dir" pull --ff-only
+git -C "$davical_awl_repo_dir" switch "$davical_awl_branch"
+
+# Create davical principal and keytab.
+add_principal -nokey -x "containerdn=${robots_basedn}" "$davical_username"
+
+ktadd -k "$davical_client_keytab" "$davical_username"
+chgrp "$nginx_user" "$davical_client_keytab"
+chmod 640 "$davical_client_keytab"
+
+nginx_uid=$(id -u "$nginx_user")
+install_directory -o "$nginx_user" -m 0700 "/var/krb5/user/${nginx_uid}"
+ln -snfv "$davical_client_keytab" "/var/krb5/user/${nginx_uid}/client.keytab"
+
+# Create HTTP principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+
+ktadd -k "$davical_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$davical_keytab"
+chmod 640 "$davical_keytab"
+
+ln -snfv "$davical_keytab" "/var/krb5/user/${nginx_uid}/keytab"
+
+# Generate davical configuration.
+install_template -m 0644 \
+  "${davical_repo_dir}/config/config.php" \
+  "${davical_repo_dir}/config/administration.yml"
+
+# Create postgres user and database.
+postgres_create_role "$davical_dbhost" "$davical_username"
+postgres_create_database "$davical_dbhost" "$davical_dbname"
+
+# Initialize davical database.
+if ! davical_psql -c 'SELECT 1 FROM awl_db_revision'; then
+  davical_psql \
+    -f "${davical_awl_repo_dir}/dba/awl-tables.sql" \
+    -f "${davical_awl_repo_dir}/dba/schema-management.sql" \
+    -f "${davical_repo_dir}/dba/davical.sql"
+
+  PGPASSWORD="$boxconf_password" PGSSLMODE=require \
+    "${davical_repo_dir}/dba/update-davical-database" --debug --nopatch
+
+  davical_psql -f "${davical_repo_dir}/dba/base-data.sql"
+
+  PGPASSWORD="$boxconf_password" PGSSLMODE=require \
+    "${davical_repo_dir}/dba/update-davical-database" --debug
+
+  davical_psql -c "delete from usr where username = 'admin'"
+fi
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$davical_https_cert"
+install_certificate_key nginx "$davical_https_key"
+
+# Generate nginx configuration.
+install_file -m 0644 "${nginx_conf_dir}/fastcgi_params"
+install_template -m 0644 \
+  "${nginx_conf_dir}/nginx.conf" \
+  "${nginx_conf_dir}/vhosts.conf"
+
+# Generate php-fpm configuration.
+install_file -m 0644 \
+  /usr/local/etc/php.ini \
+  /usr/local/etc/php-fpm.conf
+install_template -m 0644 \
+  /usr/local/etc/php-fpm.d/davical.conf
+> /usr/local/etc/php-fpm.d/www.conf
+
+# Enable and start daemons.
+sysrc -v \
+  nginx_enable=YES \
+  php_fpm_enable=YES
+service nginx restart
+service php_fpm restart
+
+# Sync groups from LDAP.
+su -m "$nginx_user" -c "${davical_repo_dir}/scripts/cron-sync-ldap.php ${fqdn}"
+
+# Create cron job for keeping LDAP groups up-to-date.
+install_template -m 0644 /etc/cron.d/davical
+
+# Create access role.
+ldap_add "cn=${davical_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${davical_access_role}
+EOF

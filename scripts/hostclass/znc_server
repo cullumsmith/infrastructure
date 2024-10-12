@@ -1,0 +1,68 @@
+#!/bin/sh
+
+: ${znc_max_networks:='16'}
+: ${znc_access_role:='znc-access'}
+
+znc_http_port=8443
+znc_home=/usr/local/etc/znc
+znc_user=znc
+znc_tls_cert="${znc_home}/znc.crt"
+znc_tls_key="${znc_home}/znc.key"
+znc_clone_user='clone___'
+
+# Install required packages.
+pkg install -y \
+  cyrus-sasl-saslauthd \
+  nginx \
+  znc
+
+# Create ZFS dataset for ZNC configs. 
+create_dataset -o "mountpoint=${znc_home}" "${state_dataset}/znc"
+
+# Set ownership on ZNC dir.
+install_directory -o "$znc_user" -g "$znc_user" -m 0755 "$znc_home"
+
+# Copy TLS certificate for ZNC.
+install_certificate     -o "$znc_user" -g "$znc_user" znc "$znc_tls_cert"
+install_certificate_key -o "$znc_user" -g "$znc_user" znc "$znc_tls_key"
+
+# Generate ZNC configs.
+install_directory -o "$znc_user" -g "$znc_user" -m 0700 \
+  "${znc_home}/configs" \
+  "${znc_home}/moddata" \
+  "${znc_home}/moddata/cyrusauth"
+
+[ -f "${znc_home}/configs/znc.conf" ] \
+  || install_template -o "$znc_user" -g "$znc_user" -m 0600 "${znc_home}/configs/znc.conf"
+
+install_template -o "$znc_user" -g "$znc_user" -m 0600 "${znc_home}/moddata/cyrusauth/.registry"
+
+# Copy saslauthd configuration.
+# TODO: use ldap module for saslauthd.
+install_template -m 0644 \
+  /usr/local/lib/sasl2/znc.conf \
+  /etc/pam.d/znc
+
+# Allow znc to read the saslauthd socket.
+install_directory -m 0750 -o "$saslauthd_user" -g "$znc_user" "$saslauthd_runtime_dir"
+
+# Generate nginx configuration.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+sysrc -v \
+  saslauthd_enable=YES \
+  saslauthd_flags='-a pam' \
+  znc_enable=YES \
+  nginx_enable=YES
+
+service saslauthd restart
+service znc status || service znc start
+service nginx restart
+
+# Create access role.
+ldap_add "cn=${znc_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${znc_access_role}
+EOF

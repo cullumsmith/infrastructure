@@ -1,0 +1,5 @@
+#!/bin/sh
+
+allowed_tcp_ports='ssh http https'
+acme=true
+nginx_public=true

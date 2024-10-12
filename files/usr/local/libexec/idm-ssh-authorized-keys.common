@@ -7,7 +7,7 @@ use Net::LDAP;
 use Net::LDAP::Util qw(escape_filter_value);
 use Authen::SASL;
 
-open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or quit($!);
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or die($!);
 my %config;
 while (<$fh>) {
   chomp;
@@ -18,9 +18,9 @@ while (<$fh>) {
 }
 close($fh);
 
-my $mech   = $config{SASL_MECH} // 'GSSAPI';
-my $uri    = $config{URI}  // quit('URI not specified');
-my $basedn = $config{USERS_BASE} // quit('USERS_BASE not specified');
+my $mech   = $config{SASL_MECH}  // 'GSSAPI';
+my $uri    = $config{URI}        // die("URI not specified\n");
+my $basedn = $config{USERS_BASE} // die("USERS_BASE not specified\n");
 
 @ARGV == 1 or die "usage: $0 USERNAME\n";
 my $username = $ARGV[0];

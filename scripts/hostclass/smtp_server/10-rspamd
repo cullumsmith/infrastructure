@@ -21,8 +21,8 @@ rspamd_redis_sock=/var/run/redis/rspamd.sock
 rspamd_bayes_redis_sock=/var/run/redis/rspamd-bayes.sock
 rspamd_redis_data_dir="${redis_data_dir}/rspamd"
 rspamd_bayes_redis_data_dir="${redis_data_dir}/rspamd-bayes"
-rspamd_tls_cert=/usr/local/etc/nginx/rspamd.crt
-rspamd_tls_key=/usr/local/etc/nginx/rspamd.key
+rspamd_https_cert="${nginx_conf_dir}/rspamd.crt"
+rspamd_https_key="${nginx_conf_dir}/rspamd.key"
 nginx_keytab="${keytab_dir}/nginx.keytab"
 
 pkg install -y \
@@ -97,8 +97,8 @@ chgrp "$nginx_user" "$nginx_keytab"
 chmod 640 "$nginx_keytab"
 
 # Copy TLS certificate for nginx.
-install_certificate     nginx "$rspamd_tls_cert"
-install_certificate_key nginx "$rspamd_tls_key"
+install_certificate     nginx "$rspamd_https_cert"
+install_certificate_key nginx "$rspamd_https_key"
 
 # Enable and start rspamd and nginx.
 sysrc -v \

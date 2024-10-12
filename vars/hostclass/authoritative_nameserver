@@ -1,0 +1,4 @@
+#!/bin/sh
+
+allowed_tcp_ports='ssh domain'
+allowed_udp_ports='domain'

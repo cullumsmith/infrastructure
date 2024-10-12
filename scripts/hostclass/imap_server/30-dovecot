@@ -75,9 +75,10 @@ install_template -m 0644 \
   "${dovecot_conf_dir}/conf.d/90-sieve-extprograms.conf" \
   "${dovecot_conf_dir}/conf.d/auth-ldap.conf.ext"
 
-install_template -m 0550 -o root -g "$dovecot_user" \
+install_template -m 0640 -o root -g "$dovecot_user" "${dovecot_conf_dir}/rspamd.conf.sh"
+install_file -m 0555 \
   "${dovecot_sieve_pipe_bin_dir}/report-spam.sh" \
-  "${dovecot_sieve_pipe_bin_dir}/report-ham.sh" \
+  "${dovecot_sieve_pipe_bin_dir}/report-ham.sh"
 
 install_file -m 0555 \
   "${dovecot_script_dir}/quota-warning.sh"

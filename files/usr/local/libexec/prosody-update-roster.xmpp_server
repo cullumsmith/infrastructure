@@ -1,0 +1,47 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Authen::SASL;
+
+@ARGV == 1 or die "usage: $0 ROLE_NAME\n";
+my $role = $ARGV[0];
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or quit($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech         = $config{SASL_MECH}  // 'GSSAPI';
+my $uri          = $config{URI}        // die("URI not specified\n");
+my $users_basedn = $config{USERS_BASE} // die("USERS_BASE not specified\n");
+my $roles_basedn = $config{ROLES_BASE} // die("ROLES_BASE not specified\n");
+
+my $conn = Net::LDAP->new($ldap_uris, version => '3') or die "$@";
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and die $status->error;
+
+my $search = $conn->search(
+  scope  => 'sub',
+  base   => $users_basedn,
+  filter => "(&(memberOf=cn=$role,$roles_basedn)(mailAddress=*))",
+  attrs  => ['mailAddress', 'cn']);
+
+print "[Internal]\n";
+
+foreach my $entry ($search->entries) {
+  my $jid = ($entry->get_value('mailAddress'))[0];
+  my $cn = ($entry->get_value('cn'))[0] // $jid;
+  print "$jid=$cn\n";
+}
+
+system('prosodyctl reload');

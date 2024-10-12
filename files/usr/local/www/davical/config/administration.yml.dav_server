@@ -1,0 +1,4 @@
+admin_db_user: ${boxconf_username}
+admin_db_host: ${davical_dbhost}
+admin_db_name: ${davical_dbname}
+app_db_user: '"${davical_username}"'

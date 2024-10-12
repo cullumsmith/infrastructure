@@ -1,0 +1,8 @@
+#!/bin/sh
+
+coturn_listen_port=3478
+coturn_min_port=49152
+coturn_max_port=65535
+
+allowed_tcp_ports="ssh ${coturn_listen_port}"
+allowed_udp_ports="${coturn_listen_port} ${coturn_min_port}:${coturn_max_port}"
