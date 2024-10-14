@@ -1,0 +1,7 @@
+ldap_servers: ${ldaps_uri}
+ldap_use_sasl: yes
+ldap_mech: PLAIN
+ldap_auth_method: fastbind
+ldap_group_search_base: ${users_basedn}
+ldap_group_match_method: filter
+ldap_group_filter: (&(uid=%u)(memberOf=cn=${znc_access_role},${roles_basedn}))

@@ -12,5 +12,3 @@ sasl_mech GSSAPI
 nss_min_uid ${nslcd_min_uid}
 nss_initgroups_ignoreusers ALLLOCAL
 nss_nested_groups yes
-
-pam_authz_search (&(uid=\$username)(memberOf=cn=\$service-access,${roles_basedn}))

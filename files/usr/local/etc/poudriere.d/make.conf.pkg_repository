@@ -56,6 +56,7 @@ net_openldap26-server_UNSET=SMBPWD
 print_cups-filters_UNSET=COLORD
 print_freetype2_SET=LCD_FILTERING
 print_freetype2_UNSET=LCD_RENDERING
+security_cyrus-sasl2-saslauthd_SET=OPENLDAP
 security_cyrus-sasl2-saslauthd_UNSET=BDB1
 security_heimdal-devel_SET=LDAP
 security_heimdal-devel_UNSET=BDB

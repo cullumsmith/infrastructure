@@ -1,0 +1,8 @@
+SystemGroup ${cups_admin_group}
+
+ServerKeychain ${cups_tls_dir}
+CreateSelfSignedCerts no
+
+AccessLog syslog
+ErrorLog syslog
+PageLog syslog

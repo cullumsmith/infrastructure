@@ -41,6 +41,7 @@ install_template -o "$znc_user" -g "$znc_user" -m 0600 "${znc_home}/moddata/cyru
 # TODO: use ldap module for saslauthd.
 install_template -m 0644 \
   /usr/local/lib/sasl2/znc.conf \
+  /usr/local/etc/saslauthd.conf \
   /etc/pam.d/znc
 
 # Allow znc to read the saslauthd socket.
@@ -53,7 +54,7 @@ install_template -m 0644 \
 
 sysrc -v \
   saslauthd_enable=YES \
-  saslauthd_flags='-a pam' \
+  saslauthd_flags='-a ldap' \
   znc_enable=YES \
   nginx_enable=YES
 

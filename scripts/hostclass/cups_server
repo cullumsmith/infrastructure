@@ -1,0 +1,25 @@
+#!/bin/sh
+
+: ${cups_admin_group='sysadmins'}
+: ${cups_server_admin="${cups_admin_group}@${email_domain}"}
+
+cups_user=cups
+cups_conf_dir=/usr/local/etc/cups
+cups_tls_dir=${cups_conf_dir}/ssl
+cups_tls_cert="${cups_tls_dir}/${fqdn}.crt"
+cups_tls_key="${cups_tls_dir}/${fqdn}.key"
+
+# Install required packages.
+pkg install -y cups cups-filters
+
+# Copy TLS certificate for CUPS.
+install_certificate     -g "$cups_user" cups "$cups_tls_cert"
+install_certificate_key -g "$cups_user" cups "$cups_tls_key"
+
+# Copy CUPS configuration.
+install_template -o root -g "$cups_user" -m 0640 \
+  "${cups_conf_dir}/cupsd.conf" \
+  "${cups_conf_dir}/cups-files.conf"
+
+sysrc -v cupsd_enable=YES
+service cupsd restart
