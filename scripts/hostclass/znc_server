@@ -38,11 +38,9 @@ install_directory -o "$znc_user" -g "$znc_user" -m 0700 \
 install_template -o "$znc_user" -g "$znc_user" -m 0600 "${znc_home}/moddata/cyrusauth/.registry"
 
 # Copy saslauthd configuration.
-# TODO: use ldap module for saslauthd.
 install_template -m 0644 \
   /usr/local/lib/sasl2/znc.conf \
-  /usr/local/etc/saslauthd.conf \
-  /etc/pam.d/znc
+  /usr/local/etc/saslauthd.conf
 
 # Allow znc to read the saslauthd socket.
 install_directory -m 0750 -o "$saslauthd_user" -g "$znc_user" "$saslauthd_runtime_dir"

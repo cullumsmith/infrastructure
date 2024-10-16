@@ -43,5 +43,5 @@ sysrc -v gssd_env="KRB5_KTNAME=${keytab_dir}/host.keytab"
 install_template -m 0644 /etc/exports
 
 for service in gssd nfsuserd mountd nfsd; do
-  service "$service" restart
+  service "$service" status || service "$service" start
 done

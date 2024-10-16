@@ -27,7 +27,7 @@ install_file -m 0644 /etc/auto_master
 install_file -m 0555 /usr/local/libexec/idm-autofs-map
 ln -snfv /usr/local/libexec/idm-autofs-map /etc/autofs/include
 
-# No nfscbd: causes kernel panics on FreeBSD 14.1
+# TODO: nfscbd causes kernel panics on FreeBSD 14.1, disabled for now.
 for service in gssd nfsclient nfsuserd automount automountd autounmountd; do
   service "$service" status || service "$service" start
 done
