@@ -6,6 +6,8 @@
 : ${sddm_min_uid:='10000'}
 : ${sddm_max_uid:='19999'}
 
+# TODO: kill lingering processes after logout (chrome, baloo-search, etc).
+
 if [ "${enable_idm:-}" = false ]; then
   desktop_access_role=operator
 else
