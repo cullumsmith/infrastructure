@@ -1,0 +1,2 @@
+MAILTO=root
+0 3 * * * root /usr/local/libexec/invidious-update -q ${invidious_local_username} ${invidious_repo_dir}

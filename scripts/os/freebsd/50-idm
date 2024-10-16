@@ -20,7 +20,8 @@ pkg install -y \
 # Configure PAM/NSS integration.
 install_file -m 0644 \
   /etc/nsswitch.conf \
-  /etc/pam.d/sshd
+  /etc/pam.d/sshd \
+  /etc/pam.d/sudo
 
 install_template -m 0644 \
   /etc/krb5.conf \
@@ -114,7 +115,11 @@ install_file -m 0555 \
   /usr/local/libexec/idm-ssh-authorized-keys
 
 # Create user for running SSH AuthorizedKeysCommand.
-add_user -u "$ssh_authzkeys_uid" -g "$host_keytab_groupname" "$ssh_authzkeys_username"
+add_user \
+  -u "$ssh_authzkeys_uid" \
+  -g "$host_keytab_groupname" \
+  -d /nonexistent \
+  "$ssh_authzkeys_username"
 
 # Enable and start nslcd/nscd.
 sysrc -v \

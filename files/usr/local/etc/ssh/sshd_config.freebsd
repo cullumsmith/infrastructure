@@ -13,4 +13,6 @@ GSSAPICleanupCredentials yes
 UsePAM yes
 UseDNS no
 
+# TODO: require group to login?
+
 Subsystem	sftp	/usr/local/libexec/sftp-server

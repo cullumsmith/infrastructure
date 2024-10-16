@@ -1,0 +1,8 @@
+#!/bin/sh
+
+allowed_tcp_ports='ssh 6789 8080 8443 8843 8880'
+allowed_udp_ports='3478 10001'
+
+redirect_tcp_ports='
+https 8443
+http 8880'

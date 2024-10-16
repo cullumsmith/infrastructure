@@ -1,0 +1,8 @@
+polkit.addRule(function (action, subject) {
+  if ((action.id == "org.freedesktop.consolekit.system.restart" ||
+      action.id == "org.freedesktop.consolekit.system.stop" ||
+      action.id == "org.freedesktop.consolekit.system.suspend")
+      && subject.isInGroup("${desktop_access_role}")) {
+    return polkit.Result.YES;
+  }
+});

@@ -10,8 +10,8 @@ OPTIONS_SET=GSSAPI GSSAPI_MIT MIT NONFREE LIBEDIT
 # Per-port options
 databases_akonadi_SET=MYSQL
 databases_luadbi_SET=PGSQL
-databases_postgresql${postgresql_version}-client_SET=PAM
-databases_postgresql${postgresql_version}-server_SET=PAM
+databases_postgresql${postgresql_version}-client_SET=PAM LDAP
+databases_postgresql${postgresql_version}-server_SET=PAM LDAP
 devel_apr1_SET=LDAP
 devel_gitolite_SET=GITUSER
 devel_kio-extras_UNSET=AFC

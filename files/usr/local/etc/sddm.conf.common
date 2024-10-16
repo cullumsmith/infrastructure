@@ -1,0 +1,9 @@
+[General]
+DisplayServer = x11
+
+[Wayland]
+SessionDir = /dev/null
+
+[Users]
+MinimumUid = ${sddm_min_uid}
+MaximumUid = ${sddm_max_uid}

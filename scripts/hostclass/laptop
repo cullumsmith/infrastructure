@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Enable thinkpad hardware features.
+load_kernel_module acpi_ibm
+set_loader_conf acpi_ibm_load=YES
+
 # Set USB power savings
 usbconfig | awk -F: '{ print $1 }' | xargs -rtn1 -I% usbconfig -d % power_save ||:
 install_file /etc/rc.local
@@ -14,6 +18,19 @@ load_kernel_module if_urndis
 set_loader_conf if_urndis_load=YES
 sysrc -v ifconfig_ue0='DHCP'
 
+# Install laptop packages.
+pkg install -y networkmgr
+
+# Misc power saving stuff.
+set_loader_conf \
+  vfs.zfs.txg.timeout=10 \
+
+if [ "$graphics_type" = intel ]; then
+  set_loader_conf \
+    compat.linuxkpi.i915_disable_power_well=1 \
+    compat.linuxkpi.i915_enable_dc=2
+fi
+
 case ${wireless_type:-} in
   iwm*)
     set_loader_conf \
@@ -27,6 +44,9 @@ case ${wireless_type:-} in
     sysrc -v wlans_iwm0='wlan0'
     ;;
 esac
+
+# Enable power saving for sound card.
+set_sysctl hw.snd.latency=7
 
 # Configure wireless card.
 sysrc -v \

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# This file contains various environment variables and hacks to accomodate
+# applications that don't play well with NFS-mounted home directories.
+
+if [ "$(id -u)" -lt 1000 ]; then
+  return 0
+fi
+
+LOCAL_HOME="/usr/local/home/${USER}"
+
+export PYTHONUSERBASE="${LOCAL_HOME}/.local"
+export npm_config_cache="${LOCAL_HOME}/.npm"
+export CARGO_HOME="${LOCAL_HOME}/.cargo"
+export GOPATH="${LOCAL_HOME}/go"
+
+# firefox
+mkdir -p "${LOCAL_HOME}/.mozilla"
+ln -sfn "${LOCAL_HOME}/.mozilla" "${HOME}/.mozilla"
+
+# kwallet
+# The kwallet PAM module hard-codes ~/.local/share/kwalletd, but kwallet itself
+# honors XDG_DATA_HOME! So we symlink from the local disk back into NFS. Gross!
+mkdir -p "${LOCAL_HOME}/.local/share/kwalletd"
+ln -sfn "${HOME}/.local/share/kwalletd/kwallet.salt" "${LOCAL_HOME}/.local/share/kwalletd/kdewallet.salt"

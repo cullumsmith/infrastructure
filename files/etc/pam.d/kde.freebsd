@@ -1,0 +1,2 @@
+auth     required    /usr/local/lib/security/pam_krb5.so try_first_pass
+account  required    /usr/local/lib/security/pam_krb5.so

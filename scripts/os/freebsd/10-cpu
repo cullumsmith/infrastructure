@@ -19,6 +19,8 @@ sysrc -v \
   performance_cx_lowest="$cx_lowest" \
   economy_cx_lowest="$cx_lowest"
 
+set_loader_conf machdep.hwpstate_pkg_ctrl=0
+
 # Set energy/performance preference for Intel P-states.
 # 0 = most performance, 100 = most power savings
 if sysctl -n dev.hwpstate_intel.0.epp >/dev/null 2>&1; then

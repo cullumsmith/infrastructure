@@ -1,4 +1,5 @@
 *.err;kern.warning;auth.notice;mail.crit		/dev/console
+!-devd
 *.info;authpriv.none;auth.none;cron.none;kern.debug;mail.crit;news.err	/var/log/messages
 security.*					/var/log/security
 auth.info;authpriv.info				/var/log/auth.log
@@ -7,6 +8,8 @@ cron.*						/var/log/cron
 !-devd
 *.=debug					/var/log/debug.log
 *.emerg						*
+!devd
+*.>=info          /var/log/devd.log
 !*
 include						/etc/syslog.d
 include						/usr/local/etc/syslog.d

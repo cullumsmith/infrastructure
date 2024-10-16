@@ -58,7 +58,7 @@ tcp_buffer_size=2097152  # suitable for 1 GigE
 
 nginx_nofile=2048
 nginx_worker_connections=768
-if (( nproc > 4 )); then
+if [ "$nproc" -gt 4 ]; then
   nginx_worker_processes=4
 else
   nginx_worker_processes=$nproc

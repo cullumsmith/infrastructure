@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# Note: does not work. inv_sig_helper does not build on FreeBSD...
+
+# Generate using: https://github.com/iv-org/youtube-trusted-session-generator
+: ${invidious_po_token:='changeme'}
+: ${invidious_visitor_data:='changeme'}
+
+: ${invidious_username:='s-invidious'}
+: ${invidious_password:='changeme'}
+: ${invidious_hmac_key:='changemeeeeeeeeeeee'}
+: ${invidious_dbname:='invidious'}
+: ${invidious_dbhost:="$postgres_host"}
+: ${invidious_fqdn:="$fqdn"}
+: ${invidious_repo='https://github.com/iv-org/invidious'}
+: ${invidious_branch='master'}
+
+invidious_dn="uid=${invidious_username},${robots_basedn}"
+invidious_local_username=$nginx_user
+invidious_home=/usr/local/invidious
+invidious_port=8080
+invidious_repo_dir="${invidious_home}/invidious.git"
+invidious_https_cert="${nginx_conf_dir}/invidious.crt"
+invidious_https_key="${nginx_conf_dir}/invidious.key"
+invidious_signature_sock=/tmp/inv_sig_helper.sock
+
+# Install required packages.
+pkg install -y \
+  ca_root_nss \
+  git \
+  crystal \
+  shards \
+  sqlite3 \
+  nginx \
+  postgresql${postgresql_version}-client \
+  rust
+
+# Create invidious user account.
+ldap_add "$invidious_dn" <<EOF
+objectClass: account
+objectClass: simpleSecurityObject
+uid: ${invidious_username}
+userPassword: {SSHA-512}
+EOF
+
+# Set LDAP password for invidious user.
+ldap_passwd "$invidious_dn" "$invidious_password"
+
+# Create postgres user and database.
+postgres_create_role "$invidious_dbhost" "$invidious_username"
+postgres_create_database "$invidious_dbhost" "$invidious_dbname" "$invidious_username"
+
+# Clone git repo.
+install_directory -o "$invidious_local_username" -g "$invidious_local_username" -m 0775 "$invidious_home"
+[ -d "${invidious_repo_dir}" ] || su -m "$invidious_local_username" -c "git clone ${invidious_repo} ${invidious_repo_dir}"
+
+# Update git repo.
+su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} pull --ff-only"
+su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} switch ${invidious_branch}"
+
+# Build invidious.
+( cd "$invidious_repo_dir"
+  su -m "$invidious_local_username" -c "HOME=${invidious_home} shards install --production"
+  su -m "$invidious_local_username" -c "HOME=${invidious_home} crystal build src/invidious.cr --release"
+)
+
+# Copy invidious configuration.
+install_template -o "$invidious_local_username" -g "$invidious_local_username" -m 0600 "${invidious_repo_dir}/config/config.yml"
+
+# Copy invidious rc script.
+install_file -m 0555 /usr/local/etc/rc.d/invidious
+
+# Copy TLS certificate for nginx.
+install_certificate     invidious "$invidious_https_cert"
+install_certificate_key invidious "$invidious_https_key"
+
+# Generate nginx configuration.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Start daemons.
+sysrc -v \
+  invidious_enable=YES \
+  nginx_enable=YES
+service invidious restart
+service nginx restart
+
+# Copy invidous auto-update script.
+install_file -m 0555 /usr/local/libexec/invidious-update
+install_template -m 0644 /etc/cron.d/invidious

@@ -8,17 +8,16 @@
 : ${postgres_maintenance_work_mem:="$(( memsize / 20 ))"}
 : ${postgres_temp_buffers:="$((32 * 1024 * 1024))"}
 : ${postgres_effective_cache_size:="$(( memsize * 3 / 4 ))"}
+: ${postgres_ldap_username:='s-postgresql'}
+: ${postgres_ldap_password:='changeme'}
 
+postgres_dn="uid=${postgres_ldap_username},${robots_basedn}"
 postgres_user=postgres
 postgres_home=/var/db/postgres
 postgres_data_dir="${postgres_home}/data${postgresql_version}"
 postgres_tls_cert="${postgres_home}/postgres.crt"
 postgres_tls_key="${postgres_home}/postgres.key"
 postgres_keytab="${keytab_dir}/postgres.keytab"
-
-psql(){
-  command psql --quiet --no-align --echo-all --tuples-only --no-password --username=postgres --dbname=postgres "$@"
-}
 
 pkg install -y postgresql${postgresql_version}-server
 
@@ -46,8 +45,16 @@ postgres_uid=$(id -u "$postgres_user")
 install_directory -o "$postgres_user" -m 0700 "/var/krb5/user/${postgres_uid}"
 ln -snfv "$postgres_keytab" "/var/krb5/user/${postgres_uid}/keytab"
 
-# Create postgresql PAM service.
-install_template -m 0644 /etc/pam.d/postgresql
+# Create PostgreSQL LDAP user account.
+ldap_add "$postgres_dn" <<EOF
+objectClass: account
+objectClass: simpleSecurityObject
+uid: ${postgres_ldap_username}
+userPassword: {SSHA-512}
+EOF
+
+# Set LDAP password for PostgreSQL user.
+ldap_passwd "$postgres_dn" "$postgres_ldap_password"
 
 # Copy TLS certificate for postgres.
 install_certificate     -m 0644 -o root -g "$postgres_user" postgres "$postgres_tls_cert"
@@ -63,10 +70,11 @@ install_file -m 0600 -o "$postgres_user" -g "$postgres_user" \
 # The postgresql rc script seems to hold onto open descriptors, which causes
 # the parent boxconf SSH process to never close.
 echo 'Restarting postgresql.'
-service postgresql restart > /dev/null 2>&1 < /dev/null
+service postgresql restart > /dev/null 2>&1 < /dev/null || die 'failed to start postgresql'
 
 # Create boxconf admin user.
-psql -c "DO
+psql --quiet --no-align --echo-all --tuples-only --no-password --username=postgres --dbname=postgres -c \
+"DO
 \$$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${boxconf_username}') THEN
@@ -74,4 +82,3 @@ BEGIN
   END IF;
 END
 \$$"
-

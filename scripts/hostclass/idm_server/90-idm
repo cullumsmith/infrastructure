@@ -93,11 +93,11 @@ install_file -m 0555 \
 # Create the boxconf administrative user.
 if is_primary_server && ! ldap_dn_exists "$boxconf_dn"; then
   ldap_add "$boxconf_dn" <<EOF
-objectClass: krbPrincipal
+objectClass: account
 objectClass: simpleSecurityObject
-krbPrincipalName: ${boxconf_username}@${realm}
+uid: ${boxconf_username}
 userPassword: {SASL}${boxconf_username}@${realm}
 EOF
 
-  kadmin.local change_password -pw "$boxconf_password" "$boxconf_username"
+  kadmin.local add_principal -x "dn=${boxconf_dn}" -pw "$boxconf_password" "$boxconf_username"
 fi

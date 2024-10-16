@@ -9,6 +9,8 @@
 : ${poudriere_ccache_size:='50.0G'}
 : ${poudriere_default_versions:='imagemagick=7-nox11'}
 
+poudriere_https_cert="${nginx_conf_dir}/poudriere.crt"
+poudriere_https_key="${nginx_conf_dir}/poudriere.key"
 poudriere_data_dir=/usr/local/poudriere
 poudriere_conf_dir=/usr/local/etc/poudriere.d
 poudriere_patch_dir="${poudriere_conf_dir}/patches"
@@ -42,10 +44,15 @@ install_directory -m 0755 /usr/ports/distfiles
 install_directory -m 0755 -o nobody -g nobody "${poudriere_data_dir}/ccache"
 install_template -m 0644 -o nobody -g nobody "${poudriere_data_dir}/ccache/ccache.conf"
 
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$poudriere_https_cert"
+install_certificate_key nginx "$poudriere_https_key"
+
 # Configure and enable nginx to serve the packages.
 install_template -m 0644 \
   /usr/local/etc/nginx/nginx.conf \
   /usr/local/etc/nginx/vhosts.conf
+
 sysrc -v nginx_enable=YES
 service nginx restart
 
@@ -59,7 +66,8 @@ poudriere ports -v -u -p latest
 install_directory -m 0755 "$poudriere_patch_dir"
 rm -f "${poudriere_patch_dir}/"*.patch
 install_file -m 0644 \
-  "${poudriere_patch_dir}/postgresql16-gssapi.patch"
+  "${poudriere_patch_dir}/postgresql16-gssapi.patch" \
+  "${poudriere_patch_dir}/chromium-gssapi.patch"
 
 for patch in "${poudriere_patch_dir}/"*.patch; do
   [ -f "$patch" ] || continue

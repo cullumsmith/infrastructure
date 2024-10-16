@@ -1,0 +1,2 @@
+MAILTO=root
+@daily ${freeradius_user} find ${freeradius_tlscache_dir} -mindepth 1 -mtime +2 -exec rm -vf {} +

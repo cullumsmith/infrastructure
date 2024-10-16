@@ -16,6 +16,9 @@ pkg install -y cups cups-filters
 install_certificate     -g "$cups_user" cups "$cups_tls_cert"
 install_certificate_key -g "$cups_user" cups "$cups_tls_key"
 
+# Generate CUPS pam configuration.
+install_file -m 0644 /etc/pam.d/cups
+
 # Copy CUPS configuration.
 install_template -o root -g "$cups_user" -m 0640 \
   "${cups_conf_dir}/cupsd.conf" \

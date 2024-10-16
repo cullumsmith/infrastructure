@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -e
+
+uid=$(id -u "$PAM_USER")
+
+if [ "$uid" -ge 1000 ]; then
+  install -m 0755 -d /usr/local/home
+  install -o "$uid" -g "$uid" -m 0700 -d "/usr/local/home/${PAM_USER}"
+fi

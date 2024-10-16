@@ -1,0 +1,54 @@
+--- www/chromium/Makefile	2024-10-14 22:31:01.044557000 -0400
++++ www/chromium/Makefile	2024-10-14 22:37:11.304192000 -0400
+@@ -144,19 +144,20 @@
+ SUB_FILES=	chromium-browser.desktop chrome
+ SUB_LIST+=	COMMENT="${COMMENT}"
+ 
+-OPTIONS_DEFINE=		CODECS CUPS DEBUG DRIVER KERBEROS LTO PIPEWIRE TEST WIDEVINE
+-OPTIONS_DEFAULT=	CODECS CUPS DRIVER KERBEROS PIPEWIRE SNDIO ALSA PULSEAUDIO
++OPTIONS_DEFINE=		CODECS CUPS DEBUG DRIVER LTO PIPEWIRE TEST WIDEVINE
++OPTIONS_DEFAULT=	CODECS CUPS DRIVER KERBEROS PIPEWIRE SNDIO ALSA PULSEAUDIO GSSAPI_MIT
+ OPTIONS_EXCLUDE_aarch64=LTO
+ OPTIONS_GROUP=		AUDIO
+ OPTIONS_GROUP_AUDIO=	ALSA PULSEAUDIO SNDIO
+-OPTIONS_RADIO=		KERBEROS
+-OPTIONS_RADIO_KERBEROS=	HEIMDAL HEIMDAL_BASE MIT
++OPTIONS_SINGLE=		KERBEROS
++OPTIONS_SINGLE_KERBEROS=GSSAPI_NONE GSSAPI_BASE GSSAPI_HEIMDAL GSSAPI_MIT
+ OPTIONS_SUB=		yes
+ CODECS_DESC=		Compile and enable patented codecs like H.264
+ DRIVER_DESC=		Install chromedriver
+-HEIMDAL_BASE_DESC=	Heimdal Kerberos (base)
+-HEIMDAL_DESC=		Heimdal Kerberos (security/heimdal)
+-MIT_DESC=		MIT Kerberos (security/krb5)
++GSSAPI_NONE_DESC=	Build without GSSAPI support
++GSSAPI_BASE_DESC=	Use GSSAPI from base
++GSSAPI_HEIMDAL_DESC=	Use Heimdal GSSAPI from security/heimdal
++GSSAPI_MIT_DESC=	Use MIT GSSAPI from security/krb5
+ 
+ ALSA_LIB_DEPENDS=	libasound.so:audio/alsa-lib
+ ALSA_RUN_DEPENDS=	${LOCALBASE}/lib/alsa-lib/libasound_module_pcm_oss.so:audio/alsa-plugins \
+@@ -189,16 +190,19 @@
+ 
+ DRIVER_MAKE_ARGS=	chromedriver
+ 
+-HEIMDAL_LIB_DEPENDS=	libkrb.so.26:security/heimdal
+-KERBEROS_VARS=		GN_ARGS+=use_kerberos=true
+-KERBEROS_VARS_OFF=	GN_ARGS+=use_kerberos=false
++GSSAPI_BASE_USES=	gssapi
++GSSAPI_HEIMDAL_USES=	gssapi:heimdal
++GSSAPI_MIT_USES=	gssapi:mit
++GSSAPI_BASE_VARS=	GN_ARGS+=use_kerberos=true
++GSSAPI_MIT_VARS=	GN_ARGS+=use_kerberos=true
++GSSAPI_HEIMDAL_VARS=	GN_ARGS+=use_kerberos=true
++GSSAPI_NONE_VARS=	GN_ARGS+=use_kerberos=false
+ 
+ LTO_VARS=		GN_ARGS+=use_thin_lto=true \
+ 			GN_ARGS+=thin_lto_enable_optimizations=true \
+ 			WANTSPACE="14 GB"
+ LTO_VARS_OFF=		GN_ARGS+=use_thin_lto=false
+ 
+-MIT_LIB_DEPENDS=	libkrb.so.3:security/krb5
+ 
+ PIPEWIRE_DESC=		Screen capture via PipeWire
+ PIPEWIRE_LIB_DEPENDS=	libpipewire-0.3.so:multimedia/pipewire

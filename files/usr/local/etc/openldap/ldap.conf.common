@@ -12,3 +12,4 @@ USERS_BASE     ${users_basedn}
 GROUPS_BASE    ${groups_basedn}
 HOSTS_BASE     ${hosts_basedn}
 ROLES_BASE     ${roles_basedn}
+AUTOMOUNT_BASE ${automount_basedn}

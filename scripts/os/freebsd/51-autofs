@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# NFS mounts are not supported within jails.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ] || \
+   [ "$BOXCONF_HOSTCLASS" = nfs_server ] || \
+   [ "${enable_idm:-}" = false ] || \
+   [ "${enable_autofs:-}" = false ]; then
+  return 0
+fi
+
+: ${nfsuserd_cache_size:='256'}
+: ${nfsuserd_num_servers:='4'}
+: ${nfsuserd_cache_timeout:='1'}
+
+sysrc -v \
+  nfsuserd_enable=YES \
+  nfsuserd_flags="-usermax ${nfsuserd_cache_size} -usertimeout ${nfsuserd_cache_timeout} ${nfsuserd_num_servers}" \
+  gssd_enable=YES \
+  gssd_flags='-h -s /tmp' \
+  gssd_env="KRB5_KTNAME=${keytab_dir}/host.keytab"
+  nfs_client_enable=YES \
+  nfscbd_enable=NO \
+  nfscbd_flags="-p ${nfscbd_port} -P host" \
+  autofs_enable=YES
+
+install_file -m 0644 /etc/auto_master
+install_file -m 0555 /usr/local/libexec/idm-autofs-map
+ln -snfv /usr/local/libexec/idm-autofs-map /etc/autofs/include
+
+# No nfscbd: causes kernel panics on FreeBSD 14.1
+for service in gssd nfsclient nfsuserd automount automountd autounmountd; do
+  service "$service" status || service "$service" start
+done

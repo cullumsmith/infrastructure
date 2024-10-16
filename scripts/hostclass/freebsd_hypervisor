@@ -24,6 +24,9 @@ hypervisor_jail_bpf_ruleset=1000
 # Required for vnet jails.
 set_sysctl net.link.tap.up_on_open=1
 
+# Required to for kerberized NFS within jails.
+sysrc -v kld_list+='kgssapi kgssapi_krb5'
+
 # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=262189
 set_sysctl vfs.zfs.vol.mode=2
 

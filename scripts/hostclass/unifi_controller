@@ -1,0 +1,40 @@
+#!/bin/sh
+
+unifi_user=unifi
+unifi_home=/usr/local/share/java/unifi
+unifi_https_cert="${unifi_home}/data/unifi.crt"
+unifi_https_key="${unifi_home}/data/unifi.key"
+unifi_keystore="${unifi_home}/data/keystore"
+
+# Install required packages.
+pkg install -y unifi8
+
+# Create ZFS dataset for unifi data.
+create_dataset -o "mountpoint=${unifi_home}/data" "${state_dataset}/unifi"
+
+# Set ownership on unifi data dir.
+install_directory -o "$unifi_user" -g "$unifi_user" -m 0700 "${unifi_home}/data"
+
+# Copy TLS certificate for unifi.
+install_certificate             -g "$unifi_user" unifi "$unifi_https_cert"
+install_certificate_key -m 0640 -g "$unifi_user" unifi "$unifi_https_key"
+
+# Enable unifi.
+sysrc -v unifi_enable=YES
+
+# Stop the unifi service.
+service unifi status && service unifi stop
+
+# Add HTTPS certificate to unifi keystore.
+[ -f "${unifi_home}/data/keystore" ] || install -Cv -o "$unifi_user" -g "$unifi_user" -m 0600 /dev/null "${unifi_home}/data/keystore"
+su -m "$unifi_user" -c "java -jar ${unifi_home}/lib/ace.jar import_key_cert ${unifi_https_key} ${unifi_https_cert} ${site_cacert_path}"
+
+# Disable analytics.
+install_directory -m 0640 -o "$unifi_user" -g "$unifi_user" \
+  "${unifi_home}/data/sites" \
+  "${unifi_home}/data/sites/default"
+grep -xFq 'config.system_cfg.1=system.analytics.anonymous=disabled' "${unifi_home}/data/sites/default/config.properties" \
+  || echo 'config.system_cfg.1=system.analytics.anonymous=disabled' | tee -a "${unifi_home}/data/sites/default/config.properties"
+
+# Start unifi.
+service unifi start

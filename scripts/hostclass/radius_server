@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# radius_clients=client1
+# radius_client1_address='192.168.1.0/24'
+# radius_client1_secret='s3cret'
+
+: ${radius_clients=''}
+
+freeradius_user=freeradius
+freeradius_conf_dir=/usr/local/etc/raddb
+freeradius_tls_cert="${freeradius_conf_dir}/freeradius.crt"
+freeradius_tls_key="${freeradius_conf_dir}/freeradius.key"
+freeradius_cache_dir=/var/cache/radiusd
+freeradius_tlscache_dir="${freeradius_cache_dir}/tlscache"
+
+# Install packages.
+pkg install -y freeradius3
+
+freeradius_version=$(pkg info freeradius3 | awk '$1 == "Version" { print $3 }')
+
+# Generate configuration.
+install_directory -m 0755 "${freeradius_conf_dir}/certs"
+install_template -o "$freeradius_user" -g "$freeradius_user" -m 0640 \
+  "${freeradius_conf_dir}/radiusd.conf" \
+  "${freeradius_conf_dir}/mods-available/eap"
+rm -f "${freeradius_conf_dir}/sites-enabled/inner-tunnel"
+
+# Copy TLS certificate for freeradius.
+install_certificate     -g "$freeradius_user" freeradius "$freeradius_tls_cert"
+install_certificate_key -g "$freeradius_user" freeradius "$freeradius_tls_key"
+
+# Generate clients.conf.
+install -Cv -o "$freeradius_user" -g "$freeradius_user" -m 0660 /dev/null "${freeradius_conf_dir}/clients.conf"
+for client_name in $radius_clients; do
+  eval "client_address=\$radius_${client_name}_address"
+  eval "client_secret=\$radius_${client_name}_secret"
+  cat <<EOF >> "${freeradius_conf_dir}/clients.conf"
+client ${client_name} {
+  ipaddr = ${client_address}
+  secret = ${client_secret}
+}
+
+EOF
+done
+
+# Create cache directories.
+install_directory -o "$freeradius_user" -g "$freeradius_user" -m 700 \
+  "$freeradius_cache_dir" \
+  "$freeradius_tlscache_dir"
+
+# Clean up tlscache with cron job.
+install_template -m 0644 /etc/cron.d/freeradius
+
+# Enable and start daemons.
+sysrc -v radiusd_enable=YES
+service radiusd restart

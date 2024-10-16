@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# PROVIDE: invidious
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=invidious
+rcvar=invidious_enable
+
+load_rc_config "$name"
+
+: ${invidious_enable:='NO'}
+: ${invidious_dir:='/usr/local/invidious/invidious.git'}
+: ${invidious_user='www'}
+: ${invidious_syslog_priority:='info'}
+: ${invidious_syslog_facility:='daemon'}
+
+invidious_syslog_tag=invidious
+
+invidious_chdir=$invidious_dir
+pidfile=/var/run/invidious/invidious.pid
+command=/usr/sbin/daemon
+
+command_args="-f \
+-s ${invidious_syslog_priority} \
+-l ${invidious_syslog_facility} \
+-T ${invidious_syslog_tag} \
+-p ${pidfile} \
+-t invidious \
+${invidious_dir}/invidious"
+
+procname="${invidious_dir}/invidious"
+start_precmd=invidious_prestart
+
+invidious_prestart(){
+  install -d -m 0755 -o ${invidious_user} /var/run/invidious
+}
+
+run_rc_command "$1"

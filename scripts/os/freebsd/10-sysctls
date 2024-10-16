@@ -70,6 +70,8 @@ if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
     security.bsd.see_other_gids="$see_other_uids" \
     security.bsd.see_other_uids="$see_other_uids" \
     security.bsd.unprivileged_read_msgbuf=0 \
+    vfs.nfsd.enable_locallocks=0 \
+    vfs.nfsd.issue_delegations=1 \
     vfs.zfs.min_auto_ashift=12
 
   # FreeBSD automatically scales kern.maxfilesperproc with the amount of memory.

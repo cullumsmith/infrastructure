@@ -1,0 +1,29 @@
+#!/bin/sh
+
+homedir_priv_quota=250G
+homedir_pub_quota=10G
+
+create_dataset "${nfs_dataset}/user"
+create_dataset "${nfs_dataset}/group"
+
+for user in ${nfs_homedirs:-}; do
+  create_dataset "${nfs_dataset}/user/${user}"
+  create_dataset "${nfs_dataset}/user/${user}/priv"
+  create_dataset "${nfs_dataset}/user/${user}/pub"
+
+  zfs set "refquota=${homedir_priv_quota}" "${nfs_dataset}/user/${user}/priv"
+  zfs set "refquota=${homedir_pub_quota}"  "${nfs_dataset}/user/${user}/pub"
+
+  chown "${user}:${user}" \
+    "${nfs_root}/user/${user}/priv" \
+    "${nfs_root}/user/${user}/pub"
+
+  chmod 700 "${nfs_root}/user/${user}/priv"
+  chmod 755 "${nfs_root}/user/${user}/pub"
+done
+
+  ldap_add "automountKey=*,automountMapName=auto_home,${automount_basedn}" <<EOF
+objectClass: automount
+automountKey: *
+automountInformation: -nfsv4,gssname=host,sec=krb5p ${fqdn}:/user/&/priv
+EOF

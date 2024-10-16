@@ -6,7 +6,6 @@
 : ${vaultwarden_fqdn:="$fqdn"}
 
 vaultwarden_local_username=$nginx_user
-vaultwarden_uid=$(id -u "$vaultwarden_local_username")
 vaultwarden_https_cert="${nginx_conf_dir}/vaultwarden.crt"
 vaultwarden_https_key="${nginx_conf_dir}/vaultwarden.key"
 vaultwarden_home=/usr/local/www/vaultwarden
@@ -24,6 +23,7 @@ ktadd -k "$vaultwarden_client_keytab" "$vaultwarden_username"
 chgrp "$vaultwarden_local_username" "$vaultwarden_client_keytab"
 chmod 640 "$vaultwarden_client_keytab"
 
+vaultwarden_uid=$(id -u "$vaultwarden_local_username")
 install_directory -o "$vaultwarden_local_username" -m 0700 "/var/krb5/user/${vaultwarden_uid}"
 ln -snfv "$vaultwarden_client_keytab" "/var/krb5/user/${vaultwarden_uid}/client.keytab"
 

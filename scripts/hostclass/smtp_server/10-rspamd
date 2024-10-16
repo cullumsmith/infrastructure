@@ -77,8 +77,8 @@ install_template -m 0640 -g "$rspamd_user" \
 printf '%s\n' ${rspamd_domain_whitelist} | tee "${rspamd_conf_dir}/local.d/maps.d/domain-whitelist.map"
 
 # Copy DKIM keys.
-for domain in $postfix_virtual_domains; do
-  install_file -m 0640 -g "$rspamd_user" "${rspamd_data_dir}/dkim/${domain}.key"
+for _domain in $postfix_virtual_domains; do
+  install_file -m 0640 -g "$rspamd_user" "${rspamd_data_dir}/dkim/${_domain}.key"
 done
 
 # Add rspamd user to redis group, so it can write to the redis unix socket.

@@ -20,8 +20,12 @@
   'port'            => '389',
   'sasl'            => 'yes',
   'sasl_mech'       => 'GSSAPI',
-  'baseDNUsers'     => '${users_basedn}',
+  'baseDNUsers'     => '${people_basedn}',
   'baseDNGroups'    => '${groups_basedn}',
+   /* Must use scope=onelevel here because if davical picks up a user and group
+    * with the same name, then the group takes precedence and the user is lost.
+    * Sad for us because we store user private groups in LDAP.
+    */
   'scope'           => 'onelevel',
   'protocolVersion' => 3,
   'optReferrals'    => 0,
@@ -44,6 +48,6 @@
                             'H' => array(8,2),
                             'M' => array(10,2),
                             'S' => array(12,2)),
-  'i_use_mode_kerberos' => 'i_know_what_i_am_doing',
+  'i_use_mode_kerberos' => 'allow_fallback_to_ldap_auth',
 );
 include_once('drivers_ldap.php');

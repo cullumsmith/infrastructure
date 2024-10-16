@@ -1,0 +1,2 @@
+V4: ${nfs_root}
+# The default is to not export anything.

@@ -1,0 +1,35 @@
+log_level: info
+domain: ${invidious_fqdn}
+external_port: 443
+channel_threads: 1
+feed_threads: 1
+database_url: postgres://${invidious_username}:${invidious_password}@${invidious_dbhost}/${invidious_dbname}?sslmode=verify-full&auth_methods=cleartext
+use_pubsub_feeds: false
+hmac_key: ${invidious_hmac_key}
+https_only: true
+registration_enabled: true
+port: ${invidious_port}
+host_binding: 127.0.0.1
+popular_enabled: false
+captcha_enabled: false
+check_tables: true
+cache_annotations: true
+po_token: ${invidious_po_token}
+visitor_data: ${invidious_visitor_data}
+signature_server: ${invidious_signature_sock}
+
+default_user_preferences:
+  dark_mode: auto
+  autoplay: false
+  continue: true
+  continue_autoplay: false
+  local: true
+  quality: dash
+  quality_dash: 1080p
+  locale: en-US
+  region: US
+  related_videos: true
+  video_loop: false
+  player_style: invidious
+  default_home: Subscriptions
+  feed_menu: [Subscriptions, Playlists]

@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# Jails serving NFS need 'allow.nfsd' option.
+
+: ${nfsuserd_cache_size:='256'}
+: ${nfsuserd_num_servers:='4'}
+: ${nfsuserd_cache_timeout:='1'}
+: ${nfsd_srvmaxio:='1048576'}
+
+nfs_root=/share
+nfs_dataset="${state_dataset}/nfs"
+
+# Create ZFS dataset for NFS share.
+create_dataset -o "mountpoint=${nfs_root}" "${nfs_dataset}"
+
+# Create nfs service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "nfs/${fqdn}"
+ktadd -k "${keytab_dir}/host.keytab" "nfs/${fqdn}"
+
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
+  set_sysctl \
+    vfs.nfsd.issue_delegations=1 \
+    vfs.nfsd.enable_locallocks=0
+fi
+
+sysrc -v \
+  nfs_server_managegids=YES \
+  nfsuserd_enable=YES \
+  nfsuserd_flags="-usermax ${nfsuserd_cache_size} -usertimeout ${nfsuserd_cache_timeout} ${nfsuserd_num_servers}" \
+  gssd_enable=YES \
+  nfs_server_enable=YES \
+  nfs_server_flags='-t' \
+  nfs_server_maxio="$nfsd_srvmaxio" \
+  nfsv4_server_only=YES \
+  mountd_enable=YES \
+  mountd_flags='-R -S'
+
+# Our krb5.conf assumes MIT Kerberos, but the gssd in base uses the base
+# Heimdal kerberos, which doesnt support %{euid} expansion. So we must
+# override the keytab path with an environment variable.
+sysrc -v gssd_env="KRB5_KTNAME=${keytab_dir}/host.keytab"
+
+install_template -m 0644 /etc/exports
+
+for service in gssd nfsuserd mountd nfsd; do
+  service "$service" restart
+done

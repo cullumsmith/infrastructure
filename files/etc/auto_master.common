@@ -1,0 +1,2 @@
+/net -hosts -nobrowse,nosuid,intr
++auto_master

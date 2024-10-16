@@ -1,75 +1,75 @@
 #!/bin/sh
 
-load_kernel_module linux linux64 acpi_ibm
+: ${desktop_access_role:='desktop-access'}
+: ${desktop_access_gid:='40000'}
 
-pkg install -y \
-  chromium \
-  compton \
-  dino \
-  dmenu \
-  eclipse \
-  firefox \
-  git \
-  gnupg \
-  krb5 \
-  i3 \
-  libreoffice \
-  libva-intel-media-driver \
-  networkmgr \
-  password-store \
-  py${python_version}-pip  \
-  stow \
-  terminus-font \
-  terminus-ttf \
-  tmux \
-  tree \
-  wireguard-tools \
-  xfontsel \
-  xidle \
-  xorg \
-  xterm
+: ${sddm_min_uid:='10000'}
+: ${sddm_max_uid:='19999'}
+
+if [ "${enable_idm:-}" = false ]; then
+  desktop_access_role=operator
+else
+  ldap_add "cn=${desktop_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+objectClass: posixGroup
+cn: ${desktop_access_role}
+gidNumber: ${desktop_access_gid}
+EOF
+fi
+
+# Load linux kernel modules.
+load_kernel_module linux linux64
+set_loader_conf \
+  linux_load=YES \
+  linux64_load=YES
+
+# Install packages common to all DEs.
+pkg install -y $desktop_common_packages
+
+# Install scripts for creating local (non-NFS) home directories.
+install_file -m 0555 \
+  /usr/local/libexec/pam-create-local-homedir \
+  /etc/profile.d/local-homedir.sh
+install_directory -m 0755 /usr/local/home
 
 case $desktop_type in
   i3)
-    pkg install \
-      dunst \
-      i3 \
-      i3lock \
-      i3status \
-      profanity
+    pkg install -y $desktop_i3_packages
     ;;
   kde)
-    pkg install \
-      juk \
-      k3b \
-      kde5 \
-      kid3-qt6 \
-      kmix \
-      konversation \
-      sddm
+    # Install KDE packages.
+    pkg install -y $desktop_kde_packages
+
+    # Configure pam services.
+    install_file -m 0644 \
+      /etc/pam.d/sddm \
+      /etc/pam.d/kde
+
+    # Copy SDDM config file.
+    install_template -m 0644 /usr/local/etc/sddm.conf
+
+    # Create profile script for KDE environment variables.
+    install_file -m 0644 /etc/profile.d/kde.sh
+
+    # Create SDDM local homedir.
+    install_directory -o sddm -g sddm -m 0700 /usr/local/home/sddm
+
+    # Enable sddm.
+    sysrc -v sddm_enable=YES
     ;;
 esac
 
+# Tune sysctls for desktop usage.
 set_sysctl \
   net.local.stream.recvspace=65536 \
   net.local.stream.sendspace=65536 \
   kern.sched.preempt_thresh=224 \
-  vfs.usermount=1 \
-  hw.snd.latency=7
+  vfs.usermount=1
 
 set_loader_conf \
   kern.ipc.shmseg=1024 \
   kern.ipc.shmmni=1024 \
   kern.maxproc=100000 \
-  linux_load=YES \
-  linux64_load=YES \
-  acpi_ibm_load=YES \
-  compat.linuxkpi.i915_enable_dc=2 \
-  compat.linuxkpi.i915_enable_fbc=1 \
-  compat.linuxkpi.i915_fastboot=1 \
-  compat.linuxkpi.i915_disable_power_well=1 \
-  machdep.hwpstate_pkg_ctrl=0 \
-  vfs.zfs.txg.timeout=10 \
   hw.pci.do_power_nodriver=3
 
 # Create policy file for firefox.
@@ -88,6 +88,18 @@ install_file -m 0644 /usr/local/lib/libreoffice/program/sofficerc
 # Add terminus font to X11
 install_file -m 0644 /usr/local/etc/X11/xorg.conf.d/terminus.conf
 
+# Create xdg override directory.
+install_directory -m 0755 \
+  /usr/local/override \
+  /usr/local/override/applications
+
+# Create xdg application overrides.
+install_file -m 0644 \
+  /usr/local/override/applications/signal-desktop.desktop
+
+# Create polkit rules for shutdown/reboot/suspend
+install_template -m 0644 /usr/local/etc/polkit-1/rules.d/51-desktop.rules
+
 # Enable dbus.
 sysrc -v dbus_enable=YES
 service dbus status || service dbus start
@@ -98,6 +110,9 @@ case $graphics_type in
     pkg install -y drm-kmod
     sysrc -v kld_list+=i915kms
     load_kernel_module i915kms
+    set_loader_conf \
+      compat.linuxkpi.i915_enable_fbc=1 \
+      compat.linuxkpi.i915_fastboot=1 \
     ;;
 esac
 
@@ -164,3 +179,8 @@ xterm-256color|xterm with 256 colors,
         tbc=\E[3g, u6=\E[%i%d;%dR, u7=\E[6n,
         u8=\E[?%[;0123456789]c, u9=\E[c, vpa=\E[%i%p1%dd,
 EOF
+
+# Start login manager.
+case $desktop_type in
+  kde) service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm' ;;
+esac

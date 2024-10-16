@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cnames=invidious
+invidious_fqdn="invidious.${domain}"

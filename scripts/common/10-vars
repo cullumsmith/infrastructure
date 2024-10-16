@@ -34,4 +34,4 @@ sudo_basedn="ou=sudo,${basedn}"
 dns_basedn="ou=dns,${basedn}"
 kdc_basedn="cn=kdc,${basedn}"
 
-boxconf_dn="krbPrincipalName=${boxconf_username}@${realm},${robots_basedn}"
+boxconf_dn="uid=${boxconf_username},${robots_basedn}"

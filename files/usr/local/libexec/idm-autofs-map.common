@@ -1,0 +1,44 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Net::LDAP::Util qw(escape_dn_value);
+use Authen::SASL;
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or die($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech   = $config{SASL_MECH}      // 'GSSAPI';
+my $uri    = $config{URI}            // die("URI not specified\n");
+my $basedn = $config{AUTOMOUNT_BASE} // die("AUTOMOUNT_BASE not specified\n");
+
+@ARGV == 1 or die "usage: $0 MAPNAME\n";
+my $mapname = $ARGV[0];
+
+my $conn = Net::LDAP->new($uri, version => '3') or die "$0: $@";
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and die "$0: ".$status->error."\n";
+
+my $search = $conn->search(
+  scope  => 'one',
+  base   => 'automountMapName='.escape_dn_value($mapname).",$basedn",
+  filter => '(objectClass=automount)',
+  attrs  => ['automountKey', 'automountInformation']);
+$search->code and die "$0: $mapname: ".$search->error."\n";
+
+foreach my $entry ($search->entries) {
+  my $key  = ($entry->get_value('automountKey'))[0];
+  my $info = ($entry->get_value('automountInformation'))[0];
+  print "$key $info\n";
+}
