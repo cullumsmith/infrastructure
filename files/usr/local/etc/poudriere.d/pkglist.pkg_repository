@@ -6,6 +6,7 @@ archivers/zip
 audio/juk
 audio/kid3
 audio/kmix
+audio/virtual_oss
 converters/php${php_version}-iconv
 converters/php${php_version}-mbstring
 databases/luadbi
@@ -60,6 +61,9 @@ misc/php${php_version}-calendar
 multimedia/audacious
 multimedia/libva-intel-media-driver
 multimedia/makemkv
+multimedia/v4l-utils
+multimedia/v4l_compat
+multimedia/webcamd
 net-im/dino
 net-im/gajim
 net-im/prosody
@@ -125,8 +129,15 @@ www/nginx
 www/php${php_version}-opcache
 www/php${php_version}-session
 www/w3m
+x11-fonts/cantarell-fonts
+x11-fonts/droid-fonts-ttf
+x11-fonts/inconsolata-ttf
+x11-fonts/noto-basic
+x11-fonts/noto-emoji
 x11-fonts/terminus-font
 x11-fonts/terminus-ttf
+x11-fonts/ubuntu-font
+x11-fonts/webfonts
 x11/kde5
 x11/sddm
 x11/xev

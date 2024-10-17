@@ -13,11 +13,7 @@ kill -HUP 1
 set_loader_conf \
   autoboot_delay=1 \
   beastie_disable=YES \
-  boot_multicons=YES \
-  boot_serial=YES \
   cc_htcp_load=YES \
-  console=comconsole,efi \
-  comconsole_speed=115200 \
   kern.geom.label.disk_ident.enable=0 \
   kern.geom.label.gptid.enable=0 \
   net.inet.tcp.soreceive_stream=1 \
@@ -27,3 +23,13 @@ set_loader_conf \
   pf_load=YES \
   pflog_load=YES \
   security.bsd.allow_destructive_dtrace=0
+
+if [ "${serial_console:-}" = true ]; then
+  # Don't enable the serial console for all hosts indiscriminately.
+  # Somehow, having the serial console enabled breaks ConsoleKit.
+  set_loader_conf \
+    boot_multicons=YES \
+    boot_serial=YES \
+    console=comconsole,efi \
+    comconsole_speed=115200
+fi

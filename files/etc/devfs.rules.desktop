@@ -1,0 +1,4 @@
+[${devfs_local_ruleset_name}=1000]
+add path 'drm/*'       mode 0660 group ${desktop_access_role}
+add path 'backlight/*' mode 0660 group ${desktop_access_role}
+add path 'video*'      mode 0660 group ${desktop_access_role}

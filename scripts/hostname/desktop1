@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# This desktop has USB speakers and webcam USB microphone, so sndio can't
+# use both at the same time. This creates a virtual device combining both
+# of them into one virutal sound card.
+#
+# Because the virtual soundcard is installed to /dev/dsp, it will
+# automatically be used as the default.
+
+playback_device=1
+recording_device=0
+samplerate=48000
+bits=16
+buffer_ms=25
+microphone_gain=50
+
+pkg install -y virtual_oss
+sysrc -v \
+  virtual_oss_enable=YES \
+  virtual_oss_dsp="-T /dev/sndstat -C 2 -c 2 -S -r ${samplerate} -b ${bits} -s ${buffer_ms}ms -O /dev/dsp${playback_device} -R /dev/dsp${recording_device} -d dsp -t vsdp.ctl"
+service virtual_oss restart
+
+set_loader_conf "hint.pcm.${recording_device}.mic=${microphone_gain}"
+set_loader_conf "hint.pcm.${playback_device}.pcm=100"

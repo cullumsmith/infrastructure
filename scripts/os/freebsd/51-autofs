@@ -17,7 +17,7 @@ sysrc -v \
   nfsuserd_flags="-usermax ${nfsuserd_cache_size} -usertimeout ${nfsuserd_cache_timeout} ${nfsuserd_num_servers}" \
   gssd_enable=YES \
   gssd_flags='-h -s /tmp' \
-  gssd_env="KRB5_KTNAME=${keytab_dir}/host.keytab"
+  gssd_env="KRB5_KTNAME=${keytab_dir}/host.keytab" \
   nfs_client_enable=YES \
   nfscbd_enable=NO \
   nfscbd_flags="-p ${nfscbd_port} -P host" \
@@ -28,6 +28,9 @@ install_file -m 0555 /usr/local/libexec/idm-autofs-map
 ln -snfv /usr/local/libexec/idm-autofs-map /etc/autofs/include
 
 # TODO: nfscbd causes kernel panics on FreeBSD 14.1, disabled for now.
-for service in gssd nfsclient nfsuserd automount automountd autounmountd; do
+for service in gssd nfsuserd automountd autounmountd; do
   service "$service" status || service "$service" start
 done
+
+service nfsclient start
+service automount start

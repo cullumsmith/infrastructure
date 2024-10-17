@@ -7,10 +7,12 @@ enable_pf=true
 install_packages='sudo tmux vim'
 intel_epp=50
 see_other_uids=0
+clear_tmp_enable=true
 
 memsize=$(sysctl -n hw.physmem)
 
 export ASSUME_ALWAYS_YES=yes
+devfs_local_ruleset_name=localrules
 keytab_dir=/var/db/keytabs
 nfscbd_port=7745
 nginx_user=www

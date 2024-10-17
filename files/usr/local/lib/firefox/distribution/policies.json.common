@@ -9,10 +9,6 @@
         "install_url": "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi",
         "installation_mode": "normal_installed"
       },
-      "7esoorv3@alefvanoon.anonaddy.me": {
-        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/libredirect/latest.xpi",
-        "installation_mode": "normal_installed"
-      },
       "{9cbd40c5-5275-443e-811b-dc57d8c7c5d2}": {
         "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kde-default-breeze/latest.xpi",
         "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo 'normal_installed'; else echo 'allowed'; fi)"

@@ -55,6 +55,7 @@ rspamd_port=11334
 ssh_authzkeys_uid=789
 ssh_authzkeys_username=sshkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE
+serial_console=false
 
 nginx_nofile=2048
 nginx_worker_connections=768

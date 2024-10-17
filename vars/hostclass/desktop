@@ -1,23 +1,41 @@
 #!/bin/sh
 
+# UID/GID hiding breaks consolekit and KDE screen locker.
+see_other_uids=1
+
+# sndiod's control socket lives under /tmp, but sndoid starts *before* /tmp is
+# cleared out, resulting in the socket being blown away.
+clear_tmp_enable=false
+
 desktop_common_packages="
 bind-tools
+cantarell-fonts
 chromium
+droid-fonts-ttf
 eclipse
 firefox
 git
 gnupg
+inconsolata-ttf
 krb5
 libreoffice
 libva-intel-media-driver
+noto-basic
+noto-emoji
 password-store
 py${python_version}-pip
 signal-desktop
+sndio
 stow
 terminus-font
 terminus-ttf
 tmux
 tree
+ubuntu-font
+v4l-utils
+v4l_compat
+webcamd
+webfonts 
 wireguard-tools
 xorg"
 

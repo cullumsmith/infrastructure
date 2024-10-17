@@ -1,10 +1,15 @@
 #!/bin/sh
 
 sysrc -v \
-  clear_tmp_enable=YES \
   dumpdev=NO \
   ipv6_activate_all_interfaces=NO \
   syslogd_flags=-ss
+
+if [ "$clear_tmp_enable" = false ]; then
+  sysrc -v clear_tmp_enable=NO
+else
+  sysrc -v clear_tmp_enable=YES
+fi
 
 if [ -n "${console_font:-}" ]; then
   sysrc -v allscreens_flags="-f ${console_font}"
