@@ -157,7 +157,7 @@ case $graphics_type in
     load_kernel_module i915kms
     set_loader_conf \
       compat.linuxkpi.i915_enable_fbc=1 \
-      compat.linuxkpi.i915_fastboot=1 \
+      compat.linuxkpi.i915_fastboot=1
     ;;
 esac
 
@@ -227,5 +227,8 @@ EOF
 
 # Start login manager.
 case $desktop_type in
-  kde) service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm' ;;
+  kde)
+    # We have to redirect the output here because sddm holds FDs open :(
+    service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm'
+    ;;
 esac
