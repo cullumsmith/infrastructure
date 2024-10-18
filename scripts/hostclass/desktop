@@ -10,7 +10,6 @@
 
 sddm_user=sddm
 cups_conf_dir=/usr/local/etc/cups
-xdg_override_dir=/usr/local/share-override
 
 if [ "${enable_idm:-}" = false ]; then
   desktop_access_role=operator

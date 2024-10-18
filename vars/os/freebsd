@@ -26,6 +26,7 @@ saslauthd_user=cyrus
 site_cacert_path=/usr/local/etc/ssl/certs/ca.crt
 system_cacert_path=/etc/ssl/certs
 ssh_host_key_dir=/var/db/ssh
+xdg_override_dir=/usr/local/share-override
 
 # For 10 Gbit ethernet, bump up the TCP buffers.
 if ifconfig | grep -q '10Gbase-T'; then

@@ -66,9 +66,9 @@ multimedia/libva-intel-media-driver
 multimedia/libva-utils
 multimedia/libvdpau-va-gl
 multimedia/makemkv
-multimedia/vdpauinfo
 multimedia/v4l-utils
 multimedia/v4l_compat
+multimedia/vdpauinfo
 multimedia/webcamd
 net-im/dino
 net-im/gajim
@@ -110,6 +110,7 @@ sysutils/cpu-microcode
 sysutils/htop
 sysutils/k3b
 sysutils/lsof
+sysutils/neofetch
 sysutils/p5-Sys-Syslog
 sysutils/password-store
 sysutils/php${php_version}-fileinfo
