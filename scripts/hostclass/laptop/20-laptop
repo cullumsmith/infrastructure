@@ -21,16 +21,17 @@ sysrc -v ifconfig_ue0='DHCP'
 # Install laptop packages.
 pkg install -y networkmgr
 
-# Misc power saving stuff.
-set_loader_conf \
-  vfs.zfs.txg.timeout=10 \
+# Increase ZFS timeout to save battery.
+set_loader_conf vfs.zfs.txg.timeout=10
 
+# Set intel power saving options.
 if [ "$graphics_type" = intel ]; then
   set_loader_conf \
     compat.linuxkpi.i915_disable_power_well=1 \
     compat.linuxkpi.i915_enable_dc=2
 fi
 
+# Load appropriate WiFi drivers.
 case ${wireless_type:-} in
   iwm*)
     set_loader_conf \
