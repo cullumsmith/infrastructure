@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Chromium no longer trusts the system certificate store. Instead, it uses the
+# user's local NSS database, located at ~/.pki.
+#
+# This script adds our local root CA to the NSS DB, so that Chrome will trust it.
+
+cert_name="$(hostname -d) Root CA"
+cert_path=/usr/local/etc/ssl/certs/ca.crt
+nss_db_path="${HOME}/.pki/nssdb"
+
+mkdir -p "$nss_db_path"
+
+if ! certutil -d "sql:${nss_db_path}" -L -n "$cert_name" > /dev/null 2>&1; then
+  certutil -d "sql:${nss_db_path}" -A -t 'C,,' -n "$cert_name" -i "$cert_path"
+fi

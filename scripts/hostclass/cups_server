@@ -9,6 +9,9 @@ cups_tls_dir=${cups_conf_dir}/ssl
 cups_tls_cert="${cups_tls_dir}/${fqdn}.crt"
 cups_tls_key="${cups_tls_dir}/${fqdn}.key"
 
+# Create dataset for persistent CUPS configuration.
+create_dataset -o "mountpoint=${cups_conf_dir}" "${state_dataset}/cups"
+
 # Install required packages.
 pkg install -y cups cups-filters
 

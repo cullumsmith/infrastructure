@@ -3,8 +3,7 @@
 set -eu -o pipefail
 
 prog=$(basename "$(readlink -f "$0")")
-usage="${prog} BLOCKLIST_DIR
-       Blocklist URLs are read from stdin."
+usage="${prog} URL_FILE WHITELIST_FILE BLOCKLIST_DIR"
 
 die() {
   printf '%s: %s\n' "$prog" "$*" 1>&2
@@ -16,17 +15,41 @@ usage(){
   exit 2
 }
 
-[ $# -eq 1 ] || usage
-case $1 in
+case ${1:-} in
   -h|--help) usage ;;
 esac
 
-[ -d "$1" ] || die "not a directory: ${1}"
+[ $# -eq 3 ] || usage
 
-cd "$1"
+url_file=$1
+whitelist_file=$2
+blocklist_dir=$3
 
+[ -d "$blocklist_dir" ] || die "not a directory: ${blocklist_dir}"
+
+cd "$blocklist_dir"
+
+# Delete any existing zone files.
 find . -maxdepth 1 -type f -exec rm {} +
 
-while read -r name url; do
-  [ -n "$url" ] && curl -sSfL -o "${name}.zone" "$url"
-done
+if grep -q '[^[:space:]]' "$whitelist_file"; then
+  # If the whitelist file is non empty, compute a regex.
+  while read -r pattern; do
+    [ -n "$pattern" ] || continue
+    whitelist_regex="${whitelist_regex:+"${whitelist_regex}|"}${pattern}"
+  done < "$whitelist_file"
+
+  # For each blocklist url, download the blocklist and filter out the whitelist.
+  while read -r name url; do
+    [ -n "$url" ] && curl -sSfL "$url" | grep -Ev "^(.*\\.)?(${whitelist_regex})[[:space:]]" > "${name}.zone"
+  done < "$url_file"
+else
+  # If no whitelist configured, just download each blocklist.
+  while read -r name url; do
+    [ -n "$url" ] && curl -sSfL -o "${name}.zone" "$url"
+  done < "$url_file"
+fi
+
+# Try to reload unbound.
+unbound_pidfile=$(/usr/local/sbin/unbound-checkconf -o pidfile /usr/local/etc/unbound/unbound.conf)
+kill -HUP "$(cat "$unbound_pidfile")" ||:

@@ -1,9 +1,0 @@
-#!/bin/sh
-
-add_user \
-  -c "Cullum Smith" \
-  -G wheel,operator,video \
-  -s /bin/sh \
-  -m \
-  -p changeme \
-  cullum

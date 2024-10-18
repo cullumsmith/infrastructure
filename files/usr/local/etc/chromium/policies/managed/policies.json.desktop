@@ -67,7 +67,7 @@
     "extensions": {
       "cjpalhdlnbpafiamejdnhcphjbkeiagm": {
         "toOverwrite": {
-          "filterLists": [
+          "selectedFilterLists": [
             "user-filters",
             "ublock-filters",
             "ublock-badware",
@@ -75,11 +75,14 @@
             "ublock-abuse",
             "ublock-unbreak",
             "ublock-annoyances",
+            "ublock-cookies-easylist",
+            "fanboy-cookiemonster",
             "easylist",
             "easyprivacy",
             "urlhaus-1",
             "plowe-0",
             "fanboy-annoyance",
+            "fanboy-social",
             "fanboy-thirdparty_social",
             "adguard-spyware-url",
             "ublock-quick-fixes"
@@ -87,7 +90,7 @@
         },
         "toAdd": {
           "trustedSiteDirectives": [
-            "${domain}"
+            "$(join '","' "$domain" $ublock_whitelist)"
           ]
         }
       }

@@ -20,6 +20,7 @@ pkg install -y \
 # Configure PAM/NSS integration.
 install_file -m 0644 \
   /etc/nsswitch.conf \
+  /etc/pam.d/login \
   /etc/pam.d/sshd \
   /etc/pam.d/sudo
 

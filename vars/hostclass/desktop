@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# Let users run gdb/truss.
+allow_proc_debug=1
+
+# Serial console breaks ConsoleKit2.
+enable_serial_console=false
+
 # UID/GID hiding breaks consolekit and KDE screen locker.
 see_other_uids=1
 
@@ -7,22 +13,29 @@ see_other_uids=1
 # cleared out, resulting in the socket being blown away.
 clear_tmp_enable=false
 
+# Chromium seems to need this to enable VAAPI video decoding on intel.
+chrome_flags='--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan'
+
+# signal-desktop requires pulseaudio for audio/video chat. SAD!
 desktop_common_packages="
 bind-tools
 cantarell-fonts
 chromium
 droid-fonts-ttf
 eclipse
+ffmpeg
 firefox
 git
 gnupg
 inconsolata-ttf
 krb5
 libreoffice
-libva-intel-media-driver
+libva-utils
+libvdpau-va-gl
 noto-basic
 noto-emoji
 password-store
+pulseaudio
 py${python_version}-pip
 signal-desktop
 sndio
@@ -32,6 +45,7 @@ terminus-ttf
 tmux
 tree
 ubuntu-font
+vdpauinfo
 v4l-utils
 v4l_compat
 webcamd
@@ -39,16 +53,20 @@ webfonts
 wireguard-tools
 xorg"
 
-desktop_kde_packages='
+desktop_kde_packages="
+audacious
+audacious-plugins
 dino
 gajim
+gtksourceview4
 juk
 k3b
 kde5
 kid3-qt6
 kmix
 konversation
-sddm'
+py${python_version}-omemo-dr
+sddm"
 
 desktop_i3_packages='
 compton

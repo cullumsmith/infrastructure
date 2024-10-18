@@ -4,10 +4,13 @@
 : ${desktop_access_gid:='40000'}
 : ${sddm_min_uid:='10000'}
 : ${sddm_max_uid:='19999'}
+: ${cups_host:='cups'}
+: ${ublock_whitelist:=''}
+: ${chrome_flags:=''}
 
 sddm_user=sddm
-
-# TODO: kill lingering processes after logout (chrome, baloo-search, etc).
+cups_conf_dir=/usr/local/etc/cups
+xdg_override_dir=/usr/local/share-override
 
 if [ "${enable_idm:-}" = false ]; then
   desktop_access_role=operator
@@ -33,7 +36,9 @@ pkg install -y $desktop_common_packages
 install_file -m 0555 \
   /usr/local/libexec/pam-create-local-homedir \
   /etc/profile.d/local-homedir.sh
-install_directory -m 0755 /usr/local/home
+
+# Create ZFS dataset for local homedirs.
+create_dataset -o mountpoint=/usr/local/home "${state_dataset}/home"
 
 # Enable sndio.
 sysrc -v sndiod_enable=YES
@@ -53,6 +58,10 @@ load_kernel_module cuse
 set_loader_conf cuse_load=YES
 sysrc -v webcamd_enable=YES
 service webcamd status || service webcamd start
+
+# Create xdg autostart entry to add our Root CA to Chrome's certificate store.
+install_file -m 0644 /usr/local/etc/xdg/autostart/nss-trust-root-ca.desktop
+install_file -m 0555 /usr/local/libexec/nss-trust-root-ca
 
 case $desktop_type in
   i3)
@@ -121,12 +130,13 @@ install_file -m 0644 /usr/local/etc/X11/xorg.conf.d/terminus.conf
 
 # Create xdg override directory.
 install_directory -m 0755 \
-  /usr/local/override \
-  /usr/local/override/applications
+  "${xdg_override_dir}" \
+  "${xdg_override_dir}/applications"
 
 # Create xdg application overrides.
-install_file -m 0644 \
-  /usr/local/override/applications/signal-desktop.desktop
+install_template -m 0644 \
+  "${xdg_override_dir}/applications/signal-desktop.desktop" \
+  "${xdg_override_dir}/applications/chromium-browser.desktop"
 
 # Create polkit rules for shutdown/reboot/suspend
 install_template -m 0644 /usr/local/etc/polkit-1/rules.d/51-desktop.rules
@@ -135,10 +145,14 @@ install_template -m 0644 /usr/local/etc/polkit-1/rules.d/51-desktop.rules
 sysrc -v dbus_enable=YES
 service dbus status || service dbus start
 
+# Configure CUPS.
+pkg install -y cups
+install_template -m 0644 "${cups_conf_dir}/client.conf"
+
 # Configure graphics drivers.
 case $graphics_type in
   intel)
-    pkg install -y drm-kmod
+    pkg install -y drm-kmod libva-intel-media-driver
     sysrc -v kld_list+=i915kms
     load_kernel_module i915kms
     set_loader_conf \

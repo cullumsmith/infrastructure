@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Add site root CA to user NSS database.
+Exec=/usr/local/libexec/nss-trust-root-ca
+StartupNotify=false
+NoDisplay=true

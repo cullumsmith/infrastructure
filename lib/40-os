@@ -3,16 +3,17 @@
 set_sysctl(){
   # Set sysctl value(s) and persist them to /etc/sysctl.conf.
   # $1..$N = sysctl values (as "name=value" strings)
+  # The '|' character is unsupported within the sysctl value.
   while [ $# -gt 0 ]; do
     sysctl "$1"
     sed -i.bak "/^${1%%=*}=/{
 h
-s/=.*/=${1#*=}/
+s|=.*|=${1#*=}|
 }
 \${
 x
 /^\$/{
-s//${1}/
+s||${1}|
 H
 }
 x
@@ -26,18 +27,19 @@ set_loader_conf(){
   # Set the FreeBSD bootloader options in /boot/loader.conf.
   # The host will be rebooted if the file is changed.
   # $1..$N = bootloader options (as "name=value" strings)
+  # The '|' character is unsupported within the option value.
   [ "$BOXCONF_OS" = freebsd ] || bug 'set_loader_conf can only be used on FreeBSD'
 
   while [ $# -gt 0 ]; do
     grep -qxF "${1%%=*}=\"${1#*=}\"" /boot/loader.conf || BOXCONF_NEED_REBOOT=true
     sed -i.bak "/^${1%%=*}=/{
 h
-s/=.*/=\"${1#*=}\"/
+s|=.*|=\"${1#*=}\"|
 }
 \${
 x
 /^\$/{
-s//${1%%=*}=\"${1#*=}\"/
+s||${1%%=*}=\"${1#*=}\"|
 H
 }
 x

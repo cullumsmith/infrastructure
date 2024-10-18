@@ -1,0 +1,14 @@
+#!/bin/sh
+
+: ${microcode_name:='intel-ucode.bin'}
+
+# Only run this file on baremetal hosts.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" != none ]; then
+  return
+fi
+
+pkg install -y cpu-microcode
+
+set_loader_conf \
+  cpu_microcode_load=YES \
+  cpu_microcode_name="/boot/firmware/${microcode_name}"

@@ -28,3 +28,8 @@ if sysctl -n dev.hwpstate_intel.0.epp >/dev/null 2>&1; then
     set_sysctl "dev.hwpstate_intel.${n}.epp=${intel_epp}"
   done
 fi
+
+# Enable CPU-related kernel modules.
+set_loader_conf \
+  cpuctl_load=YES \
+  coretemp_load=YES

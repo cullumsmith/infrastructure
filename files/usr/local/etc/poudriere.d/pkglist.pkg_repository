@@ -3,6 +3,7 @@ archivers/php${php_version}-phar
 archivers/php${php_version}-zip
 archivers/unzip
 archivers/zip
+audio/elisa
 audio/juk
 audio/kid3
 audio/kmix
@@ -19,6 +20,7 @@ databases/postgresql${postgresql_version}-server
 databases/redis
 devel/ccache
 devel/cgit
+devel/electron30
 devel/git@lite
 devel/gitolite
 devel/php${php_version}-gettext
@@ -58,9 +60,13 @@ mail/postfix
 mail/rspamd
 mail/sieve-connect
 misc/php${php_version}-calendar
-multimedia/audacious
+multimedia/audacious-plugins@qt5
+multimedia/audacious@qt5
 multimedia/libva-intel-media-driver
+multimedia/libva-utils
+multimedia/libvdpau-va-gl
 multimedia/makemkv
+multimedia/vdpauinfo
 multimedia/v4l-utils
 multimedia/v4l_compat
 multimedia/webcamd
@@ -96,9 +102,11 @@ security/openssh-portable
 security/pam_krb5@mit
 security/pam_mkhomedir
 security/php${php_version}-filter
+security/py-omemo-dr
 security/sshpass
 security/sudo
 security/vaultwarden
+sysutils/cpu-microcode
 sysutils/htop
 sysutils/k3b
 sysutils/lsof
@@ -138,6 +146,7 @@ x11-fonts/terminus-font
 x11-fonts/terminus-ttf
 x11-fonts/ubuntu-font
 x11-fonts/webfonts
+x11-toolkits/gtksourceview4
 x11/kde5
 x11/sddm
 x11/xev

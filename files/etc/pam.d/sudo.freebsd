@@ -1,15 +1,11 @@
-# auth
-auth    sufficient    /usr/local/lib/security/pam_krb5.so try_first_pass
-auth    required      pam_unix.so no_warn try_first_pass
+auth      sufficient  /usr/local/lib/security/pam_krb5.so try_first_pass
+auth      required    pam_unix.so no_warn try_first_pass
 
-# account
 account   required    /usr/local/lib/security/pam_krb5.so
 account   required    pam_login_access.so
 account   required    pam_unix.so
 
-# session
 account   required    pam_permit.so
 
-# password
 password  sufficient  /usr/local/lib/security/pam_krb5.so try_first_pass
 password  required    pam_unix.so no_warn try_first_pass

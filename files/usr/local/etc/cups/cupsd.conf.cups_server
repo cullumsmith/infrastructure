@@ -11,7 +11,6 @@ MaxLogSize 1m
 # Default error policy for printers
 ErrorPolicy retry-job
 
-# Only listen for connections from the local machine.
 Listen 80
 Listen 631
 Listen /var/run/cups/cups.sock
@@ -28,9 +27,6 @@ DefaultEncryption Required
 
 # Web interface setting...
 WebInterface Yes
-
-# Timeout after cupsd exits if idle (applied only if cupsd runs on-demand - with -l)
-IdleExitTimeout 60
 
 # Restrict access to the server...
 <Location />

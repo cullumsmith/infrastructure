@@ -1,0 +1,3 @@
+ServerName ${cups_host}.${domain}:631
+Encryption Required
+ValidateCerts Yes

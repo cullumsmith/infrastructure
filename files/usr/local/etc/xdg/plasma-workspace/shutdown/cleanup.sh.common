@@ -1,4 +1,0 @@
-#!/bin/sh
-
-pkill signal-desktop chrome baloo_file
-pkill -f /usr/local/libexec/geoclue-2.0/demos/agent

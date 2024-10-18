@@ -24,9 +24,7 @@ set_loader_conf \
   pflog_load=YES \
   security.bsd.allow_destructive_dtrace=0
 
-if [ "${serial_console:-}" = true ]; then
-  # Don't enable the serial console for all hosts indiscriminately.
-  # Somehow, having the serial console enabled breaks ConsoleKit.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = none ] && [ "$enable_serial_console" = true ]; then
   set_loader_conf \
     boot_multicons=YES \
     boot_serial=YES \

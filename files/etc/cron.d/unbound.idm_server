@@ -1,0 +1,2 @@
+MAILTO=root
+@daily ${unbound_user} /usr/local/libexec/idm-update-unbound-blocklists ${unbound_blocklist_url_file} ${unbound_whitelist_file} ${unbound_blocklist_dir}

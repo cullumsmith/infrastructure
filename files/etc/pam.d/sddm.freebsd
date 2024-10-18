@@ -2,15 +2,20 @@
 # try multiple authentication sources (like krb5 but fall back to pam_unix)
 # if we want pam_kwallet5 to execute.
 # Hence, for sddm, we try krb5 only (no local accounts).
-auth      required  /usr/local/lib/security/pam_krb5.so try_first_pass
-auth      optional  pam_exec.so /usr/local/libexec/pam-create-local-homedir
-auth      optional  pam_kwallet5.so
+auth      sufficient  pam_self.so no_warn
+auth      required    /usr/local/lib/security/pam_krb5.so try_first_pass
+auth      optional    pam_exec.so /usr/local/libexec/pam-create-local-homedir
+auth      optional    pam_kwallet5.so
 
-account   required  /usr/local/lib/security/pam_krb5.so
-account   required  pam_login_access.so
-account   required  pam_unix.so
+account   requisite   pam_securetty.so
+account   required    pam_nologin.so
+account   required    /usr/local/lib/security/pam_krb5.so
+account   required    pam_login_access.so
+account   required    pam_unix.so
 
-session   required  pam_lastlog.so no_fail
-session   optional  pam_kwallet5.so auto_start
+session   required    pam_lastlog.so no_fail
+session   required    pam_xdg.so no_fail
+session   required    /usr/local/lib/security/pam_krb5.so
+session   optional    pam_kwallet5.so auto_start
 
-password  required  /usr/local/lib/security/pam_krb5.so try_first_pass
+password  required    /usr/local/lib/security/pam_krb5.so try_first_pass
