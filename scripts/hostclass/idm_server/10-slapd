@@ -185,15 +185,6 @@ EOF
 objectClass: automountMap
 automountMapName: auto_master
 EOF
-  ldap_add "automountKey=/home,automountMapName=auto_master,${automount_basedn}" <<EOF
-objectClass: automount
-automountKey: /home
-automountInformation: auto_home
-EOF
-  ldap_add "automountMapName=auto_home,${automount_basedn}" <<EOF
-objectClass: automountMap
-automountMapName: auto_home
-EOF
 
   # ou=sudo,dc=example,dc=com
   ldap_add "$sudo_basedn" <<EOF
