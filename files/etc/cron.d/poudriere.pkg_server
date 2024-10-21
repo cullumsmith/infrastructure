@@ -1,0 +1,1 @@
+@weekly root lockf -t 0 /tmp/poudriere-cron.lock /usr/local/libexec/poudriere-cron $(echo "$poudriere_versions" | tr . _)

@@ -2,10 +2,7 @@
 
 nfs_mount_opts='-nfsv4,gssname=host,sec=krb5p'
 
-default_priv_quota=250G
-default_pub_quota=10G
-
-# Add /home autofs map.
+# /home: auto_home
 ldap_add "automountKey=/home,automountMapName=auto_master,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: /home
@@ -15,24 +12,15 @@ ldap_add "automountMapName=auto_home,${automount_basedn}" <<EOF
 objectClass: automountMap
 automountMapName: auto_home
 EOF
+
+# auto_home: *
 ldap_add "automountKey=*,automountMapName=auto_home,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: *
 automountInformation: ${fqdn}:/user/&/priv
 EOF
 
-# Create /- (direct) autofs map
-ldap_add "automountKey=/-,automountMapName=auto_master,${automount_basedn}" <<EOF
-objectClass: automount
-automountKey: /-
-automountInformation: auto_direct ${nfs_mount_opts}
-EOF
-ldap_add "automountMapName=auto_direct,${automount_basedn}" <<EOF
-objectClass: automountMap
-automountMapName: auto_direct
-EOF
-
-# Create /nfs/user autofs map.
+# /nfs/user: auto_user
 ldap_add "automountKey=/nfs/user,automountMapName=auto_master,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: /nfs/user
@@ -43,26 +31,9 @@ objectClass: automountMap
 automountMapName: auto_user
 EOF
 
-# Create user home directories.
+# auto_user: $user/{pub,priv}
 for userquota in ${nfs_homedirs:-}; do
   user=$(echo "$userquota" | awk -F: '{print $1}')
-  privquota=$(echo "$userquota" | awk -F: '{print $2}')
-  pubquota=$(echo "$userquota" | awk -F: '{print $3}')
-
-  create_dataset -p "${nfs_dataset}/user/${user}/priv"
-  create_dataset -p "${nfs_dataset}/user/${user}/pub"
-
-  zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/user/${user}/priv"
-  zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/user/${user}/pub"
-
-  chown "${user}:${user}" \
-    "${nfs_root}/user/${user}/priv" \
-    "${nfs_root}/user/${user}/pub"
-
-  chmod 700 "${nfs_root}/user/${user}/priv"
-  chmod 755 "${nfs_root}/user/${user}/pub"
-
-  # Create user autofs key.
   ldap_add "automountKey=${user},automountMapName=auto_user,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: ${user}
@@ -70,7 +41,7 @@ automountInformation: /priv ${fqdn}:/user/&/priv /pub ${fqdn}:/user/&/pub
 EOF
 done
 
-# Add /nfs/group autofs map.
+# /nfs/group: auto_group
 ldap_add "automountKey=/nfs/group,automountMapName=auto_master,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: /nfs/group
@@ -81,26 +52,9 @@ objectClass: automountMap
 automountMapName: auto_group
 EOF
 
-# Create group home directories.
+# auto_group: $group/{pub,priv}
 for groupquota in ${nfs_groupdirs:-}; do
   group=$(echo "$groupquota" | awk -F: '{print $1}')
-  privquota=$(echo "$groupquota" | awk -F: '{print $2}')
-  pubquota=$(echo "$groupquota" | awk -F: '{print $3}')
-
-  create_dataset -p "${nfs_dataset}/group/${group}/priv"
-  create_dataset -p "${nfs_dataset}/group/${group}/pub"
-
-  zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/group/${group}/priv"
-  zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/group/${group}/pub"
-
-  chown "root:${group}" \
-    "${nfs_root}/group/${group}/priv" \
-    "${nfs_root}/group/${group}/pub"
-
-  chmod 770 "${nfs_root}/group/${group}/priv"
-  chmod 775 "${nfs_root}/group/${group}/pub"
-
-  # Create group autofs key.
   ldap_add "automountKey=${group},automountMapName=auto_group,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: ${group}
@@ -108,7 +62,7 @@ automountInformation: /priv ${fqdn}:/group/&/priv /pub ${fqdn}:/group/&/pub
 EOF
 done
 
-# Add /nfs/media autofs map.
+# /nfs/media: auto_media
 ldap_add "automountMapName=auto_media,${automount_basedn}" <<EOF
 objectClass: automountMap
 automountMapName: auto_media
@@ -119,14 +73,7 @@ automountKey: /nfs/media
 automountInformation: auto_media ${nfs_mount_opts}
 EOF
 
-# Create music dataset.
-create_dataset -p "${nfs_dataset}/media/music"
-
-# Set music ACLs.
-chgrp media-admin "${nfs_root}/media/music"
-chmod 770 "${nfs_root}/media/music"
-
-# Create music autofs key.
+# auto_media: music
 ldap_add "automountKey=music,automountMapName=auto_media,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: music

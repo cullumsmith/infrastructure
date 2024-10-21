@@ -99,8 +99,7 @@ install_directory -m 0555 "${poudriere_data_dir}/data/packages/poudriere"
 
 # Create cron job to update packages automatically.
 install_file -m 0555 /usr/local/libexec/poudriere-cron
-echo "@weekly root lockf -t 0 /tmp/poudriere-cron.lock /usr/local/libexec/poudriere-cron $(echo "$poudriere_versions" | tr . _)" \
-  | tee /etc/cron.d/poudriere
+install_file -m 0644 /etc/cron.d/poudriere
 
 # Now that we have a valid repo, switch the pkg repo to the local filesystem.
 install_directory -m 0755 \

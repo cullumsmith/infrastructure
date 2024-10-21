@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# media/music
+create_dataset -p "${nfs_dataset}/media/music"
+chgrp media-admin "${nfs_root}/media/music"
+chmod 2770 "${nfs_root}/media/music"
+set_facl "${nfs_root}/media/music" \
+   group:media-admin:rwpDdaARWcs:fd:allow \
+   group:media-admin:x:d:allow \
+   group:media-access:raRcs:fd:allow \
+   group:media-access:x:d:allow

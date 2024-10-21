@@ -13,6 +13,9 @@ nfs_dataset="${state_dataset}/nfs"
 # Create ZFS dataset for NFS share.
 create_dataset -o "mountpoint=${nfs_root}" "${nfs_dataset}"
 
+# Allow NFSv4 ACLs to propagate.
+zfs set aclinherit=passthrough aclmode=passthrough "$nfs_dataset"
+
 # Create nfs service principal and keytab.
 add_principal -nokey -x "containerdn=${services_basedn}" "nfs/${fqdn}"
 ktadd -k "${keytab_dir}/host.keytab" "nfs/${fqdn}"

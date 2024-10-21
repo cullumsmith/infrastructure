@@ -179,3 +179,12 @@ install_ca_certificate(){
   install -m "$_bcicc_mode" $_bcicc_install_args "${BOXCONF_CA_DIR}/ca.crt" "$1"
   log "installed root CA to ${1}"
 }
+
+set_facl(){
+  # Replaces the NFSv4 ACL on a file with the specified ACL list.
+  # $1 = path
+  # $2-$N = ACL entries
+  [ "$BOXCONF_OS" = freebsd ] || bug 'set_facl only supported on FreeBSD'
+  _bcsetfacl_path=$1; shift
+  setfacl -b -a 0 "$(join ',' "$@")" "$_bcsetfacl_path"
+}

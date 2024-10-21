@@ -1,0 +1,50 @@
+#!/bin/sh
+
+default_priv_quota=250G
+default_pub_quota=10G
+
+# Create user home directories.
+for userquota in ${nfs_homedirs:-}; do
+  user=$(echo "$userquota" | awk -F: '{print $1}')
+  privquota=$(echo "$userquota" | awk -F: '{print $2}')
+  pubquota=$(echo "$userquota" | awk -F: '{print $3}')
+
+  create_dataset -p "${nfs_dataset}/user/${user}/priv"
+  create_dataset -p "${nfs_dataset}/user/${user}/pub"
+
+  zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/user/${user}/priv"
+  zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/user/${user}/pub"
+
+  chown "${user}:${user}" \
+    "${nfs_root}/user/${user}/priv" \
+    "${nfs_root}/user/${user}/pub"
+
+  chmod 700 "${nfs_root}/user/${user}/priv"
+  chmod 755 "${nfs_root}/user/${user}/pub"
+done
+
+# Create group home directories.
+for groupquota in ${nfs_groupdirs:-}; do
+  group=$(echo "$groupquota" | awk -F: '{print $1}')
+  privquota=$(echo "$groupquota" | awk -F: '{print $2}')
+  pubquota=$(echo "$groupquota" | awk -F: '{print $3}')
+
+  create_dataset -p "${nfs_dataset}/group/${group}/priv"
+  create_dataset -p "${nfs_dataset}/group/${group}/pub"
+
+  zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/group/${group}/priv"
+  zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/group/${group}/pub"
+
+  chown "root:${group}" \
+    "${nfs_root}/group/${group}/priv" \
+    "${nfs_root}/group/${group}/pub"
+
+  chmod 770 "${nfs_root}/group/${group}/priv"
+  chmod 775 "${nfs_root}/group/${group}/pub"
+
+  for sub in priv pub; do
+    set_facl "${nfs_root}/group/${group}/${sub}" \
+       group:${group}:rwpDdaARWcs:fd:allow \
+       group:${group}:x:d:allow
+  done
+done

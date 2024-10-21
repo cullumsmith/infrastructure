@@ -16,7 +16,7 @@ done
 
 for jail in "$@"; do
   poudriere jail -u -j "$jail" > /dev/null
-  poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/pkglist-idm -p "$ports_tree" -z idm > /dev/null
+  poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/idm-pkglist -p "$ports_tree" -z idm > /dev/null
   poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/pkglist -p "$ports_tree" > /dev/null
 done
 

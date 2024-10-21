@@ -1,3 +1,1 @@
-SHELL=/bin/sh
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
-@weekly root zfs list -Ho name | xargs -r -n1 zpool trim
+@weekly root zpool list -Ho name | xargs -r -n1 zpool trim
