@@ -5,7 +5,7 @@ archivers/unzip
 archivers/zip
 audio/elisa
 audio/juk
-audio/kid3
+audio/kid3@kf5
 audio/kmix
 audio/virtual_oss
 converters/php${php_version}-iconv
@@ -40,6 +40,7 @@ finance/gnucash
 finance/kmymoney
 ftp/php${php_version}-curl
 graphics/ImageMagick7@nox11
+graphics/digikam
 graphics/drm-kmod
 graphics/p5-Image-ExifTool
 graphics/php${php_version}-exif

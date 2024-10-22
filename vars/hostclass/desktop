@@ -36,8 +36,10 @@ neofetch
 noto-basic
 noto-emoji
 password-store
+postgresql16-client
 pulseaudio
 py${python_version}-pip
+rsync
 signal-desktop
 sndio
 stow
@@ -55,15 +57,16 @@ wireguard-tools
 xorg"
 
 desktop_kde_packages="
-audacious
-audacious-plugins
+audacious-qt5
+audacious-plugins-qt5
+digikam
 dino
+elisa
 gajim
 gtksourceview4
-juk
 k3b
 kde5
-kid3-qt6
+kid3-kf5
 kmix
 konversation
 py${python_version}-omemo-dr

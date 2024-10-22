@@ -13,13 +13,6 @@ objectClass: automountMap
 automountMapName: auto_home
 EOF
 
-# auto_home: *
-ldap_add "automountKey=*,automountMapName=auto_home,${automount_basedn}" <<EOF
-objectClass: automount
-automountKey: *
-automountInformation: ${fqdn}:/user/&/priv
-EOF
-
 # /nfs/user: auto_user
 ldap_add "automountKey=/nfs/user,automountMapName=auto_master,${automount_basedn}" <<EOF
 objectClass: automount
@@ -32,12 +25,18 @@ automountMapName: auto_user
 EOF
 
 # auto_user: $user/{pub,priv}
+# auto_home: $user
 for userquota in ${nfs_homedirs:-}; do
   user=$(echo "$userquota" | awk -F: '{print $1}')
   ldap_add "automountKey=${user},automountMapName=auto_user,${automount_basedn}" <<EOF
 objectClass: automount
 automountKey: ${user}
 automountInformation: /priv ${fqdn}:/user/&/priv /pub ${fqdn}:/user/&/pub
+EOF
+  ldap_add "automountKey=${user},automountMapName=auto_home,${automount_basedn}" <<EOF
+objectClass: automount
+automountKey: ${user}
+automountInformation: ${fqdn}:/user/&/priv
 EOF
 done
 
