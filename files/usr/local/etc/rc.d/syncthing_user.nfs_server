@@ -1,0 +1,86 @@
+#!/bin/sh
+
+# PROVIDE: syncthing_user
+# REQUIRE: DAEMON nslcd
+# KEYWORD: shutdown
+#
+# syncthing_user_enable=YES
+# syncthing_user_instances="bob joe"
+# syncthing_user_bob_port="22000"
+# syncthing_user_joe_port="22001"
+
+. /etc/rc.subr
+
+name=syncthing_user
+rcvar=syncthing_user_enable
+
+load_rc_config $name
+
+: ${syncthing_user_enable:='NO'}
+: ${syncthing_user_socket_group:='www'}
+
+syncthing_user_rundir=/var/run/syncthing
+syncthing_user_confdir=/var/db/syncthing
+syncthing_user_args='serve --no-browser --no-upgrade --no-default-folder --logflags=0 --logfile=-'
+syncthing_config_template=/usr/local/etc/syncthing.template.xml
+
+procname="/usr/local/bin/syncthing"
+command="/usr/sbin/daemon"
+start_precmd=syncthing_user_startprecmd
+required_files="${syncthing_config_template}"
+
+syncthing_user_startprecmd()
+{
+  [ -d "$syncthing_user_rundir"   ] || install -d -m 0755 "$syncthing_user_rundir"
+  [ -d "$syncthing_user_irundir"  ] || install -d -m 2750 -o "$syncthing_user_user" -g "$syncthing_user_socket_group" "$syncthing_user_irundir"
+  [ -d "$syncthing_user_iconfdir" ] || install -d -m 0750 -o "$syncthing_user_user" -g "$syncthing_user_user"         "$syncthing_user_iconfdir"
+
+  if [ ! -f "${syncthing_user_iconfdir}/config.xml" ]; then
+    su -m "$syncthing_user_user" -c "${procname} generate --home=${syncthing_user_iconfdir}"
+
+    deviceid=$("$procname" serve --home="$syncthing_user_iconfdir" --device-id)
+    fqdn=$(hostname -f)
+    sed -E \
+      -e "s|__DEVICEID__|${deviceid}|" \
+      -e "s|__PORT__|${syncthing_user_port}|" \
+      -e "s|__FQDN__|${fqdn}|" \
+      -e "s|__SOCK__|${syncthing_user_irundir}/syncthing.sock|" \
+      "$syncthing_config_template" > "${syncthing_user_iconfdir}/config.xml"
+  fi
+}
+
+if [ -n "$syncthing_user_instances" ]; then
+  _1=$1
+  if [ $# -gt 1 ]; then
+    shift
+    syncthing_user_instances=$*
+  fi
+
+  rc=0
+  for syncthing_user_user in $syncthing_user_instances; do
+    syncthing_user_group=$syncthing_user_user
+    syncthing_user_iconfdir="${syncthing_user_confdir}/${syncthing_user_user}"
+    syncthing_user_irundir="${syncthing_user_rundir}/${syncthing_user_user}"
+    unset syncthing_user_port
+    eval "syncthing_user_port=\$syncthing_user_${syncthing_user_user}_port"
+
+    if [ -z "${syncthing_user_port:-}" ]; then
+      echo "syncthing_user_${syncthing_user_user}_port not defined in /etc/rc.conf - skipping" 1>&2
+      continue
+    fi
+
+    pidfile="${syncthing_user_rundir}/${syncthing_user_user}/syncthing.pid"
+    command_args="-cf -s info -l daemon -T syncthing-${syncthing_user_user} -p ${pidfile} -t syncthing-${syncthing_user_user} \
+      ${procname} ${syncthing_user_args} --home=${syncthing_user_iconfdir} --gui-address=unix://${syncthing_user_irundir}/syncthing.sock"
+
+    run_rc_command "$_1"
+    if [ $? -ne 0 ]; then rc=1; fi
+
+    unset _pidcmd _rc_restart_done
+  done
+
+  exit $rc
+else
+  echo 'No users defined. Set syncthing_user_instances in /etc/rc.conf.' 1>&2
+  exit 1
+fi

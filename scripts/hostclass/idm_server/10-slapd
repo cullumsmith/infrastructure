@@ -36,6 +36,11 @@ pkg install -y \
 
 # Create ZFS dataset for OpenLDAP DB.
 create_dataset -o "mountpoint=${slapd_data_dir}" "${state_dataset}/openldap-data"
+zfs set \
+  com.sun:auto-snapshot:hourly=true \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/openldap-data"
 
 # To prevent a circular dependency in poudriere, we have to make a special "set"
 # of packages for the IDM hosts in which cyrus-sasl-gssapi is built with the

@@ -14,6 +14,10 @@ pkg install -y \
 
 # Create ZFS dataset for webroots.
 create_dataset -o "mountpoint=${vhosts_dir}" "${state_dataset}/vhosts"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/vhosts"
 
 # Configure nginx.
 install_template -m 0644 /usr/local/etc/nginx/nginx.conf

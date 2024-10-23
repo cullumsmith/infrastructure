@@ -44,6 +44,10 @@ pkg install -y \
 
 # Create ZFS dataset for Asterisk DB.
 create_dataset -o "mountpoint=${asterisk_db_dir}" "${state_dataset}/asterisk"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/asterisk"
 install_directory -o "$asterisk_user" -g "$asterisk_user" -m 0755 "$asterisk_db_dir"
 
 # Generate asterisk configuration.

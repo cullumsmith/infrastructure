@@ -1,0 +1,38 @@
+$(for user in ${syncthing_users:-}; do cat <<EOF
+upstream syncthing_${user} {
+  server unix:///var/run/syncthing/${user}/syncthing.sock;
+}
+
+EOF
+done)
+
+server {
+  listen 443      ssl default_server;
+  listen [::]:443 ssl default_server;
+  http2 on;
+
+  ssl_certificate      ${syncthing_https_cert};
+  ssl_certificate_key  ${syncthing_https_key};
+
+  add_header Strict-Transport-Security "max-age=63072000" always;
+
+  auth_gss_keytab ${nginx_keytab};
+  auth_gss_allow_basic_fallback off;
+
+$(for user in ${syncthing_users:-}; do cat <<EOF
+  location /${user}/ {
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+    proxy_pass http://syncthing_${user}/;
+    auth_gss on;
+    auth_gss_authorized_principal ${user};
+  }
+EOF
+done)
+}

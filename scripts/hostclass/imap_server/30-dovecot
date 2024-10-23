@@ -35,6 +35,11 @@ add_user \
 
 # Create ZFS dataset for virtual maildirs.
 create_dataset -o "mountpoint=${dovecot_vmail_dir}" "${state_dataset}/mailboxes"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  com.sun:auto-snapshot:monthly=true \
+  "${state_dataset}/mailboxes"
 
 # Set ownership on vmail dir.
 install_directory -m 0770 -o "$dovecot_vmail_user" -g "$dovecot_vmail_user" "$dovecot_vmail_dir"

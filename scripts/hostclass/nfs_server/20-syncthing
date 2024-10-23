@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# syncthing_users='user1 user2'
+# syncthing_user1_port=22000
+# syncthing_user2_port=22001
+
+if [ -z "${syncthing_users:-}" ]; then
+  return 0
+fi
+
+syncthing_https_cert="${nginx_conf_dir}/syncthing.crt"
+syncthing_https_key="${nginx_conf_dir}/syncthing.key"
+syncthing_conf_dir=/var/db/syncthing
+nginx_keytab="${keytab_dir}/nginx.keytab"
+
+pkg install -y \
+  syncthing \
+  nginx
+
+# Create ZFS dataset for syncthing configuration.
+create_dataset -o "mountpoint=$syncthing_conf_dir" "${state_dataset}/syncthing"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/syncthing"
+install_directory -m 0755 "$syncthing_conf_dir"
+
+# Copy syncthing_user rc script.
+install_file -m 0644 /usr/local/etc/syncthing.template.xml
+install_file -m 0555 /usr/local/etc/rc.d/syncthing_user
+
+# Generate nginx configuration.
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Create HTTP service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+
+ktadd -k "$nginx_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$nginx_keytab"
+chmod 640 "$nginx_keytab"
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$syncthing_https_cert"
+install_certificate_key nginx "$syncthing_https_key"
+
+# Enable and start daemons.
+sysrc -v nginx_enable=YES
+service nginx restart
+
+sysrc -v \
+  syncthing_user_enable=YES \
+  "syncthing_user_instances+=${syncthing_users}"
+
+for user in $syncthing_users; do
+  eval "port=\$syncthing_${user}_port"
+  sysrc -v "syncthing_user_${user}_port=${port}"
+done
+
+service syncthing_user restart

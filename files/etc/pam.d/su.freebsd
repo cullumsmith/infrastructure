@@ -1,0 +1,10 @@
+auth     sufficient  pam_rootok.so no_warn
+auth     sufficient  pam_self.so no_warn
+auth     requisite   pam_group.so no_warn group=wheel root_only fail_safe ruser
+auth     sufficient  /usr/local/lib/security/pam_krb5.so try_first_pass
+auth     required    pam_unix.so no_warn try_first_pass nullok
+
+account  required    /usr/local/lib/security/pam_krb5.so
+account  required    pam_unix.so
+
+session  required    pam_permit.so

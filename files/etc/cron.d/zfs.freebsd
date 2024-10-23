@@ -1,1 +1,2 @@
 @weekly root zpool list -Ho name | xargs -r -n1 zpool trim
+@monthly root zpool list -Ho name | xargs -r zpool scrub

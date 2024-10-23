@@ -1,0 +1,8 @@
+auth      required  pam_unix.so no_warn try_first_pass nullok
+
+account   required  pam_unix.so
+
+session   required  pam_lastlog.so no_fail
+session   required  pam_xdg.so
+
+password  required  pam_unix.so no_warn try_first_pass

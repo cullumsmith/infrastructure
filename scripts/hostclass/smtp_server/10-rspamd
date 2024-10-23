@@ -33,6 +33,10 @@ pkg install -y \
 
 # Create ZFS dataset for Redis DBs.
 create_dataset -o "mountpoint=${redis_data_dir}" "${state_dataset}/redis"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/redis"
 
 # Generate config files for redis instances.
 install_template -m 0644 \

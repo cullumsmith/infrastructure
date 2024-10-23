@@ -18,6 +18,9 @@ poudriere_patch_dir="${poudriere_conf_dir}/patches"
 # Create poudriere datasets.
 create_dataset -o "mountpoint=${poudriere_data_dir}" "${state_dataset}/poudriere"
 create_dataset -o "mountpoint=${poudriere_conf_dir}" "${state_dataset}/poudriere-config"
+zfs set com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/poudriere" \
+  "${state_dataset}/poudriere-config" 
 
 # Since we're doing a ton of compilation, disable sync on the poudriere dataset.
 # Possibly snakeoil, but my hope is that most file I/O will end up in the ARC cache

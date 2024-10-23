@@ -7,5 +7,5 @@ create_dataset -o mountpoint=none "$state_dataset"
 
 # If this is baremetal host or a VM, trim the zpools periodically.
 if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
-  install_file -m 0644 /etc/cron.d/zfs-trim
+  install_file -m 0644 /etc/cron.d/zfs
 fi

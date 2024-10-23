@@ -18,6 +18,10 @@ pkg install -y \
 
 # Create ZFS dataset for ZNC configs. 
 create_dataset -o "mountpoint=${znc_home}" "${state_dataset}/znc"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/znc"
 
 # Set ownership on ZNC dir.
 install_directory -o "$znc_user" -g "$znc_user" -m 0755 "$znc_home"

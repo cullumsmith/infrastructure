@@ -28,6 +28,11 @@ create_dataset \
   -o primarycache=metadata \
   -o atime=off \
   "${state_dataset}/postgres"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  com.sun:auto-snapshot:monthly=true \
+  "${state_dataset}/postgres"
 install_directory -m 0755 -o "$postgres_user" -g "$postgres_user" "$postgres_home"
 
 # Initialize the database.

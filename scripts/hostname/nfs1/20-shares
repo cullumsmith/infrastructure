@@ -2,6 +2,11 @@
 
 # media/music
 create_dataset -p "${nfs_dataset}/media/music"
+zfs set \
+  compression=off \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${nfs_dataset}/media/music"
 chgrp media-admin "${nfs_root}/media/music"
 chmod 2770 "${nfs_root}/media/music"
 set_facl "${nfs_root}/media/music" \

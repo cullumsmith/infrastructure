@@ -1,3 +1,4 @@
 #!/bin/sh
 
-allowed_tcp_ports='ssh nfsd'
+allowed_tcp_ports='ssh nfsd http https'
+nginx_gssapi=true

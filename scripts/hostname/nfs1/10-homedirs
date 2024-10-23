@@ -14,6 +14,9 @@ for userquota in ${nfs_homedirs:-}; do
 
   zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/user/${user}/priv"
   zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/user/${user}/pub"
+  zfs set 'com.sun:auto-snapshot=true' \
+    "${nfs_dataset}/user/${user}/priv" \
+    "${nfs_dataset}/user/${user}/pub"
 
   chown "${user}:${user}" \
     "${nfs_root}/user/${user}/priv" \
@@ -34,6 +37,9 @@ for groupquota in ${nfs_groupdirs:-}; do
 
   zfs set "refquota=${privquota:-$default_priv_quota}" "${nfs_dataset}/group/${group}/priv"
   zfs set "refquota=${pubquota:-$default_pub_quota}"   "${nfs_dataset}/group/${group}/pub"
+  zfs set 'com.sun:auto-snapshot=true' \
+    "${nfs_dataset}/group/${group}/priv" \
+    "${nfs_dataset}/group/${group}/pub"
 
   chown "root:${group}" \
     "${nfs_root}/group/${group}/priv" \

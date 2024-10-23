@@ -1,6 +1,5 @@
 #!/bin/sh
 
-: ${desktop_access_role:='desktop-access'}
 : ${desktop_access_gid:='40000'}
 : ${sddm_min_uid:='10000'}
 : ${sddm_max_uid:='19999'}
@@ -38,6 +37,11 @@ install_file -m 0555 \
 
 # Create ZFS dataset for local homedirs.
 create_dataset -o mountpoint=/usr/local/home "${state_dataset}/home"
+zfs set \
+  com.sun:auto-snapshot:hourly=true \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/home"
 
 # Enable sndio.
 sysrc -v sndiod_enable=YES

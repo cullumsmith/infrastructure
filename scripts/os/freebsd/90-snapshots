@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Don't run autosnapshot within jails. Otherwise we will create duplicate
+# snapshots with the host system.
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ]; then
+  return 0
+fi
+
+pkg install -y zfstools
+install_file -m 0644 /etc/cron.d/zfs-autosnapshot

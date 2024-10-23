@@ -11,6 +11,10 @@ pkg install -y unifi8
 
 # Create ZFS dataset for unifi data.
 create_dataset -o "mountpoint=${unifi_home}/data" "${state_dataset}/unifi"
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  "${state_dataset}/unifi"
 
 # Set ownership on unifi data dir.
 install_directory -o "$unifi_user" -g "$unifi_user" -m 0700 "${unifi_home}/data"

@@ -1,0 +1,4 @@
+# .login - csh login script, read by login shell, after `.cshrc' at login.
+
+# Query terminal size; useful for serial lines.
+if ( -x /usr/bin/resizewin ) /usr/bin/resizewin -z

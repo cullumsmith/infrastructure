@@ -88,6 +88,7 @@ net/php${php_version}-ldap
 net/php${php_version}-sockets
 net/py-python-ldap
 net/rsync
+net/syncthing
 net/turnserver
 net/wireguard-tools
 ports-mgmt/poudriere
@@ -101,6 +102,7 @@ security/krb5@ldap
 security/kstart
 security/openssh-portable
 security/pam_krb5@mit
+security/pam_mkhomedir
 security/pam_mkhomedir
 security/php${php_version}-filter
 security/py-omemo-dr
@@ -120,6 +122,7 @@ sysutils/pwgen
 sysutils/stow
 sysutils/tmux
 sysutils/tree
+sysutils/zfstools
 textproc/hs-pandoc
 textproc/jq
 textproc/p5-YAML

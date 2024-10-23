@@ -15,20 +15,33 @@ pkg install -y \
   pam_krb5 \
   perl5 \
   p5-perl-ldap \
-  p5-Authen-SASL
+  p5-Authen-SASL \
+  pam_mkhomedir
 
 # Configure PAM/NSS integration.
 install_file -m 0644 \
   /etc/nsswitch.conf \
+  /etc/pam.d/system \
   /etc/pam.d/login \
   /etc/pam.d/sshd \
-  /etc/pam.d/sudo
+  /etc/pam.d/sudo \
+  /etc/pam.d/su \
+  /etc/pam.d/other
+
+install_template -m 0644 /etc/login.access
 
 install_template -m 0644 \
   /etc/krb5.conf \
   /etc/nscd.conf \
   /usr/local/etc/openldap/ldap.conf  \
   /usr/local/etc/nslcd.conf
+
+# Ensure /home exists and configure skel files.
+install_directory -m 0755 /home
+install_file -m 0644 \
+  /usr/share/skel/dot.login \
+  /usr/share/skel/dot.profile \
+  /usr/share/skel/dot.shrc
 
 # Create ldap.conf symlink.
 ln -snfv /usr/local/etc/openldap/ldap.conf /usr/local/etc/ldap.conf

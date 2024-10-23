@@ -1,0 +1,6 @@
+export CLICOLOR=1
+export PAGER=less
+export LESS='-iMRS -x2'
+export EDITOR=vi
+export LSCOLORS=DxfxgxgxcxxbxbaCacADAd
+export ENV="${HOME}/.shrc"
