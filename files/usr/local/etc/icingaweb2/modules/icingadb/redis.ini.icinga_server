@@ -1,0 +1,3 @@
+[redis1]
+host = "localhost"
+port = "${redis_port}"

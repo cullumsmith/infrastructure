@@ -76,6 +76,10 @@ net-im/gajim
 net-im/prosody
 net-im/prosody-modules
 net-im/signal-desktop
+net-mgmt/icinga2
+net-mgmt/icingadb
+net-mgmt/icingaweb2
+net-mgmt/icingaweb2-module-icingadb
 net-mgmt/unifi8
 net/asterisk18
 net/freeradius3

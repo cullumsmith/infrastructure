@@ -5,6 +5,7 @@
 : ${vaultwarden_dbhost:="$postgres_host"}
 : ${vaultwarden_fqdn:="$fqdn"}
 
+vaultwarden_dn="uid=${vaultwarden_username},${robots_basedn}"
 vaultwarden_local_username=$nginx_user
 vaultwarden_https_cert="${nginx_conf_dir}/vaultwarden.crt"
 vaultwarden_https_key="${nginx_conf_dir}/vaultwarden.key"
@@ -17,7 +18,11 @@ pkg install -y \
   nginx
 
 # Create vaultwarden principal and keytab.
-add_principal -nokey -x "containerdn=${robots_basedn}" "$vaultwarden_username"
+ldap_add "$vaultwarden_dn" <<EOF
+objectClass: account
+uid: ${vaultwarden_username}
+EOF
+add_principal -nokey -x "dn=${vaultwarden_dn}" "$vaultwarden_username"
 
 ktadd -k "$vaultwarden_client_keytab" "$vaultwarden_username"
 chgrp "$vaultwarden_local_username" "$vaultwarden_client_keytab"

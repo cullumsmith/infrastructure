@@ -1,0 +1,28 @@
+[icingaweb_db]
+type = "db"
+db = "pgsql"
+host = "${icingaweb_dbhost}"
+dbname = "${icingaweb_dbname}"
+username = "${icinga_username}"
+password = ""
+port = "5432"
+use_ssl = "0"
+
+[icingaweb_ldap]
+type = "ldap"
+hostname = "${ldap_hosts}"
+port = "389"
+encryption = "starttls"
+bind_dn = "${icinga_dn}"
+bind_pw = "${icinga_password}"
+root_dn = "${accounts_basedn}"
+
+[icingadb]
+type = "db"
+db = "pgsql"
+host = "${icinga_dbhost}"
+dbname = "${icinga_dbname}"
+username = "${icinga_username}"
+password = ""
+port = "5432"
+use_ssl = "0"

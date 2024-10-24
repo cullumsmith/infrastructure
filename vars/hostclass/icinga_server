@@ -1,0 +1,5 @@
+#!/bin/sh
+
+icinga_port=5665
+allowed_tcp_ports="ssh http https ${icinga_port}"
+nginx_gssapi=true

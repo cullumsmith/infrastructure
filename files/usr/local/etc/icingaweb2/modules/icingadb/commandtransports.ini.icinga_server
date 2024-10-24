@@ -1,0 +1,6 @@
+[icinga2]
+skip_validation = "0"
+transport = "api"
+port = "${icinga_port}"
+username = "${icingaweb_api_username}"
+password = ${icingaweb_api_password}"

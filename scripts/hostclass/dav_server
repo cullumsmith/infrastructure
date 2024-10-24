@@ -10,10 +10,10 @@
 : ${davical_awl_repo:='https://gitlab.com/davical-project/awl.git'}
 : ${davical_awl_branch:='master'}
 
+davical_dn="uid=${davical_username},${robots_basedn}"
 davical_repo_dir=/usr/local/www/davical
 davical_awl_repo_dir=/usr/local/share/awl
 davical_webroot="${davical_repo_dir}/htdocs"
-
 davical_https_cert="${nginx_conf_dir}/davical.crt"
 davical_https_key="${nginx_conf_dir}/davical.key"
 davical_https_cacert="${nginx_conf_dir}/davical.ca.crt"
@@ -55,7 +55,11 @@ git -C "$davical_awl_repo_dir" pull --ff-only
 git -C "$davical_awl_repo_dir" switch "$davical_awl_branch"
 
 # Create davical principal and keytab.
-add_principal -nokey -x "containerdn=${robots_basedn}" "$davical_username"
+ldap_add "$davical_dn" <<EOF
+objectClass: account
+uid: ${davical_username}
+EOF
+add_principal -nokey -x "dn=${davical_dn}" "$davical_username"
 
 ktadd -k "$davical_client_keytab" "$davical_username"
 chgrp "$nginx_user" "$davical_client_keytab"

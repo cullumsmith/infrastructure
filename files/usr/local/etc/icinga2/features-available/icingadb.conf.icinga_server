@@ -1,0 +1,3 @@
+object IcingaDB "icingadb" {
+  path = "${redis_sock}"
+}

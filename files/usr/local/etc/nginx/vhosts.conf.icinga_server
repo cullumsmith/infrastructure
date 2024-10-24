@@ -1,0 +1,33 @@
+server {
+  listen 443      ssl default_server;
+  listen [::]:443 ssl default_server;
+  http2 on;
+
+  root ${icingaweb_webroot};
+  index index.php index.html;
+
+  ssl_certificate      ${icingaweb_https_cert};
+  ssl_certificate_key  ${icingaweb_https_key};
+
+  add_header Strict-Transport-Security "max-age=63072000" always;
+
+  auth_gss_keytab ${nginx_keytab};
+  auth_gss_allow_basic_fallback off;
+  auth_gss on;
+  satisfy any;
+$(printf '  deny %s;\n' $kerberized_cidrs)
+  allow all;
+
+  location ~ ^/index\.php(.*)$ {
+    fastcgi_pass unix:${icingaweb_fpm_socket};
+    fastcgi_index index.php;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME ${icingaweb_webroot}/index.php;
+    fastcgi_param ICINGAWEB_CONFIGDIR ${icingaweb_conf_dir};
+  }
+
+  location ~ ^/(.+)? {
+    index index.php;
+    try_files \$1 \$uri \$uri/ /index.php\$is_args\$args;
+  }
+}

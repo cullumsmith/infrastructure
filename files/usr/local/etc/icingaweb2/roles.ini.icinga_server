@@ -1,0 +1,12 @@
+[Administrators]
+$(if [ -n "$icingaweb_admin_groups" ]; then
+cat <<EOF
+groups = "$(join ',' $icingaweb_admin_groups)"
+EOF
+fi)
+permissions = "*"
+
+[Users]
+groups = "${icingaweb_access_role}"
+permissions = "module/icingadb"
+icingadb/denylist/variables = "*priv*,*auth*,*key*,*pass*,*token*"

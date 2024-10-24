@@ -1,0 +1,10 @@
+[icingaweb2]
+backend = "ldap"
+resource = "icingaweb_ldap"
+base_dn = "${users_basedn}"
+user_class = "inetOrgPerson"
+user_name_attribute = "uid"
+filter = "memberOf=cn=${icingaweb_access_role},${roles_basedn}"
+
+[autologin]
+backend = external

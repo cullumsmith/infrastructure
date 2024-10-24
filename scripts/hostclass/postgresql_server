@@ -19,7 +19,21 @@ postgres_tls_cert="${postgres_home}/postgres.crt"
 postgres_tls_key="${postgres_home}/postgres.key"
 postgres_keytab="${keytab_dir}/postgres.keytab"
 
-pkg install -y postgresql${postgresql_version}-server
+postgres_psql(){
+  psql \
+    --quiet \
+    --no-align \
+    --echo-all \
+    --tuples-only \
+    --no-password \
+    --username=postgres \
+    --dbname=postgres \
+    "$@"
+}
+
+pkg install -y \
+  postgresql${postgresql_version}-server \
+  postgresql${postgresql_version}-contrib
 
 # Create ZFS dataset for postgresql data.
 create_dataset \
@@ -78,7 +92,7 @@ echo 'Restarting postgresql.'
 service postgresql restart > /dev/null 2>&1 < /dev/null || die 'failed to start postgresql'
 
 # Create boxconf admin user.
-psql --quiet --no-align --echo-all --tuples-only --no-password --username=postgres --dbname=postgres -c \
+postgres_psql -c \
 "DO
 \$$
 BEGIN
@@ -87,3 +101,6 @@ BEGIN
   END IF;
 END
 \$$"
+
+# Load citext extension (required by icingadb)
+postgres_psql -c 'create extension if not exists citext;'

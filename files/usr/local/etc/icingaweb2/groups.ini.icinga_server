@@ -1,0 +1,11 @@
+[icingaweb2]
+backend = "ldap"
+resource = "icingaweb_ldap"
+user_backend = "icingaweb2"
+user_class = "inetOrgPerson"
+user_name_attribute = "uid"
+user_base_dn = "${users_basedn}"
+base_dn = "${groups_basedn}"
+group_class = "groupOfMembers"
+group_member_attribute = "member"
+group_name_attribute = "cn"

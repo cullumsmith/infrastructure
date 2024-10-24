@@ -8,6 +8,7 @@
 : ${ttrss_admin_role:='ttrss-admin'}
 : ${ttrss_mail_from:="ttrss-noreply@${email_domain}"}
 
+ttrss_dn="uid=${ttrss_username},${robots_basedn}"
 ttrss_https_cert="${nginx_conf_dir}/ttrss.crt"
 ttrss_https_key="${nginx_conf_dir}/ttrss.key"
 ttrss_repo='https://git.tt-rss.org/fox/tt-rss.git/'
@@ -49,7 +50,11 @@ pkg install -y \
   php${php_version}-zip
 
 # Create ttrss principal and keytab.
-add_principal -nokey -x "containerdn=${robots_basedn}" "$ttrss_username"
+ldap_add "$ttrss_dn" <<EOF
+objectClass: account
+uid: ${ttrss_username}
+EOF
+add_principal -nokey -x "dn=${ttrss_dn}" "$ttrss_username"
 
 ktadd -k "$ttrss_client_keytab" "$ttrss_username"
 chgrp "$nginx_user" "$ttrss_client_keytab"

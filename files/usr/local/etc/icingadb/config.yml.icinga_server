@@ -1,0 +1,10 @@
+database:
+  type: pgsql
+  host: ${icinga_dbhost}
+  user: ${icinga_username}
+  password: ${icinga_password}
+  database: ${icinga_dbname}
+  tls: true
+
+redis:
+  host: ${redis_sock}

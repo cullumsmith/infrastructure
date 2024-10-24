@@ -10,7 +10,7 @@
 : ${slapd_syncrepl_session_log:='1000'}
 : ${slapd_syncrepl_cleanup_age:='7'}
 : ${slapd_syncrepl_cleanup_interval:='1'}
-: ${slapd_admin_role:='role-ldap-admin'}
+: ${slapd_admin_role:='ldap-admin'}
 
 slapd_user=ldap
 slapd_data_dir=/var/db/openldap-data
@@ -173,7 +173,7 @@ objectClass: organizationalUnit
 ou: $(ldap_rdn_value "$roles_basedn")
 EOF
 
-  # cn=role-ldap-admin,ou=roles,ou=groups,ou=accounts,dc=example,dc=com
+  # cn=ldap-admin,ou=roles,ou=groups,ou=accounts,dc=example,dc=com
   ldap_add "cn=${slapd_admin_role},${roles_basedn}" <<EOF
 objectClass: groupOfMembers
 cn: ${slapd_admin_role}

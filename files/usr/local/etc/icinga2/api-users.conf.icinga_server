@@ -1,0 +1,4 @@
+object ApiUser "${icingaweb_api_username}" {
+  password = "${icingaweb_api_password}"
+  permissions = [ "status/query", "actions/*", "objects/modify/*", "objects/query/*" ]
+}
