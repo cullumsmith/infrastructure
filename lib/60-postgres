@@ -17,8 +17,8 @@ EOF
 }
 
 postgres_create_database(){
-  # $1 = postgres_host, $2 = dbname, $3 = owner
+  # $1 = postgres_host, $2 = dbname, $3 = owner $4 = encoding, $5 = locale
   cat <<EOF | postgres_run -h "${1}" -d postgres
-SELECT 'CREATE DATABASE "${2}" OWNER "${3:-postgres}"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${2}')\\gexec
+SELECT 'CREATE DATABASE "${2}" ENCODING "${4:-UTF8}" LOCALE "${5:-en_US.UTF-8}" OWNER "${3:-postgres}" TEMPLATE "template0"' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${2}')\\gexec
 EOF
 }

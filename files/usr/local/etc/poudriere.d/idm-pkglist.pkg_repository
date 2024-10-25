@@ -4,6 +4,7 @@ dns/powerdns
 dns/unbound
 editors/vim@console
 lang/python
+net-mgmt/monitoring-plugins
 net/nss-pam-ldapd-sasl
 net/openldap26-client
 net/openldap26-server

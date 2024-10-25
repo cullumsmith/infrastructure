@@ -4,6 +4,12 @@ green=$'\e[0;32m'
 PS1="\[${green}\]\u@\h\[${reset}\]:\[${blue}\]\W\[${green}\]\$\[${reset}\] "
 unset reset blue green
 
+export CLICOLOR=1
+export PAGER=less
+export LESS='-iMRS -x2'
+export EDITOR=vim
+export LSCOLORS=DxfxgxgxcxxbxbaCacADAd
+
 alias ls='ls -FHh'
 alias ll='ls -l'
 alias la='ls -la'

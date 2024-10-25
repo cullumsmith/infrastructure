@@ -104,3 +104,8 @@ END
 
 # Load citext extension (required by icingadb)
 postgres_psql -c 'create extension if not exists citext;'
+
+# Create icinga user.
+postgres_psql <<EOF
+SELECT 'CREATE ROLE "${icinga_username}" WITH LOGIN' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${icinga_username}')\\gexec
+EOF

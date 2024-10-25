@@ -1,0 +1,119 @@
+object HostGroup "hypervisors" {
+  display_name = "Hypervisors"
+  assign where regex("^alcatraz[0-9]+", host.name)
+}
+
+object HostGroup "idm-servers" {
+  display_name = "IDM Servers"
+  assign where regex("^idm[0-9]+", host.name)
+}
+
+object HostGroup "pkg-repositories" {
+  display_name = "Pkg Repositories"
+  assign where regex("^pkg[0-9]+", host.name)
+}
+
+object HostGroup "smtp-servers" {
+  display_name = "SMTP Servers"
+  assign where regex("^smtp[0-9]+", host.name)
+}
+
+object HostGroup "imap-servers" {
+  display_name = "IMAP Servers"
+  assign where regex("^imap[0-9]+", host.name)
+}
+
+object HostGroup "radius-servers" {
+  display_name = "RADIUS Servers"
+  assign where regex("^radius[0-9]+", host.name)
+}
+
+object HostGroup "desktops" {
+  display_name = "Desktops"
+  assign where regex("^desktop[0-9]+", host.name)
+}
+
+object HostGroup "laptops" {
+  display_name = "Laptops"
+  assign where regex("^laptop[0-9]+", host.name)
+}
+
+object HostGroup "postgresql-servers" {
+  display_name = "PostgreSQL Servers"
+  assign where regex("^postgres[0-9]+", host.name)
+}
+
+object HostGroup "dav-servers" {
+  display_name = "DAV Servers"
+  assign where regex("^dav[0-9]+", host.name)
+}
+
+object HostGroup "bitwarden-servers" {
+  display_name = "Bitwarden Servers"
+  assign where regex("^bitwarden[0-9]+", host.name)
+}
+
+object HostGroup "ttrss-servers" {
+  display_name = "TT-RSS Servers"
+  assign where regex("^ttrss[0-9]+", host.name)
+}
+
+object HostGroup "znc-servers" {
+  display_name = "ZNC Servers"
+  assign where regex("^znc[0-9]+", host.name)
+}
+
+object HostGroup "cups-servers" {
+  display_name = "CUPS Servers"
+  assign where regex("^cups[0-9]+", host.name)
+}
+
+object HostGroup "unifi-controllers" {
+  display_name = "UniFi Controllers"
+  assign where regex("^unifi[0-9]+", host.name)
+}
+
+object HostGroup "invidious-servers" {
+  display_name = "Invidious Servers"
+  assign where regex("^invidious[0-9]+", host.name)
+}
+
+object HostGroup "git-servers" {
+  display_name = "Git Servers"
+  assign where regex("^git[0-9]+", host.name)
+}
+
+object HostGroup "xmpp-servers" {
+  display_name = "XMPP Servers"
+  assign where regex("^xmpp[0-9]+", host.name)
+}
+
+object HostGroup "web-servers" {
+  display_name = "Web Servers"
+  assign where regex("^(www|web)[0-9]+", host.name)
+}
+
+object HostGroup "nameservers" {
+  display_name = "Nameservers"
+  assign where regex("^ns[0-9]+", host.name)
+}
+
+object HostGroup "asterisk-servers" {
+  display_name = "Asterisk Servers"
+  assign where regex("^pbx[0-9]+", host.name)
+}
+
+object HostGroup "nfs-servers" {
+  display_name = "NFS Servers"
+  assign where regex("^nfs[0-9]+", host.name)
+}
+
+object HostGroup "turn-servers" {
+  display_name = "TURN Servers"
+  assign where regex("^turn[0-9]+", host.name)
+}
+
+object HostGroup "icinga-servers" {
+  display_name = "Icinga Servers"
+  assign where regex("^icinga[0-9]+", host.name)
+}

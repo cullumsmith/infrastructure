@@ -1,9 +1,10 @@
 #!/bin/sh
 
-: ${icinga_username:='s-icinga'}
+: ${icinga_threads:="$nproc"}
 : ${icinga_dbname:='icinga'}
 : ${icinga_dbhost:="$postgres_host"}
 : ${icinga_password:='changeme'}
+: ${icinga_ticket_salt:='changeme'}
 : ${icingaweb_api_password:='changeme'}
 : ${icingaweb_dbhost:="$postgres_host"}
 : ${icingaweb_dbname:='icingaweb'}
@@ -118,10 +119,10 @@ install_directory -m 0700 -o "$icinga_local_user" -g "$icinga_local_user" \
   "$icinga_ca_dir"
 [ -f "${icinga_ca_dir}/ca.crt" ] \
   || icinga2 pki new-ca
-[ -f "${icinga_cert_dir}/${fqdn}.csr" ] \
-  || icinga2 pki new-cert --cn "$fqdn" --key "${icinga_cert_dir}/${fqdn}.key" --csr "${icinga_cert_dir}/${fqdn}.csr"
-[ -f "${icinga_cert_dir}/${fqdn}.crt" ] \
-  || icinga2 pki sign-csr --csr "${icinga_cert_dir}/${fqdn}.csr" --cert "${icinga_cert_dir}/${fqdn}.crt"
+[ -f "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr" ] \
+  || icinga2 pki new-cert --cn "$BOXCONF_HOSTNAME" --key "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.key" --csr "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr"
+[ -f "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.crt" ] \
+  || icinga2 pki sign-csr --csr "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr" --cert "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.crt"
 ln -snfv "${icinga_ca_dir}/ca.crt" "${icinga_cert_dir}/ca.crt"
 
 # Enable icinga modules.
@@ -132,7 +133,21 @@ done
 # Generate icinga configuration.
 install_template -m 0640 -g "$icinga_local_user" \
   "${icinga_conf_dir}/api-users.conf" \
-  "${icinga_conf_dir}/features-available/icingadb.conf"
+  "${icinga_conf_dir}/constants.conf" \
+  "${icinga_conf_dir}/icinga2.conf" \
+  "${icinga_conf_dir}/zones.conf" \
+  "${icinga_conf_dir}/features-available/icingadb.conf" \
+  "${icinga_conf_dir}/conf.d/users.conf" \
+  "${icinga_conf_dir}/conf.d/hosts.conf"
+install_file -m 0640 -g "$icinga_local_user" \
+  "${icinga_conf_dir}/conf.d/app.conf" \
+  "${icinga_conf_dir}/conf.d/commands.conf" \
+  "${icinga_conf_dir}/conf.d/downtimes.conf" \
+  "${icinga_conf_dir}/conf.d/groups.conf" \
+  "${icinga_conf_dir}/conf.d/notifications.conf" \
+  "${icinga_conf_dir}/conf.d/services.conf" \
+  "${icinga_conf_dir}/conf.d/templates.conf" \
+  "${icinga_conf_dir}/conf.d/timeperiods.conf"
 
 # Create icingaweb postgres user and database.
 postgres_create_database "$icingaweb_dbhost" "$icingaweb_dbname" "$icinga_username"
@@ -143,6 +158,7 @@ if ! icingaweb_psql -c 'SELECT 1 FROM icingaweb_schema'; then
 fi
 
 # Generate icingaweb configuration.
+find "$icinga_conf_dir" -name '*.sample' -delete
 install_directory -m 2770 -g "$nginx_user" \
   "$icingaweb_conf_dir" \
   "${icingaweb_conf_dir}/enabledModules" \
@@ -183,18 +199,31 @@ install_template -m 0644 \
 install_certificate     nginx "$icingaweb_https_cert"
 install_certificate_key nginx "$icingaweb_https_key"
 
+# Icinga spawns a number of threads based on the core count of the machine. On machines
+# with a large number of CPU cores, this can be undesirable (especially if run from a jail
+# with cpuset()).
+#
+# The thread count can be overriden with the -DConcurrency=N argument to icinga2.
+# Unfortunately, icinga2 rc script from ports does not have a way to override the
+# daemon arguments. So we have to copy over a custom one ("myicinga2").
+#
+# https://icinga.com/docs/icinga-2/latest/doc/15-troubleshooting/#try-reducing-concurrency-threads
+install_file -m 0555 /usr/local/etc/rc.d/myicinga2
+
 # Enable and start daemons.
 sysrc -v \
   nginx_enable=YES \
   php_fpm_enable=YES \
   redis_enable=YES \
   icingadb_enable=YES \
-  icinga2_enable=YES
+  myicinga2_enable=YES \
+  icinga2_flags="-DConfiguration.Concurrency=${icinga_threads}"
 service nginx restart
 service php_fpm restart
+
 service redis restart
-service icingadb restart > /dev/null 2>&1 < /dev/null || die 'failed to start icingadb'
-service icinga2 restart
+service icingadb restart > /dev/null 2>&1
+service myicinga2 restart
 
 # Create access role.
 ldap_add "cn=${icingaweb_access_role},${roles_basedn}" <<EOF

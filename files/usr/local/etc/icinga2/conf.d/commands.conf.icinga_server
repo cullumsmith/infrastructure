@@ -1,0 +1,40 @@
+object NotificationCommand "mail-host-notification" {
+  command = [ ConfigDir + "/scripts/mail-host-notification.sh" ]
+
+  env = {
+    NOTIFICATIONTYPE = "$notification.type$"
+    HOSTDISPLAYNAME = "$host.display_name$"
+    HOSTNAME = "$host.name$"
+    HOSTADDRESS = "$address$"
+    HOSTSTATE = "$host.state$"
+    LONGDATETIME = "$icinga.long_date_time$"
+    HOSTOUTPUT = "$host.output$"
+    NOTIFICATIONAUTHORNAME = "$notification.author$"
+    NOTIFICATIONCOMMENT = "$notification.comment$"
+    HOSTDISPLAYNAME = "$host.display_name$"
+    USEREMAIL = "$user.email$"
+    HOSTNOTES = "$host.notes$"
+  }
+}
+
+object NotificationCommand "mail-service-notification" {
+  command = [ ConfigDir + "/scripts/mail-service-notification.sh" ]
+
+  env = {
+    NOTIFICATIONTYPE = "$notification.type$"
+    SERVICENAME = "$service.name$"
+    HOSTNAME = "$host.name$"
+    HOSTDISPLAYNAME = "$host.display_name$"
+    HOSTADDRESS = "$address$"
+    SERVICESTATE = "$service.state$"
+    LONGDATETIME = "$icinga.long_date_time$"
+    SERVICEOUTPUT = "$service.output$"
+    NOTIFICATIONAUTHORNAME = "$notification.author$"
+    NOTIFICATIONCOMMENT = "$notification.comment$"
+    HOSTDISPLAYNAME = "$host.display_name$"
+    SERVICEDISPLAYNAME = "$service.display_name$"
+    USEREMAIL = "$user.email$"
+    HOSTNOTES = "$host.notes$"
+    SERVICENOTES = "$service.notes$"
+  }
+}

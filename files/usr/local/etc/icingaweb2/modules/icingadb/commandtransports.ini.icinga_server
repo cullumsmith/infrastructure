@@ -1,6 +1,7 @@
 [icinga2]
 skip_validation = "0"
 transport = "api"
+host = "127.0.0.1"
 port = "${icinga_port}"
 username = "${icingaweb_api_username}"
-password = ${icingaweb_api_password}"
+password = "${icingaweb_api_password}"
