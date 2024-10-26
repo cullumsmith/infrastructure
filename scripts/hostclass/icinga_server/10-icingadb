@@ -1,0 +1,81 @@
+#!/bin/sh
+
+: ${icinga_password:='changeme'}
+: ${icinga_dbhost:="$postgres_host"}
+: ${icinga_dbname:='icinga'}
+
+icinga_dn="uid=${icinga_username},${robots_basedn}"
+icingaweb_client_keytab="${keytab_dir}/icingaweb.client.keytab"
+icingadb_conf_dir=/usr/local/etc/icingadb
+redis_user=redis
+redis_data_dir=/var/db/redis
+redis_sock=/var/run/redis/redis.sock
+redis_port=6379
+redis_data_dir=/var/db/redis
+
+icinga_psql(){
+  KRB5CCNAME=MEMORY: KRB5_CLIENT_KTNAME="$icingaweb_client_keytab" \
+  psql \
+    --quiet --no-align --tuples-only --echo-all \
+    --host="$icinga_dbhost" \
+    --dbname="$icinga_dbname" \
+    --username="$icinga_username" \
+    --no-password \
+    "$@"
+}
+
+# Install packages.
+pkg install -y \
+  icingadb \
+  redis
+
+# Create icinga LDAP user, principal, and keytab.
+# Note that we have a separate userPassword attribute in LDAP because icingadb is
+# written in golang, and its pq library is not built with GSSAPI support.
+# GSSAPI *is* supported by icingaweb2 via PHP's PDO, however, so we use it there.
+# We also need a userPassword attribute for icingaweb2 LDAP binds.
+ldap_add "$icinga_dn" <<EOF
+objectClass: account
+objectClass: simpleSecurityObject
+uid: ${icinga_username}
+userPassword: {SSHA-512}
+EOF
+ldap_passwd "$icinga_dn" "$icinga_password"
+add_principal -nokey -x "dn=${icinga_dn}" "$icinga_username"
+
+ktadd -k "$icingaweb_client_keytab" "$icinga_username"
+chgrp "$nginx_user" "$icingaweb_client_keytab"
+chmod 640 "$icingaweb_client_keytab"
+nginx_uid=$(id -u "$nginx_user")
+install_directory -o "$nginx_user" -m 0700 "/var/krb5/user/${nginx_uid}"
+ln -snfv "$icingaweb_client_keytab" "/var/krb5/user/${nginx_uid}/client.keytab"
+
+# Create icinga postgres user and database.
+postgres_create_role "$icinga_dbhost" "$icinga_username"
+postgres_create_database "$icinga_dbhost" "$icinga_dbname" "$icinga_username"
+
+# Apply icinga database schema.
+if ! icinga_psql -c 'SELECT 1 FROM icingadb_schema'; then
+  icinga_psql -f /usr/local/share/examples/icingadb/schema/pgsql/schema.sql
+fi
+
+# Generate icinga database configuration.
+install_template -g "${icinga_local_user}" -m 0640 "${icingadb_conf_dir}/config.yml"
+
+# Create ZFS dataset for Redis DBs.
+create_dataset -o "mountpoint=${redis_data_dir}" "${state_dataset}/redis"
+install_directory -m 0700 -o "$redis_user" "$redis_data_dir"
+
+# Generate redis configuration
+install_template -m 0644 /usr/local/etc/redis.conf
+
+# Add icinga user to redis group, so it can write to the redis unix socket.
+pw groupmod "$redis_user" -m "$icinga_local_user"
+
+# Enable and start daemons for icingadb.
+sysrc -v \
+  redis_enable=YES \
+  icingadb_enable=YES
+
+service redis restart
+service icingadb restart > /dev/null 2>&1

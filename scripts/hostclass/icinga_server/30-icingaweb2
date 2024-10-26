@@ -1,0 +1,96 @@
+#!/bin/sh
+
+: ${icingaweb_api_password:='changeme'}
+: ${icingaweb_dbhost:="$postgres_host"}
+: ${icingaweb_dbname:='icingaweb'}
+: ${icingaweb_access_role:='icinga-access'}
+
+# Note that icingaweb2 does not support nested groups.
+: ${icingaweb_admin_groups:=''}
+
+icingaweb_https_cert="${nginx_conf_dir}/icingaweb.crt"
+icingaweb_https_key="${nginx_conf_dir}/icingaweb.key"
+icingaweb_install_dir=/usr/local/www/icingaweb2
+icingaweb_webroot="${icingaweb_install_dir}/public"
+icingaweb_conf_dir=/usr/local/etc/icingaweb2
+icingaweb_fpm_socket=/var/run/fpm-icingaweb.sock
+nginx_keytab="${keytab_dir}/nginx.keytab"
+
+icingaweb_psql(){
+  KRB5CCNAME=MEMORY: KRB5_CLIENT_KTNAME="$icingaweb_client_keytab" \
+  psql \
+    --quiet --no-align --tuples-only --echo-all \
+    --host="$icingaweb_dbhost" \
+    --dbname="$icingaweb_dbname" \
+    --username="$icinga_username" \
+    --no-password \
+    "$@"
+}
+
+# Install packages.
+pkg install -y \
+  icingaweb2-php${php_version} \
+  icingaweb2-module-icingadb-php${php_version} \
+  nginx
+
+# Create icingaweb postgres user and database.
+postgres_create_database "$icingaweb_dbhost" "$icingaweb_dbname" "$icinga_username"
+
+# Apply icingaweb database schema.
+if ! icingaweb_psql -c 'SELECT 1 FROM icingaweb_schema'; then
+  icingaweb_psql -f /usr/local/www/icingaweb2/schema/pgsql.schema.sql
+fi
+
+# Generate icingaweb configuration.
+install_directory -m 2770 -g "$nginx_user" \
+  "$icingaweb_conf_dir" \
+  "${icingaweb_conf_dir}/enabledModules" \
+  "${icingaweb_conf_dir}/modules" \
+  "${icingaweb_conf_dir}/modules/icingadb"
+install_template -m 0660 -g "$nginx_user" \
+  "${icingaweb_conf_dir}/modules/icingadb/commandtransports.ini" \
+  "${icingaweb_conf_dir}/modules/icingadb/config.ini" \
+  "${icingaweb_conf_dir}/modules/icingadb/redis.ini" \
+  "${icingaweb_conf_dir}/config.ini" \
+  "${icingaweb_conf_dir}/resources.ini" \
+  "${icingaweb_conf_dir}/authentication.ini" \
+  "${icingaweb_conf_dir}/groups.ini" \
+  "${icingaweb_conf_dir}/roles.ini"
+ln -snfv "${icingaweb_install_dir}/modules/icingadb" "${icingaweb_conf_dir}/enabledModules/icingadb"
+
+# Generate nginx configuration.
+install_file -m 0644 /usr/local/etc/nginx/fastcgi_params
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/vhosts.conf
+
+# Create HTTP service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+ktadd -k "$nginx_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$nginx_keytab"
+chmod 640 "$nginx_keytab"
+
+# Generate php-fpm configuration.
+install_file -m 0644 \
+  /usr/local/etc/php.ini \
+  /usr/local/etc/php-fpm.conf
+install_template -m 0644 \
+  /usr/local/etc/php-fpm.d/icingaweb.conf
+> /usr/local/etc/php-fpm.d/www.conf
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$icingaweb_https_cert"
+install_certificate_key nginx "$icingaweb_https_key"
+
+# Enable and start daemons.
+sysrc -v \
+  nginx_enable=YES \
+  php_fpm_enable=YES
+service nginx restart
+service php_fpm restart
+
+# Create icingaweb access role.
+ldap_add "cn=${icingaweb_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${icingaweb_access_role}
+EOF

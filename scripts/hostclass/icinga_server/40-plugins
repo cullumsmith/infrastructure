@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# These are used for RADIUS authentication checks.
+icinga_tls_client_cert="${icinga_home_dir}/${icinga_username}.crt"
+icinga_tls_client_key="${icinga_home_dir}/${icinga_username}.key"
+
+# Install package dependencies for custom plugins.
+pkg install -y \
+  wpa_supplicant
+
+# Copy custom plugins.
+install_file -m 0555 \
+  "${icinga_plugin_dir}/check_eapol"
+
+# Create wpa_supplicant file for radius checks.
+install_template -m 0640 -g "$icinga_local_user" "${icinga_home_dir}/eap-ttls-pap.conf"
+install_template -m 0640 -g "$icinga_local_user" "${icinga_home_dir}/eap-tls.conf"
+
+# Add icinga user to wifi access role.
+ldap_add "cn=${wifi_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${wifi_access_role}
+EOF
+ldap_add_attribute "cn=${wifi_access_role},${roles_basedn}"  member "$icinga_dn"
+
+# Copy icinga client certificate.
+install_certificate             -g "$icinga_local_user" icinga "$icinga_tls_client_cert"
+install_certificate_key -m 0640 -g "$icinga_local_user" icinga "$icinga_tls_client_key"
+
+# Copy icinga ssh key.
+install_directory -m 0755 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh"
+install_directory -m 0700 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/sockets"
+install_file      -m 0600 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/id_ed25519"
+
+# Generate ssh client configuration.
+install_file -m 0600 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/config"

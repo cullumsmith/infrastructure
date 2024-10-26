@@ -1,0 +1,96 @@
+#!/bin/sh
+
+: ${icinga_threads:="$nproc"}
+: ${icinga_ticket_salt:='changeme'}
+
+# Check thresholds
+: ${icinga_fqdn:="$fqdn"}
+: ${icinga_notification_mail_from:="Icinga <icinga-noreply@${email_domain}>"}
+: ${icinga_notification_mail_to:="changeme@${email_domain}"}
+: ${icinga_smtp_mail_from:="${icinga_username}@${fqdn}"}
+: ${icinga_smtp_rcpt_to:="someuser@${email_domain}"}
+: ${icinga_lmtp_rcpt_to:='someuser'}
+: ${icinga_upstream_ping_address:='8.8.8.8'}
+: ${icinga_upstream_packet_loss_warn:='5'}
+: ${icinga_upstream_packet_loss_crit:='15'}
+: ${icinga_upstream_latency_warn:='250'}
+: ${icinga_upstream_latency_crit:='500'}
+: ${icinga_upstream_packet_count:='5'}
+: ${icinga_mailq_warn:='1'}
+: ${icinga_mailq_crit:='5'}
+: ${icinga_cert_days_warn:='30'}
+: ${icinga_cert_days_crit:='20'}
+: ${icinga_response_time_warn:='0.5'}
+: ${icinga_response_time_crit:='1.0'}
+
+icinga_conf_dir=/usr/local/etc/icinga2
+icinga_data_dir=/var/lib/icinga2
+icinga_cert_dir="${icinga_data_dir}/certs"
+icinga_ca_dir="${icinga_data_dir}/ca"
+icinga_plugin_dir=/usr/local/libexec/nagios
+icingaweb_api_username=icingaweb2
+
+# Install packages.
+pkg install -y icinga2
+
+# Fix icinga's home directory. ports/UIDs file is wrong.
+pw user mod "$icinga_local_user" -d "$icinga_home_dir"
+rm -rf /var/spool/icinga
+
+# Create dataset for icinga state directory.
+create_dataset -o "mountpoint=${icinga_data_dir}" "${state_dataset}/icinga"
+install_directory -m 0755 -o "$icinga_local_user" -g "$icinga_local_user" "$icinga_data_dir"
+
+# Generate icinga PKI.
+install_directory -m 0700 -o "$icinga_local_user" -g "$icinga_local_user" \
+  "$icinga_cert_dir" \
+  "$icinga_ca_dir"
+[ -f "${icinga_ca_dir}/ca.crt" ] \
+  || icinga2 pki new-ca
+[ -f "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr" ] \
+  || icinga2 pki new-cert --cn "$BOXCONF_HOSTNAME" --key "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.key" --csr "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr"
+[ -f "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.crt" ] \
+  || icinga2 pki sign-csr --csr "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.csr" --cert "${icinga_cert_dir}/${BOXCONF_HOSTNAME}.crt"
+ln -snfv "${icinga_ca_dir}/ca.crt" "${icinga_cert_dir}/ca.crt"
+
+# Enable icinga modules.
+for module in api icingadb notification; do
+  ln -snfv "../features-available/${module}.conf" "${icinga_conf_dir}/features-enabled/${module}.conf"
+done
+
+# Generate icinga configuration.
+find "$icinga_conf_dir" -name '*.sample' -delete
+install_template -m 0640 -g "$icinga_local_user" \
+  "${icinga_conf_dir}/api-users.conf" \
+  "${icinga_conf_dir}/constants.conf" \
+  "${icinga_conf_dir}/icinga2.conf" \
+  "${icinga_conf_dir}/zones.conf" \
+  "${icinga_conf_dir}/features-available/icingadb.conf" \
+  "${icinga_conf_dir}/conf.d/users.conf" \
+  "${icinga_conf_dir}/conf.d/services.conf" \
+  "${icinga_conf_dir}/conf.d/notifications.conf" \
+  "${icinga_conf_dir}/conf.d/hosts.conf"
+install_file -m 0640 -g "$icinga_local_user" \
+  "${icinga_conf_dir}/conf.d/app.conf" \
+  "${icinga_conf_dir}/conf.d/commands.conf" \
+  "${icinga_conf_dir}/conf.d/downtimes.conf" \
+  "${icinga_conf_dir}/conf.d/groups.conf" \
+  "${icinga_conf_dir}/conf.d/templates.conf" \
+  "${icinga_conf_dir}/conf.d/timeperiods.conf"
+
+# Icinga spawns a number of threads based on the core count of the machine. On machines
+# with a large number of CPU cores, this can be undesirable (especially if run from a jail
+# with cpuset()).
+#
+# The thread count can be overriden with the -DConcurrency=N argument to icinga2.
+# Unfortunately, icinga2 rc script from ports does not have a way to override the
+# daemon arguments. So we have to copy over a custom one ("myicinga2").
+#
+# https://icinga.com/docs/icinga-2/latest/doc/15-troubleshooting/#try-reducing-concurrency-threads
+install_file -m 0555 /usr/local/etc/rc.d/myicinga2
+
+# Enable and start icinga.
+sysrc -v \
+  myicinga2_enable=YES \
+  icinga2_flags="-DConfiguration.Concurrency=${icinga_threads}"
+service myicinga2 restart
