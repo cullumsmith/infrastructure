@@ -13,7 +13,6 @@ service lmtp {
   user = ${dovecot_vmail_user}
   inet_listener lmtp {
     port = ${lmtp_port}
-    ssl = yes
   }
 }
 

@@ -1,0 +1,16 @@
+client icinga {
+  ipaddr = ${icinga_radius_cidr}
+  secret = ${icinga_radius_secret}
+}
+
+$(for client_name in $radius_clients; do
+  eval "client_address=\$radius_${client_name}_address"
+  eval "client_secret=\$radius_${client_name}_secret"
+  cat <<EOF
+client ${client_name} {
+  ipaddr = ${client_address}
+  secret = ${client_secret}
+}
+
+EOF
+done)

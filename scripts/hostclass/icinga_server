@@ -9,16 +9,35 @@
 : ${icingaweb_dbhost:="$postgres_host"}
 : ${icingaweb_dbname:='icingaweb'}
 : ${icingaweb_access_role:='icinga-access'}
-
 # Note that icinga does not support nested groups.
 : ${icingaweb_admin_groups:=''}
+: ${icinga_fqdn:="$fqdn"}
+: ${icinga_notification_mail_from:="Icinga <icinga-noreply@${email_domain}>"}
+: ${icinga_notification_mail_to:="changeme@${email_domain}"}
 
-icinga_local_user=icinga
+: ${icinga_smtp_mail_from:="${icinga_username}@${fqdn}"}
+: ${icinga_smtp_rcpt_to:="someuser@${email_domain}"}
+: ${icinga_lmtp_rcpt_to:='someuser'}
+: ${icinga_upstream_ping_address:='8.8.8.8'}
+: ${icinga_upstream_packet_loss_warn:='5'}
+: ${icinga_upstream_packet_loss_crit:='15'}
+: ${icinga_upstream_latency_warn:='250'}
+: ${icinga_upstream_latency_crit:='500'}
+: ${icinga_upstream_packet_count:='5'}
+: ${icinga_mailq_warn:='1'}
+: ${icinga_mailq_crit:='5'}
+: ${icinga_cert_days_warn:='30'}
+: ${icinga_cert_days_crit:='20'}
+: ${icinga_response_time_warn:='0.5'}
+: ${icinga_response_time_crit:='1.0'}
+
 icinga_dn="uid=${icinga_username},${robots_basedn}"
 icinga_conf_dir=/usr/local/etc/icinga2
 icinga_data_dir=/var/lib/icinga2
 icinga_cert_dir="${icinga_data_dir}/certs"
 icinga_ca_dir="${icinga_data_dir}/ca"
+icinga_tls_client_cert="${icinga_home_dir}/${icinga_username}.crt"
+icinga_tls_client_key="${icinga_home_dir}/${icinga_username}.key"
 icingadb_conf_dir=/usr/local/etc/icingadb
 icingaweb_api_username=icingaweb2
 icingaweb_https_cert="${nginx_conf_dir}/icingaweb.crt"
@@ -64,7 +83,12 @@ pkg install -y \
   icingaweb2-php${php_version} \
   icingaweb2-module-icingadb-php${php_version} \
   nginx \
-  redis
+  redis \
+  wpa_supplicant
+
+# Fix icinga's home directory. ports/UIDs file is wrong.
+pw user mod "$icinga_local_user" -d "$icinga_home_dir"
+rm -rf /var/spool/icinga
 
 # Create dataset for icinga state directory
 create_dataset -o "mountpoint=${icinga_data_dir}" "${state_dataset}/icinga"
@@ -138,14 +162,14 @@ install_template -m 0640 -g "$icinga_local_user" \
   "${icinga_conf_dir}/zones.conf" \
   "${icinga_conf_dir}/features-available/icingadb.conf" \
   "${icinga_conf_dir}/conf.d/users.conf" \
+  "${icinga_conf_dir}/conf.d/services.conf" \
+  "${icinga_conf_dir}/conf.d/notifications.conf" \
   "${icinga_conf_dir}/conf.d/hosts.conf"
 install_file -m 0640 -g "$icinga_local_user" \
   "${icinga_conf_dir}/conf.d/app.conf" \
   "${icinga_conf_dir}/conf.d/commands.conf" \
   "${icinga_conf_dir}/conf.d/downtimes.conf" \
   "${icinga_conf_dir}/conf.d/groups.conf" \
-  "${icinga_conf_dir}/conf.d/notifications.conf" \
-  "${icinga_conf_dir}/conf.d/services.conf" \
   "${icinga_conf_dir}/conf.d/templates.conf" \
   "${icinga_conf_dir}/conf.d/timeperiods.conf"
 
@@ -220,13 +244,38 @@ sysrc -v \
   icinga2_flags="-DConfiguration.Concurrency=${icinga_threads}"
 service nginx restart
 service php_fpm restart
-
 service redis restart
 service icingadb restart > /dev/null 2>&1
 service myicinga2 restart
 
-# Create access role.
+# Create icingaweb access role.
 ldap_add "cn=${icingaweb_access_role},${roles_basedn}" <<EOF
 objectClass: groupOfMembers
 cn: ${icingaweb_access_role}
 EOF
+
+# Copy custom plugins.
+install_file -m 0555 /usr/local/libexec/nagios/check_eapol
+
+# Create wpa_supplicant file for radius checks.
+install_template -m 0640 -g "$icinga_local_user" "${icinga_home_dir}/eap-ttls-pap.conf"
+install_template -m 0640 -g "$icinga_local_user" "${icinga_home_dir}/eap-tls.conf"
+
+# Add icinga user to wifi access role.
+ldap_add "cn=${wifi_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${wifi_access_role}
+EOF
+ldap_add_attribute "cn=${wifi_access_role},${roles_basedn}"  member "$icinga_dn"
+
+# Copy icinga client certificate.
+install_certificate             -g "$icinga_local_user" icinga "$icinga_tls_client_cert"
+install_certificate_key -m 0640 -g "$icinga_local_user" icinga "$icinga_tls_client_key"
+
+# Copy icinga ssh key.
+install_directory -m 0755 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh"
+install_directory -m 0700 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/sockets"
+install_file      -m 0600 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/id_ed25519"
+
+# Generate ssh client configuration.
+install_file -m 0600 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/config"

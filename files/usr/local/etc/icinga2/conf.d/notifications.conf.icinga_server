@@ -1,23 +1,33 @@
-apply Notification "mail-icingaadmin" to Host {
-  import "mail-host-notification"
-  user_groups = host.vars.notification.mail.groups
-  users = host.vars.notification.mail.users
+apply Notification "email" to Host {
+  command = "mail-host-notification"
 
-  //interval = 2h
+  states = [ Up, Down ]
+  types = [ Problem, Acknowledgement, Recovery, Custom,
+            FlappingStart, FlappingEnd,
+            DowntimeStart, DowntimeEnd, DowntimeRemoved ]
 
-  //vars.notification_logtosyslog = true
+  users = [ "sysadmins" ]
 
-  assign where host.vars.notification.mail
+  vars += {
+    notification_icingaweb2url = "https://${icinga_fqdn}"
+  }
+
+  assign where true
 }
 
-apply Notification "mail-icingaadmin" to Service {
-  import "mail-service-notification"
-  user_groups = host.vars.notification.mail.groups
-  users = host.vars.notification.mail.users
+apply Notification "email" to Service {
+  command = "mail-service-notification"
 
-  //interval = 2h
+  states = [ OK, Warning, Critical, Unknown ]
+  types = [ Problem, Acknowledgement, Recovery, Custom,
+            FlappingStart, FlappingEnd,
+            DowntimeStart, DowntimeEnd, DowntimeRemoved ]
 
-  //vars.notification_logtosyslog = true
+  users = [ "sysadmins" ]
 
-  assign where host.vars.notification.mail
+  vars += {
+    notification_icingaweb2url = "https://${icinga_fqdn}"
+  }
+
+  assign where true
 }

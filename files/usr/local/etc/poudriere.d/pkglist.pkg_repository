@@ -114,6 +114,7 @@ security/py-omemo-dr
 security/sshpass
 security/sudo
 security/vaultwarden
+security/wpa_supplicant
 sysutils/cpu-microcode
 sysutils/htop
 sysutils/k3b

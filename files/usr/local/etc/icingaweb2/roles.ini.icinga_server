@@ -5,9 +5,9 @@ groups = "$(join ',' $icingaweb_admin_groups)"
 EOF
 fi)
 permissions = "*"
-icingadb/denylist/variables = "*priv*,*auth*,*key*,*pass*,*token*"
+icingadb/denylist/variables = "*priv*,*auth*,*key*,*pass*,*token*,*secret*"
 
 [Users]
 groups = "${icingaweb_access_role}"
 permissions = "module/icingadb"
-icingadb/denylist/variables = "*priv*,*auth*,*key*,*pass*,*token*"
+icingadb/denylist/variables = "*priv*,*auth*,*key*,*pass*,*token*,*secret*"

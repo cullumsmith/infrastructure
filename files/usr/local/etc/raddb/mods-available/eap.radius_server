@@ -39,4 +39,12 @@ eap {
   tls {
     tls = tls-common
   }
+
+  ttls {
+    tls = tls-common
+    default_eap_type = md5
+    copy_request_to_tunnel = no
+    use_tunneled_reply = no
+    virtual_server = "inner-tunnel"
+  }
 }

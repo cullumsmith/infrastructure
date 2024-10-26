@@ -29,6 +29,9 @@ rspamd_pubkey='changeme with: rspamadm keypair'
 rspamd_ro_password='changeme'
 rspamd_rw_password='changeme'
 
+# These are needed for icinga radius checks.
+icinga_radius_cidr=192.168.0.0/24
+icinga_radius_secret='changeme'
 
 ###############################################################################
 # Variables following this line do not (generally) need to be changed.
@@ -46,6 +49,9 @@ host_keytab_gid=788
 lmtp_port=25
 quota_status_port=10993
 icinga_username='s-icinga'
+icinga_local_user=icinga
+icinga_home_dir=/var/spool/icinga2
+icinga_uid=183
 krb5_ticket_lifetime=24h
 krb5_renew_lifetime=7d
 nslcd_min_uid=1000
@@ -57,6 +63,7 @@ rspamd_port=11334
 ssh_authzkeys_uid=789
 ssh_authzkeys_username=sshkeys
 tcp_buffer_size=2097152  # suitable for 1 GigE
+wifi_access_role='wifi-access'
 
 nginx_nofile=2048
 nginx_worker_connections=768

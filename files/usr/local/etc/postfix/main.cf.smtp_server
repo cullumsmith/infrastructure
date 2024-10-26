@@ -74,7 +74,6 @@ smtp_tls_loglevel               = 1
 
 lmtp_tls_CApath                 = ${system_cacert_path}
 lmtp_tls_security_level         = encrypt
-lmtp_tls_wrappermode            = yes
 lmtp_tls_session_cache_database = btree:\$data_directory/lmtp_scache
 smtp_tls_loglevel               = 1
 

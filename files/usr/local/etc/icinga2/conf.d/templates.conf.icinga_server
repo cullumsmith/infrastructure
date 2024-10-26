@@ -12,39 +12,10 @@ template Service "generic-service" default {
 }
 
 template User "generic-user" default {
-
 }
 
-template Notification "mail-host-notification" {
-  command = "mail-host-notification"
-
-  states = [ Up, Down ]
-  types = [ Problem, Acknowledgement, Recovery, Custom,
-            FlappingStart, FlappingEnd,
-            DowntimeStart, DowntimeEnd, DowntimeRemoved ]
-
-  vars += {
-    // notification_icingaweb2url = "https://www.example.com/icingaweb2"
-    // notification_from = "Icinga 2 Host Monitoring <icinga@example.com>"
-    notification_logtosyslog = false
-  }
-
-  period = "24x7"
-}
-
-template Notification "mail-service-notification" {
-  command = "mail-service-notification"
-
-  states = [ OK, Warning, Critical, Unknown ]
-  types = [ Problem, Acknowledgement, Recovery, Custom,
-            FlappingStart, FlappingEnd,
-            DowntimeStart, DowntimeEnd, DowntimeRemoved ]
-
-  vars += {
-    // notification_icingaweb2url = "https://www.example.com/icingaweb2"
-    // notification_from = "Icinga 2 Service Monitoring <icinga@example.com>"
-    notification_logtosyslog = false
-  }
-
+template Notification "generic-notification" default {
+  // Don't repeat notifications.
+  interval = 0
   period = "24x7"
 }

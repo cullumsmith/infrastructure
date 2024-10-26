@@ -1,3 +1,19 @@
 #!/bin/sh
 
+if [ "$BOXCONF_HOSTCLASS" = icinga_server ]; then
+  return 0
+fi
+
 pkg install -y monitoring-plugins
+
+add_user \
+  -c 'Icinga pseudo-user' \
+  -d "$icinga_home_dir" \
+  -s /bin/sh \
+  -u "$icinga_uid" \
+  "$icinga_local_user"
+
+install_directory -m 0700 -o "$icinga_local_user" -g "$icinga_local_user" \
+  "${icinga_home_dir}" \
+  "${icinga_home_dir}/.ssh"
+install_file -m 0600 -o "$icinga_local_user" -g "$icinga_local_user" "${icinga_home_dir}/.ssh/authorized_keys"

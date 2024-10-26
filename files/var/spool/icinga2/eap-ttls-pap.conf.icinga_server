@@ -1,0 +1,9 @@
+network={
+  ssid="_"
+  key_mgmt=WPA-EAP
+  eap=TTLS
+  identity="${icinga_username}"
+  password="${icinga_password}"
+  phase2="auth=PAP"
+  ca_cert="${site_cacert_path}"
+}

@@ -1,5 +1,6 @@
 # Always allow root logins.
 +:root:ALL
++:${icinga_local_user}:ALL
 
 $(if [ -n "${login_access_groups:-}" ] || [ -n "${login_access_users:-}" ]; then
   printf -- '-:ALL EXCEPT '

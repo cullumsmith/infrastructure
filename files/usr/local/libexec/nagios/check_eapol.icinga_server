@@ -1,0 +1,56 @@
+#!/bin/sh
+
+PROG=check_eapol
+USAGE="USAGE: ${PROG} -c CONFIGFILE -a ADDRESS -s SECRET [-p PORT] [-t TIMEOUT] [-d]"
+
+OK=0
+WARN=1
+CRIT=2
+UNKNOWN=3
+
+usage(){
+  printf 'USAGE: %s -c CONFIGFILE -a ADDRESS -s SECRET [-p PORT] [-t TIMEOUT] [-d]' "$PROG"
+  exit "$UNKNOWN"
+}
+
+die(){
+  printf '%s: %s\n' "$PROG" "$1" 1>&2
+  exit "$UNKNOWN"
+}
+
+port=1812
+timeout=5
+debug=false
+
+while getopts :a:c:dp:s:t: opt; do
+  case $opt in
+    a)   address=$OPTARG ;;
+    c)   config=$OPTARG ;;
+    d)   debug=true ;;
+    p)   port=$OPTARG ;;
+    s)   secret=$OPTARG ;;
+    t)   timeout=$OPTARG ;;
+    :|?) usage ;;
+  esac
+done
+shift $((OPTIND - 1 ))
+
+[ $# -eq 0 ] || usage
+[ -r "$config" ] || die "config file not readable: ${config}"
+if [ -z "$address" ] || [ -z "$config" ] || [ -z "$secret" ]; then
+  usage
+fi
+
+if [ "$debug" = true ]; then
+  eapol_test -c "$config"  -a "$address" -p "$port" -s "$secret" -t "$timeout"
+else
+  eapol_test -c "$config"  -a "$address" -p "$port" -s "$secret" -t "$timeout" > /dev/null
+fi
+
+if [ $? -eq 0 ]; then
+  echo "authentication to ${address}:${port} using ${config} succeeded"
+  exit "$OK"
+else
+  echo "authentication to ${address}:${port} using ${config} failed"
+  exit "$CRIT"
+fi

@@ -1,3 +1,103 @@
-/*
- * Add custom hosts here.
- */
+// TODO: we can generate this from LDAP.
+
+object Host "icinga1" {
+  address = "icinga1.${domain}"
+  check_command = "dummy"
+  vars.os = "FreeBSD"
+}
+
+object Host "idm1" {
+  address = "idm1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "idm2" {
+  address = "idm2.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "pkg1" {
+  address = "pkg1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "smtp1" {
+  address = "smtp1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "imap1" {
+  address = "imap1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "postgres1" {
+  address = "postgres1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "turn1" {
+  address = "turn1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "xmpp1" {
+  address = "xmpp1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "www1" {
+  address = "www1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "dav1" {
+  address = "dav1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "ttrss1" {
+  address = "ttrss1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "bitwarden1" {
+  address = "bitwarden1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "znc1" {
+  address = "znc1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "cups1" {
+  address = "cups1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "invidious1" {
+  address = "invidious1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "radius1" {
+  // We must use the raw IP address because eapol_test does not resolve hostnames.
+  address = "$(host "radius1.${domain}" | awk '{print $NF}')"
+  vars.os = "FreeBSD"
+}
+
+object Host "unifi1" {
+  address = "unifi1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "nfs1" {
+  address = "nfs1.${domain}"
+  vars.os = "FreeBSD"
+}
+
+object Host "desktop1" {
+  address = "desktop1.${domain}"
+  vars.os = "FreeBSD"
+}

@@ -1,165 +1,331 @@
-apply Service "ssh" {
-  import "generic-service"
-  check_command = "ssh"
-  assign where host.vars.os in ["FreeBSD","Linux"]
-}
-
 apply Service "icinga" {
-  import "generic-service"
   check_command = "icinga"
   assign where host.name == NodeName
 }
 
+apply Service "icingadb" {
+  check_command = "icingadb"
+  assign where host.name == NodeName
+}
+
+apply Service "ssh" {
+  check_command = "ssh"
+  assign where host.vars.os in ["FreeBSD"," Linux"]
+}
+
+apply Service "upstream-packet-loss" {
+  check_command = "ping"
+  display_name = "upstream packet loss"
+  vars.ping_address = "${icinga_upstream_ping_address}"
+  vars.ping_wpl = ${icinga_upstream_packet_loss_warn}
+  vars.ping_cpl = ${icinga_upstream_packet_loss_crit}
+  vars.ping_wrta = ${icinga_upstream_latency_warn}
+  vars.ping_crta = ${icinga_upstream_latency_crit}
+  vars.ping_packets = ${icinga_upstream_packet_count}
+  assign where host.name == NodeName
+}
+
 apply Service "dns" {
-  import "generic-service"
   check_command = "dns"
-  vars.dns_lookup = "$address$"
-  vars.dns_server = "$address$"
-  vars.dns_wtime = ResponseTimeWarn
-  vars.dns_ctime = ResponseTimeCrit
+  vars.dns_lookup = "\$address\$"
+  vars.dns_server = "\$address\$"
+  vars.dns_wtime = ${icinga_response_time_warn}
+  vars.dns_ctime = ${icinga_response_time_crit}
+  assign where "idm-servers" in host.groups
+}
+
+apply Service "resolver" {
+  check_command = "dns"
+  vars.dns_lookup = "www.google.com"
+  vars.dns_server = "\$address\$"
+  vars.dns_wtime = ${icinga_response_time_warn}
+  vars.dns_ctime = ${icinga_response_time_crit}
   assign where "idm-servers" in host.groups
 }
 
 apply Service "ldap" {
-  import "generic-service"
   check_command = "ldap"
   vars.ldap_port = 389
-  vars.ldap_warning = ResponseTimeWarn
-  vars.ldap_critical = ResponseTimeCrit
+  vars.ldap_warning = ${icinga_response_time_warn}
+  vars.ldap_critical = ${icinga_response_time_crit}
   vars.ldap_v2 = false
   vars.ldap_v3 = true
   vars.ldap_starttls = true
-  vars.ldap_bind = IcingaDN
+  vars.ldap_bind = "${icinga_dn}"
   vars.ldap_pass = IcingaPassword
-  vars.ldap_base = HostsBaseDn
+  vars.ldap_base = "${hosts_basedn}"
   vars.ldap_attr = "(cn=" + NodeName + ")"
   assign where "idm-servers" in host.groups
 }
 
 apply Service "ldaps" {
-  import "generic-service"
   check_command = "ldap"
   vars.ldap_port = 636
-  vars.ldap_warning = ResponseTimeWarn
-  vars.ldap_critical = ResponseTimeCrit
+  vars.ldap_warning = ${icinga_response_time_warn}
+  vars.ldap_critical = ${icinga_response_time_crit}
   vars.ldap_v2 = false
   vars.ldap_v3 = true
   vars.ldap_ssl = true
-  vars.ldap_bind = IcingaDN
+  vars.ldap_bind = "${icinga_dn}"
   vars.ldap_pass = IcingaPassword
-  vars.ldap_base = HostsBaseDn
+  vars.ldap_base = "${hosts_basedn}"
   vars.ldap_attr = "(cn=" + NodeName + ")"
   assign where "idm-servers" in host.groups
 }
 
 apply Service "imap" {
-  import "generic-service"
   check_command = "imap"
   vars.imap_port = 993
   vars.imap_ssl = true
-  vars.imap_certificate_age = CertDaysWarn
-  vars.imap_warning = ResponseTimeWarn
-  vars.imap_critical = ResponseTimeCrit
+  vars.imap_certificate_age = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  vars.imap_warning = ${icinga_response_time_warn}
+  vars.imap_critical = ${icinga_response_time_crit}
+  assign where "imap-servers" in host.groups
+}
+
+apply Service "lmtp" {
+  check_command = "smtp2"
+  vars.smtp_port = 25
+  vars.smtp_starttls = true
+  vars.smtp_lmtp = true
+  vars.smtp_mail_from = "${icinga_smtp_mail_from}"
+  vars.smtp_command = "RCPT TO:<" + "${icinga_lmtp_rcpt_to}" + ">"
+  vars.smtp_response = "250 2.1.5 OK"
+  assign where "imap-servers" in host.groups
+}
+
+apply Service "lmtp-cert" {
+  display_name = "lmtp certificate"
+  check_command = "smtp2"
+  vars.smtp_lmtp = true
+  vars.smtp_port = 25
+  vars.smtp_certificate_age = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  vars.smtp_starttls = true
   assign where "imap-servers" in host.groups
 }
 
 apply Service "smtp" {
-  import "generic-service"
   check_command = "smtp"
   vars.smtp_port = 25
-  vars.smtp_certificate_age = CertDaysWarn
   vars.smtp_starttls = true
-  vars.smtp_warning = ResponseTimeWarn
-  vars.smtp_critical = ResponseTimeCrit
+  vars.smtp_warning = ${icinga_response_time_warn}
+  vars.smtp_critical = ${icinga_response_time_crit}
+  vars.smtp_mail_from = "${icinga_smtp_mail_from}"
+  vars.smtp_command = "RCPT TO:<" + "${icinga_smtp_rcpt_to}" + ">"
+  vars.smtp_response = "250 2.1.5 Ok"
   assign where "smtp-servers" in host.groups
 }
 
+apply Service "smtp-cert" {
+  display_name = "smtp certificate"
+  check_command = "smtp"
+  vars.smtp_port = 25
+  vars.smtp_certificate_age = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  vars.smtp_starttls = true
+  assign where "smtp-servers" in host.groups
+}
+
+
 apply Service "submission" {
-  import "generic-service"
   check_command = "smtp"
   vars.smtp_port = 587
-  vars.smtp_certificate_age = CertDaysWarn
+  vars.smtp_certificate_age = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
   vars.smtp_starttls = true
-  vars.smtp_warning = ResponseTimeWarn
-  vars.smtp_critical = ResponseTimeCrit
+  vars.smtp_warning = ${icinga_response_time_warn}
+  vars.smtp_critical = ${icinga_response_time_crit}
+  assign where "smtp-servers" in host.groups
+}
+
+apply Service "mailq" {
+  check_command = "mailq_by_ssh"
+  vars.mailq_servertype = "postfix"
+  vars.mailq_warning = ${icinga_mailq_warn}
+  vars.mailq_critical = ${icinga_mailq_crit}
   assign where "smtp-servers" in host.groups
 }
 
 apply Service "postgres" {
-  import "generic-service"
   check_command = "pgsql"
-  vars.pgsql_warning = ResponseTimeWarn
-  vars.pgsql_critical = ResponseTimeCrit
-  vars.pgsql_username = IcingaUsername
+  vars.pgsql_warning = ${icinga_response_time_warn}
+  vars.pgsql_critical = ${icinga_response_time_crit}
+  vars.pgsql_username = "${icinga_username}"
   vars.pgsql_password = IcingaPassword
+  vars.pgsql_options = ["sslmode=verify-full", "sslrootcert=system"]
   assign where "postgresql-servers" in host.groups
+}
+
+apply Service "eap-cert" {
+  check_command = "eapol"
+  vars.eapol_secret = IcingaRadiusSecret
+  vars.eapol_config_file = "${icinga_home_dir}/eap-tls.conf"
+  assign where "radius-servers" in host.groups
+}
+
+apply Service "eap-ttls-pap" {
+  check_command = "eapol"
+  vars.eapol_secret = IcingaRadiusSecret
+  vars.eapol_config_file = "${icinga_home_dir}/eap-ttls-pap.conf"
+  assign where "radius-servers" in host.groups
+}
+
+apply Service "irc" {
+  check_command = "tcp"
+  vars.tcp_port = 6697
+  vars.tcp_ssl = true
+  vars.tcp_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  vars.tcp_wtime = ${icinga_response_time_warn}
+  vars.tcp_ctime = ${icinga_response_time_crit}
+  assign where "znc-servers" in host.groups
+}
+
+apply Service "turn" {
+  check_command = "tcp"
+  vars.tcp_port = 3478
+  vars.tcp_wtime = ${icinga_response_time_warn}
+  vars.tcp_ctime = ${icinga_response_time_crit}
+  assign where "turn-servers" in host.groups
+}
+
+apply Service "cups" {
+  check_command = "http"
+  display_name = "cups status"
+  vars.http_vhost = "\$address\$"
+  vars.http_port = 631
+  vars.http_expect = "HTTP/1.1 200 OK"
+  vars.http_ssl = true
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("cups-servers" in host.groups)
+}
+
+apply Service "cups-cert" {
+  check_command = "http"
+  display_name = "cups certificate"
+  vars.http_vhost = "\$address\$"
+  vars.http_port = 631
+  vars.http_ssl = true
+  vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  assign where ("cups-servers" in host.groups)
 }
 
 // Expect HTTP 200
 apply Service "http" {
-  import "generic-service"
   check_command = "http"
-  vars.http_vhost = "$address$"
+  display_name = "http status"
+  vars.http_vhost = "\$address\$"
   vars.http_expect = "HTTP/1.1 200 OK"
   vars.http_ssl = false
-  vars.http_warn_time = ResponseTimeWarn
-  vars.http_critical_time = ResponseTimeCrit
-  assign where ("cups-servers"      in host.groups
-             || "pkg-repositories"  in host.groups)
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("pkg-repositories"  in host.groups)
 }
 
 // Expect HTTP 301
 apply Service "http" {
-  import "generic-service"
   check_command = "http"
-  vars.http_vhost = "$address$"
+  display_name = "http status"
+  vars.http_vhost = "\$address\$"
   vars.http_expect = "HTTP/1.1 301 Moved Permanently"
   vars.http_ssl = false
-  vars.http_warn_time = ResponseTimeWarn
-  vars.http_critical_time = ResponseTimeCrit
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
   assign where ("dav-servers"       in host.groups
              || "smtp-servers"      in host.groups
              || "ttrss-servers"     in host.groups
              || "invidious-servers" in host.groups
              || "nfs-servers"       in host.groups
-             || "pkg-servers"       in host.groups
-             || "unifi-controllers" in host.groups
              || "web-servers"       in host.groups
              || "xmpp-servers"      in host.groups
-             || "znc-servers"       in host.groups)
+             || "znc-servers"       in host.groups
+             || "icinga-servers"    in host.groups
+             || "bitwarden-servers" in host.groups)
+}
+
+// Expect HTTP 302
+apply Service "http" {
+  check_command = "http"
+  display_name = "http status"
+  vars.http_vhost = "\$address\$"
+  vars.http_expect = "HTTP/1.1 302"
+  vars.http_ssl = false
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("unifi-controllers" in host.groups)
 }
 
 // Expect HTTPS 401
 apply Service "https" {
-  import "generic-service"
   check_command = "http"
-  vars.http_vhost = "$address$"
+  display_name = "https status"
+  vars.http_vhost = "\$address\$"
   vars.http_expect = "HTTP/1.1 401 Unauthorized"
   vars.http_ssl = true
-  vars.http_certificate = CertDaysWarn + "," + CertDaysCrit
-  vars.http_warn_time = ResponseTimeWarn
-  vars.http_critical_time = ResponseTimeCrit
-  assign where ("dav-servers"   in host.groups
-             || "cups-servers"  in host.groups
-             || "smtp-servers"  in host.groups
-             || "ttrss-servers" in host.groups)
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("dav-servers"     in host.groups
+             || "smtp-servers"    in host.groups
+             || "icinga-servers"  in host.groups
+             || "ttrss-servers"   in host.groups)
 }
 
 // Expect HTTPS 200
 apply Service "https" {
-  import "generic-service"
   check_command = "http"
-  vars.http_vhost = "$address$"
+  display_name = "https status"
+  vars.http_vhost = "\$address\$"
   vars.http_expect = "HTTP/1.1 200 OK"
   vars.http_ssl = true
-  vars.http_certificate = CertDaysWarn + "," + CertDaysCrit
-  vars.http_warn_time = ResponseTimeWarn
-  vars.http_critical_time = ResponseTimeCrit
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("pkg-repositories"  in host.groups
+             || "web-servers"       in host.groups
+             || "xmpp-servers"      in host.groups
+             || "znc-servers"       in host.groups
+             || "bitwarden-servers" in host.groups)
+}
+
+// Expect HTTPS 404
+apply Service "https" {
+  check_command = "http"
+  display_name = "https status"
+  vars.http_vhost = "\$address\$"
+  vars.http_expect = "HTTP/1.1 404 Not Found"
+  vars.http_ssl = true
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("nfs-servers" in host.groups)
+}
+
+// Expect HTTPS 302
+apply Service "https" {
+  check_command = "http"
+  display_name = "https status"
+  vars.http_vhost = "\$address\$"
+  vars.http_expect = "HTTP/1.1 302"
+  vars.http_ssl = true
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("unifi-controllers" in host.groups
+             || "invidious-servers" in host.groups)
+}
+
+// Certificate validity
+apply Service "https-cert" {
+  check_command = "http"
+  display_name = "https certificate"
+  vars.http_vhost = "\$address\$"
+  vars.http_ssl = true
+  vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
   assign where ("invidious-servers" in host.groups
              || "nfs-servers"       in host.groups
-             || "pkg-servers"       in host.groups
+             || "pkg-repositories"  in host.groups
              || "unifi-controllers" in host.groups
              || "web-servers"       in host.groups
              || "xmpp-servers"      in host.groups
-             || "znc-servers"       in host.groups)
+             || "znc-servers"       in host.groups
+             || "bitwarden-servers" in host.groups
+             || "dav-servers"       in host.groups
+             || "smtp-servers"      in host.groups
+             || "icinga-servers"    in host.groups
+             || "ttrss-servers"     in host.groups)
 }

@@ -22,26 +22,16 @@ freeradius_version=$(pkg info freeradius3 | awk '$1 == "Version" { print $3 }')
 install_directory -m 0755 "${freeradius_conf_dir}/certs"
 install_template -o "$freeradius_user" -g "$freeradius_user" -m 0640 \
   "${freeradius_conf_dir}/radiusd.conf" \
-  "${freeradius_conf_dir}/mods-available/eap"
-rm -f "${freeradius_conf_dir}/sites-enabled/inner-tunnel"
+  "${freeradius_conf_dir}/mods-available/eap" \
+  "${freeradius_conf_dir}/mods-available/ldap" \
+  "${freeradius_conf_dir}/sites-available/inner-tunnel" \
+  "${freeradius_conf_dir}/clients.conf"
+ln -snfv '../mods-available/ldap' "${freeradius_conf_dir}/mods-enabled/ldap"
+ln -snfv '../sites-available/inner-tunnel' "${freeradius_conf_dir}/sites-enabled/inner-tunnel"
 
 # Copy TLS certificate for freeradius.
 install_certificate     -g "$freeradius_user" freeradius "$freeradius_tls_cert"
 install_certificate_key -g "$freeradius_user" freeradius "$freeradius_tls_key"
-
-# Generate clients.conf.
-install -Cv -o "$freeradius_user" -g "$freeradius_user" -m 0660 /dev/null "${freeradius_conf_dir}/clients.conf"
-for client_name in $radius_clients; do
-  eval "client_address=\$radius_${client_name}_address"
-  eval "client_secret=\$radius_${client_name}_secret"
-  cat <<EOF >> "${freeradius_conf_dir}/clients.conf"
-client ${client_name} {
-  ipaddr = ${client_address}
-  secret = ${client_secret}
-}
-
-EOF
-done
 
 # Create cache directories.
 install_directory -o "$freeradius_user" -g "$freeradius_user" -m 700 \
@@ -54,3 +44,9 @@ install_template -m 0644 /etc/cron.d/freeradius
 # Enable and start daemons.
 sysrc -v radiusd_enable=YES
 service radiusd restart
+
+# Create wifi access role.
+ldap_add "cn=${wifi_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${wifi_access_role}
+EOF
