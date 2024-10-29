@@ -29,36 +29,39 @@ if [ "${nginx_public:-}" = true ] && ! [ -f "$dhparams_path" ]; then
   openssl dhparam -out "$dhparams_path" 2048
 fi
 
+if [ "${acme_standalone:-}" != true ]; then
+  install_directory -o root -g "$acme_user" -m 0775 "$acme_webroot"
+fi
+
 acme_install_certificate(){
   _aic_group=0
-  _aic_cert_path=
-  _aic_key_path=
-  _aic_ca_path=
   _aic_reload_cmd=
+  _aic_name=
+  _aic_domain=
 
-  while getopts C:c:g:k:r: _aic_opt; do
+  while getopts g:r: _aic_opt; do
     case $_aic_opt in
-      C) _aic_ca_path=$OPTARG ;;
-      c) _aic_cert_path=$OPTARG ;;
       g) _aic_group=$OPTARG ;;
-      k) _aic_key_path=$OPTARG ;;
       r) _aic_reload_cmd=$OPTARG ;;
     esac
   done
-
   shift $((OPTIND - 1))
-  _aic_name=$1
 
-  # Acquire the certificate via HTTP ACME challenge.
+  _aic_name=$1; shift
+  _aic_key_path="${acme_cert_dir}/${_aic_name}.key"
+  _aic_cert_path="${acme_cert_dir}/${_aic_name}.crt"
+  _aic_ca_path="${acme_cert_dir}/${_aic_name}.ca.crt"
+
+  _aic_firstdomain=$1
   _aic_domain_args=''
   for _aic_domain; do
     _aic_domain_args="${_aic_domain_args} -d ${_aic_domain}"
   done
 
-  if [ -n "${acme_standalone:-}" ]; then
-     su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} --standalone --httport ${acme_standalone_port} ${_aic_domain_args}" && _aic_rc=$? || _aic_rc=$?
+  # Acquire the certificate via HTTP ACME challenge.
+  if [ "${acme_standalone:-}" = true ]; then
+     su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} --standalone --httpport ${acme_standalone_port} ${_aic_domain_args}" && _aic_rc=$? || _aic_rc=$?
   else
-    install_directory -o root -g "$acme_user" -m 0775 "$acme_webroot"
     su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} -w ${acme_webroot} ${_aic_domain_args}" && _aic_rc=$? || _aic_rc=$?
   fi
 
@@ -77,9 +80,9 @@ acme_install_certificate(){
   fi
 
   if [ -n "$_aic_reload_cmd" ]; then
-    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${aic_ca_path} --reloadcmd '${_aic_reload_cmd}'"
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_firstdomain} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${_aic_ca_path} --reloadcmd '${_aic_reload_cmd}'"
   else
-    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_name} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${aic_ca_path} "
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${_aic_firstdomain} --key-file ${_aic_key_path} --fullchain-file ${_aic_cert_path} --ca-file ${_aic_ca_path} "
   fi
 }
 
@@ -91,14 +94,29 @@ acme_setup_proxy(){
 
   # Configure SSHD for acmeproxy.
   install_template -m 0644 /usr/local/etc/ssh/sshd_config.d/acmeproxy.conf
-  service sshd reload
+  service openssh reload
 
   # Acquire ACME certificates for client SFTP.
   for domain in $acmeproxy_domains; do
-    acme_install_certificate \
-      -c "${acmeproxy_home}/certs/${domain}.crt" \
-      -k "${acmeproxy_home}/certs/${domain}.key" \
-      -g "${acmeproxy_client_gid:-${acmeproxy_client_group}}" \
-      $domain
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --issue --keylength ${acme_keylength} -w ${acme_webroot} -d ${domain}" && _asp_rc=$? || _asp_rc=$?
+
+    case $_asp_rc in
+      0) ;; # New cert was issued.
+      2) ;; # Cert was unchanged.
+      *) die "failed to issue ACME certificate for ${domain}" ;;
+    esac
+
+    _asp_cert="${acmeproxy_home}/certs/${domain}.crt"
+    _asp_key="${acmeproxy_home}/certs/${domain}.key"
+    _asp_group="${acmeproxy_client_gid:-${acmeproxy_client_group}}"
+
+    if [ -f "$_asp_key" ]; then
+      chmod 640 "$_asp_key"
+      chown "${acme_user}:${_asp_group}" "$_asp_key"
+    else
+      install -o "$acme_user" -g "$_asp_group" -m 0640 /dev/null "$_asp_key"
+    fi
+
+    su -m "$acme_user" -c "acme.sh --home ${acme_home} --install-cert --domain ${domain} --key-file ${_asp_key} --fullchain-file ${_asp_cert}"
   done
 }

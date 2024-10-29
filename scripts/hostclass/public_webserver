@@ -27,14 +27,12 @@ service nginx restart
 
 # Acquire public TLS certificates.
 install_template -m 0600 /usr/local/etc/sudoers.d/acme
-for cert in $acme_certs; do
-  eval "acme_domains=\${acme_${cert}_domains}"
+for certname in $acme_certs; do
+  eval "acme_domains=\${acme_${certname}_domains}"
   acme_install_certificate \
-    -C "${acme_cert_dir}/${cert}.ca.crt" \
-    -c "${acme_cert_dir}/${cert}.crt" \
-    -k "${acme_cert_dir}/${cert}.key" \
     -g "$nginx_user" \
     -r 'sudo service nginx reload' \
+    "$certname" \
     $acme_domains
 done
 

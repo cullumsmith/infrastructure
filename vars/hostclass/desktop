@@ -30,6 +30,7 @@ ffmpeg
 firefox
 git
 gnupg
+hs-pandoc
 inconsolata-ttf
 krb5
 libreoffice
@@ -41,6 +42,7 @@ noto-emoji
 password-store
 postgresql16-client
 pulseaudio
+python
 py${python_version}-pip
 rsync
 signal-desktop

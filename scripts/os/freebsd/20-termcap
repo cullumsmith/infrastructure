@@ -2,6 +2,7 @@
 
 # Fix xterm-256color termcap
 # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=280679
+mkdir -p /usr/local/share/site-terminfo
 cat <<'EOF' | tic -o /usr/local/share/site-terminfo -
 xterm-256color|xterm with 256 colors,
         am, bce, ccc, km, mc5i, mir, msgr, npc, xenl,

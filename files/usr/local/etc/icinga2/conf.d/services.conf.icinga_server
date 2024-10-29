@@ -34,6 +34,17 @@ apply Service "dns" {
   assign where "idm-servers" in host.groups
 }
 
+apply Service for (zone in host.vars.zones) {
+  check_command = "dns"
+  vars.dns_lookup = zone
+  name = "dns-" + zone
+  display_name = zone
+  vars.dns_server = "\$address\$"
+  vars.dns_wtime = ${icinga_response_time_warn}
+  vars.dns_ctime = ${icinga_response_time_crit}
+  assign where "nameservers" in host.groups
+}
+
 apply Service "resolver" {
   check_command = "dns"
   vars.dns_lookup = "www.google.com"
@@ -278,7 +289,6 @@ apply Service "https" {
   vars.http_warn_time = ${icinga_response_time_warn}
   vars.http_critical_time = ${icinga_response_time_crit}
   assign where ("pkg-repositories"  in host.groups
-             || "web-servers"       in host.groups
              || "xmpp-servers"      in host.groups
              || "znc-servers"       in host.groups
              || "bitwarden-servers" in host.groups)
@@ -316,7 +326,7 @@ apply Service "https-cert" {
   vars.http_vhost = "\$address\$"
   vars.http_ssl = true
   vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
-  assign where ("invidious-servers" in host.groups
+  assign where (("invidious-servers" in host.groups
              || "nfs-servers"       in host.groups
              || "pkg-repositories"  in host.groups
              || "unifi-controllers" in host.groups
@@ -327,5 +337,33 @@ apply Service "https-cert" {
              || "dav-servers"       in host.groups
              || "smtp-servers"      in host.groups
              || "icinga-servers"    in host.groups
+             || "web-servers"       in host.groups
              || "ttrss-servers"     in host.groups)
+             && !host.vars.https_vhosts)
+}
+
+// Expect HTTPS 200
+apply Service for (vhost in host.vars.https_vhosts) {
+  check_command = "http"
+  name = vhost + "-cert"
+  display_name = vhost + " certificate"
+  vars.http_vhost = vhost
+  vars.http_expect = "HTTP/1.1 200 OK"
+  vars.http_ssl = true
+  vars.http_sni = true
+  vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+}
+
+// Certificate validity
+apply Service for (vhost in host.vars.https_vhosts) {
+  check_command = "http"
+  name = vhost
+  display_name = vhost
+  vars.http_vhost = vhost
+  vars.http_expect = "HTTP/1.1 200 OK"
+  vars.http_ssl = true
+  vars.http_sni = true
+  vars.http_expect = "HTTP/1.1 200 OK"
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
 }

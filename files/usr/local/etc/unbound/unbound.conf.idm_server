@@ -53,7 +53,7 @@ $([ -z "$unbound_local_zones" ] || printf '  local-zone: "%s" typetransparent\n'
   private-domain: "${domain}"
 $([ -z "$unbound_local_zones" ] || printf '  private-domain: "%s"\n' $unbound_local_zones)
 
-$([ -z "$unbound_local_data" ] || printf '  local-data: "%s"\n' $unbound_local_data)
+$([ -z "$unbound_local_data" ] || echo "$unbound_local_data" | while read -r data; do [ -n "$data" ] && printf '  local-data: "%s"\n' "$data"; done)
 
 $(echo "$unbound_blocklists" | while read -r name _url; do
     [ -n "$name" ] && printf "rpz:\n  name: %s\n  zonefile: ${unbound_blocklist_dir}/%s.zone\n" "$name" "$name"; done)

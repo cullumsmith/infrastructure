@@ -67,12 +67,12 @@ smtpd_sasl_security_options     = noanonymous, noplaintext
 smtpd_sasl_tls_security_options = noanonymous
 smtpd_helo_required             = yes
 
-smtp_tls_CApath                 = ${system_cacert_path}
+smtp_tls_CApath                 = ${system_cadir_path}
 smtp_tls_security_level         = may
 smtp_tls_session_cache_database = btree:\$data_directory/smtp_scache
 smtp_tls_loglevel               = 1
 
-lmtp_tls_CApath                 = ${system_cacert_path}
+lmtp_tls_CAfile                 = ${site_cacert_path}
 lmtp_tls_security_level         = encrypt
 lmtp_tls_session_cache_database = btree:\$data_directory/lmtp_scache
 smtp_tls_loglevel               = 1

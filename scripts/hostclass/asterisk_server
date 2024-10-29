@@ -54,23 +54,23 @@ install_directory -o "$asterisk_user" -g "$asterisk_user" -m 0755 "$asterisk_db_
 install_file -m 0644 \
   "${asterisk_conf_dir}/extensions.conf" \
   "${asterisk_conf_dir}/logger.conf" \
-  "${asterisk_conf_dir}/queues.conf" \
   "${asterisk_conf_dir}/voicemail.conf"
 
 install_template -m 0644 \
   "${asterisk_conf_dir}/voicemail.conf" \
   "${asterisk_conf_dir}/pjsip.conf" \
+  "${asterisk_conf_dir}/queues.conf" \
   "${asterisk_conf_dir}/rtp.conf"
 
-install_template -m 0640 \
+install_template -m 0640 -g "$asterisk_user" \
   "${asterisk_conf_dir}/pjsip_wizard.conf"
 
 # Acquire public TLS certificate.
 install_template -m 0600 /usr/local/etc/sudoers.d/acme
 acme_install_certificate \
-  -c "$asterisk_public_tls_cert" \
-  -k "$asterisk_public_tls_key" \
+  -g "$asterisk_user" \
   -r 'sudo service asterisk reload' \
+  asterisk \
   "$asterisk_public_fqdn"
 
 # Enable and start asterisk.

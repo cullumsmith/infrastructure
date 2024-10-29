@@ -18,8 +18,8 @@ install_template -m 0644 /usr/local/etc/nsd/nsd.conf
 
 # Copy zone files.
 for zone in $nsd_zones; do
-  eval "zone_name=\${nsd_${zone}_zone}"
-  install_file -m 0644 "${nsd_conf_dir}/${zone_name}.zone"
+  eval "_domain=\${nsd_${zone}_domain}"
+  install_file -m 0644 "${nsd_conf_dir}/${_domain}.zone"
 done
 
 # Enable and start nsd.

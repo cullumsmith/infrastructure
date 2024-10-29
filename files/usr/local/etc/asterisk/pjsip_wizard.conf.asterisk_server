@@ -40,8 +40,10 @@ aor/remove_existing        = yes
 endpoint/allow             = !all,g722,ulaw
 endpoint/from_domain       = ${asterisk_sip_domain}
 endpoint/subscribe_context = subscribe
+endpoint/transport = transport-tcp
 
 $(for ext in ${asterisk_exts:-}; do
+  eval "ext_proto=\${asterisk_ext_${ext}_proto:-'tcp'}"
   eval "ext_context=\${asterisk_ext_${ext}_context}"
   eval "ext_password=\${asterisk_ext_${ext}_password}"
   eval "ext_max_contacts=\${asterisk_ext_${ext}_max_contacts:-1}"
@@ -62,4 +64,5 @@ aor/max_contacts      = ${ext_max_contacts}
 aor/qualify_frequency = ${ext_qualify_freq}
 aor/qualify_timeout   = ${ext_qualify_timeout}
 endpoint/direct_media = ${ext_direct_media}
+endpoint/transport    = transport-${ext_proto}
 "; done)

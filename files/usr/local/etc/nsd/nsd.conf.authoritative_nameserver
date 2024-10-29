@@ -1,7 +1,7 @@
 server:
   server-count: ${nsd_threads}
   log-only-syslog: yes
-  verbosity: 1
+  verbosity: 2
   hide-version: yes
   minimal-responses: yes
   refuse-any: yes

@@ -4,7 +4,7 @@ if [ "${idm_bootstrap:-}" = true ]; then
   resolvers=$bootstrap_resolvers
   pkg_host=$pkg_host_ip
 else
-  : ${resolvers:="$(echo "$idm_server_list" | awk '{print $3}')"}
+  : ${resolvers:="$(echo "$idm_server_list" | awk '{printf "%s ",$3}')"}
   : ${pkg_host:="pkg.${domain}"}
 fi
 
