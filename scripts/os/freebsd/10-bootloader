@@ -11,7 +11,7 @@ install_file -m 0644 /etc/ttys
 kill -HUP 1
 
 set_loader_conf \
-  autoboot_delay=1 \
+  autoboot_delay=3 \
   beastie_disable=YES \
   cc_htcp_load=YES \
   kern.geom.label.disk_ident.enable=0 \

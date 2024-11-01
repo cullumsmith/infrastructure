@@ -19,7 +19,6 @@ setgid_group      = maildrop
 import_environment = MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ XAUTHORITY DISPLAY LANG=C POSTLOG_SERVICE POSTLOG_HOSTNAME KRB5_KTNAME=${postfix_keytab} KRB5_CLIENT_KTNAME=${postfix_keytab}
 
 myorigin      = ${postfix_myorigin}
-myhostname    = ${postfix_public_fqdn}
 mynetworks    = 127.0.0.0/8 [::1]/128 [fe80::]/64 ${postfix_mynetworks}
 mydestination =
 
@@ -100,6 +99,8 @@ smtpd_relay_restrictions =
   permit_sasl_authenticated,
   reject_unauth_destination
 smtpd_recipient_restrictions =
+  permit_mynetworks,
+  permit_sasl_authenticated,
   reject_unknown_recipient_domain,
   reject_unlisted_recipient,
   reject_unauth_destination,

@@ -9,6 +9,7 @@
 : ${davical_branch:='master'}
 : ${davical_awl_repo:='https://gitlab.com/davical-project/awl.git'}
 : ${davical_awl_branch:='master'}
+: ${davical_admins:=''}
 
 davical_dn="uid=${davical_username},${robots_basedn}"
 davical_repo_dir=/usr/local/www/davical
@@ -103,6 +104,17 @@ if ! davical_psql -c 'SELECT 1 FROM awl_db_revision'; then
     "${davical_repo_dir}/dba/update-davical-database" --debug
 
   davical_psql -c "delete from usr where username = 'admin'"
+fi
+
+if [ -n "$davical_admins" ]; then
+  # Note: This won't work until each admin in $davical_admins has logged in
+  #       at least once.
+  davical_psql -c \
+    "INSERT INTO role_member (user_no, role_no)
+     SELECT user_no, (SELECT role_no FROM roles WHERE role_name  = 'Admin')
+     FROM usr
+     WHERE username in ('$(join "','" $davical_admins)')
+     ON CONFLICT DO NOTHING"
 fi
 
 # Copy TLS certificate for nginx.

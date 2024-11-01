@@ -20,8 +20,8 @@ zfs set \
   "${state_dataset}/vhosts"
 
 # Configure nginx.
-install_template -m 0644 /usr/local/etc/nginx/nginx.conf
-install -Cv -m 0644 /dev/null /usr/local/etc/nginx/vhosts.conf
+install_template -m 0644 "${nginx_conf_dir}/nginx.conf"
+[ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
 sysrc -v nginx_enable=YES
 service nginx restart
 
@@ -37,7 +37,7 @@ for certname in $acme_certs; do
 done
 
 # Now that we have the ACME certs, add the vhosts.
-install_template -m 0644 /usr/local/etc/nginx/vhosts.conf
+install_template -m 0644 "${nginx_conf_dir}/vhosts.conf"
 service nginx restart
 
 # If any acmeproxy_domains were specified, setup the SFTP proxy.

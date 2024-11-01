@@ -34,6 +34,8 @@
 asterisk_public_tls_cert="${acme_cert_dir}/asterisk.crt"
 asterisk_public_tls_key="${acme_cert_dir}/asterisk.key"
 asterisk_conf_dir=/usr/local/etc/asterisk
+asterisk_sound_dir=/usr/local/share/asterisk/sounds/en
+asterisk_g722_tarball=https://downloads.asterisk.org/pub/telephony/sounds/asterisk-core-sounds-en-g722-current.tar.gz
 asterisk_db_dir=/var/db/asterisk
 asterisk_user=asterisk
 
@@ -49,6 +51,11 @@ zfs set \
   com.sun:auto-snapshot:weekly=true \
   "${state_dataset}/asterisk"
 install_directory -o "$asterisk_user" -g "$asterisk_user" -m 0755 "$asterisk_db_dir"
+
+# Download G722 sounds.
+if ! [ -f "${asterisk_sound_dir}/hello-world.g722" ]; then
+  curl -fL "$asterisk_g722_tarball" | tar xf - -C "$asterisk_sound_dir"
+fi
 
 # Generate asterisk configuration.
 install_file -m 0644 \

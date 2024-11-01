@@ -15,6 +15,7 @@ vaultwarden_client_keytab="${keytab_dir}/vaultwarden.client.keytab"
 
 pkg install -y \
   vaultwarden \
+  ca_root_nss \
   nginx
 
 # Create vaultwarden principal and keytab.

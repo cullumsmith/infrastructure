@@ -22,25 +22,22 @@
       "Extensions": {
         "uBlock0@raymondhill.net": {
           "toOverwrite": {
-            "selectedFilterLists": [
+            "filterLists": [
               "user-filters",
               "ublock-filters",
               "ublock-badware",
               "ublock-privacy",
-              "ublock-abuse",
+              "ublock-quick-fixes",
               "ublock-unbreak",
-              "ublock-annoyances",
-              "ublock-cookies-easylist",
-              "fanboy-cookiemonster",
               "easylist",
               "easyprivacy",
+              "adguard-spyware-url",
               "urlhaus-1",
               "plowe-0",
-              "fanboy-annoyance",
-              "fanboy-social",
+              "fanboy-cookiemonster",
+              "ublock-cookies-easylist",
               "fanboy-thirdparty_social",
-              "adguard-spyware-url",
-              "ublock-quick-fixes"
+              "ublock-annoyances"
             ]
           },
           "toAdd": {
@@ -115,8 +112,44 @@
         "toplevel_name": "Intranet"
       },
       {
-        "url": "http://pkg.${domain}/poudriere/",
-        "name": "Poudriere"
+        "name": "Bitwarden",
+        "url": "https://bitwarden.${domain}/"
+      },
+      {
+        "name": "CUPS",
+        "url": "https://cups.${domain}/"
+      },
+      {
+        "name": "DAViCal",
+        "url": "https://dav.${domain}/"
+      },
+      {
+        "name": "Icinga",
+        "url": "https://icinga.${domain}/"
+      },
+      {
+        "name": "Invidious",
+        "url": "https://invidious.${domain}/"
+      },
+      {
+        "name": "Poudriere",
+        "url": "http://pkg.${domain}/poudriere"
+      },
+      {
+        "name": "Rspamd",
+        "url": "https://smtp.${domain}/"
+      },
+      {
+        "name": "Tiny Tiny RSS",
+        "url": "https://ttrss.${domain}/"
+      },
+      {
+        "name": "UniFi Controller",
+        "url": "https://unifi.${domain}/"
+      },
+      {
+        "name": "ZNC",
+        "url": "https://znc.${domain}/"
       }
     ],
     "ExtensionUpdate": true,

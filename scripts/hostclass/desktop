@@ -27,13 +27,14 @@ set_loader_conf \
   linux_load=YES \
   linux64_load=YES
 
+# Enable FUSE.
+set_loader_conf fusefs_load=YES
+
 # Install packages common to all DEs.
 pkg install -y $desktop_common_packages
 
-# Install scripts for creating local (non-NFS) home directories.
-install_file -m 0555 \
-  /usr/local/libexec/pam-create-local-homedir \
-  /etc/profile.d/local-homedir.sh
+# Install profile script for improving experience on NFS homedirs.
+install_file -m 0555 /etc/profile.d/local-homedir.sh
 
 # Create ZFS dataset for local homedirs.
 create_dataset -o mountpoint=/usr/local/home "${state_dataset}/home"
@@ -66,6 +67,9 @@ service webcamd status || service webcamd start
 install_file -m 0644 /usr/local/etc/xdg/autostart/nss-trust-root-ca.desktop
 install_file -m 0555 /usr/local/libexec/nss-trust-root-ca
 
+# Install gajim desktop file.
+install_file -m 0644 /usr/local/share/applications/gajim.desktop
+
 case $desktop_type in
   i3)
     pkg install -y $desktop_i3_packages
@@ -96,6 +100,11 @@ case $desktop_type in
       /usr/local/etc/xdg/plasma-workspace \
       /usr/local/etc/xdg/plasma-workspace/shutdown
     install_file -m 0555 /usr/local/etc/xdg/plasma-workspace/shutdown/cleanup.sh
+
+    # Disable user switching
+    # Broken with consolekit: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=221452
+    # VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
+    install_file -m 0644 /usr/local/etc/xdg/kdeglobals
 
     # Enable sddm.
     sysrc -v sddm_enable=YES

@@ -19,9 +19,17 @@ clear_tmp_enable=false
 # Chromium seems to need this to enable VAAPI video decoding on intel.
 chrome_flags='--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan'
 
+gajim_packages="
+gajim
+py${python_version}-omemo-dr
+farstream
+gsound"
+
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
 desktop_common_packages="
+android-tools
 bind-tools
+ca_root_nss
 cantarell-fonts
 chromium
 droid-fonts-ttf
@@ -62,19 +70,19 @@ wireguard-tools
 xorg"
 
 desktop_kde_packages="
+android-file-transfer-qt5
 audacious-qt5
 audacious-plugins-qt5
 digikam
-dino
 elisa
-gajim
+${gajim_packages}
 gtksourceview4
 k3b
 kde5
 kid3-kf5
 kmix
 konversation
-py${python_version}-omemo-dr
+en-hunspell
 sddm"
 
 desktop_i3_packages='

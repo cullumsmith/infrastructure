@@ -1,7 +1,11 @@
 #!/bin/sh
 
-default_priv_quota=250G
+default_priv_quota=50G
 default_pub_quota=10G
+
+# Format: username:privquota:pubquota. For example:
+# nfs_homedirs='joe:250G:10G  jane:250G'
+# nfs_groupdirs='sysadmins:250G doefamily:100G:10G'
 
 # Create user home directories.
 for userquota in ${nfs_homedirs:-}; do

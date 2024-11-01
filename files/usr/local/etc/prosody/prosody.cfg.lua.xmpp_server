@@ -47,6 +47,8 @@ reload_modules = { "groups", "tls" }
 groups_file = "${prosody_roster_path}"
 
 s2s_secure_auth = true
+c2s_direct_tls_ports = { ${prosody_c2s_tls_port} }
+s2s_direct_tls_ports = { ${prosody_s2s_tls_port} }
 
 limits = {
   c2s = {

@@ -15,9 +15,11 @@ for patch in /usr/local/etc/poudriere.d/patches/*.patch; do
 done
 
 for jail in "$@"; do
-  poudriere jail -u -j "$jail" > /dev/null
-  poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/idm-pkglist -p "$ports_tree" -z idm > /dev/null
-  poudriere bulk -j "$jail" -f  /usr/local/etc/poudriere.d/pkglist -p "$ports_tree" > /dev/null
+  poudriere jail -u  -j "$jail" > /dev/null
+  poudriere bulk     -j "$jail" -f /usr/local/etc/poudriere.d/idm-pkglist -p "$ports_tree" -z idm    > /dev/null
+  poudriere pkgclean -j "$jail" -f /usr/local/etc/poudriere.d/idm-pkglist -p "$ports_tree" -z idm -y > /dev/null
+  poudriere bulk     -j "$jail" -f /usr/local/etc/poudriere.d/pkglist     -p "$ports_tree"           > /dev/null
+  poudriere pkgclean -j "$jail" -f /usr/local/etc/poudriere.d/pkglist     -p "$ports_tree" -y        > /dev/null
 done
 
 poudriere distclean -p "$ports_tree" -a -y > /dev/null

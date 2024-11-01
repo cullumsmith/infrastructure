@@ -68,11 +68,12 @@ pkg install -y \
   pam_mkhomedir
 
 # Configure PAM/NSS integration.
+install_template -m 0644 \
+  /etc/pam.d/login \
+  /etc/pam.d/sshd
 install_file -m 0644 \
   /etc/nsswitch.conf \
   /etc/pam.d/system \
-  /etc/pam.d/login \
-  /etc/pam.d/sshd \
   /etc/pam.d/sudo \
   /etc/pam.d/su \
   /etc/pam.d/other

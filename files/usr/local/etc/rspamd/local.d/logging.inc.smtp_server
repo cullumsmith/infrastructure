@@ -1,2 +1,2 @@
 type = syslog;
-facility = mail;
+facility = daemon;

@@ -33,6 +33,10 @@ service unifi status && service unifi stop
 [ -f "${unifi_home}/data/keystore" ] || install -Cv -o "$unifi_user" -g "$unifi_user" -m 0600 /dev/null "${unifi_home}/data/keystore"
 su -m "$unifi_user" -c "java -jar ${unifi_home}/lib/ace.jar import_key_cert ${unifi_https_key} ${unifi_https_cert} ${site_cacert_path}"
 
+# Add root CA to java keystore.
+keytool -list -cacerts -storepass changeit -alias "$site" \
+  || keytool -import -trustcacerts -cacerts -storepass changeit -noprompt -alias "$site" -file "$site_cacert_path"
+
 # Disable analytics.
 install_directory -m 0640 -o "$unifi_user" -g "$unifi_user" \
   "${unifi_home}/data/sites" \

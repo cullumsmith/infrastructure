@@ -7,7 +7,7 @@
 : ${prosody_admins:=''}
 : ${prosody_public_fqdn:="$fqdn"}
 : ${prosody_domains:="$email_domain"}
-: ${prosody_ldap_passwd:='changeme'}
+: ${prosody_ldap_password:='changeme'}
 : ${prosody_dbname:='prosody'}
 : ${prosody_dbhost:="$postgres_host"}
 : ${prosody_access_role:='xmpp-access'}
@@ -24,10 +24,11 @@ prosody_dn="uid=${prosody_username},${robots_basedn}"
 prosody_local_user=prosody
 prosody_conf_dir=/usr/local/etc/prosody
 prosody_certs_dir="${prosody_conf_dir}/certs"
-prosody_keytab="${keytab_dir}/prosody.keytab"
+prosody_keytab="${keytab_dir}/prosody.client.keytab"
 prosody_roster_path="${prosody_conf_dir}/roster.ini"
 prosody_http_port=8080
-prosody_upload_dir=/var/db/prosody/http_upload
+prosody_db_dir=/var/db/prosody
+prosody_upload_dir="${prosody_db_dir}/http_upload"
 
 prosody_https_cacert="${acme_cert_dir}/nginx.ca.crt"
 prosody_https_cert="${acme_cert_dir}/nginx.crt"
@@ -42,10 +43,8 @@ pkg install -y \
   nginx
 
 # Create ZFS dataset for HTTP upload files.
-create_dataset -o "mountpoint=${prosody_upload_dir}" "${state_dataset}/http_upload"
-
-# Set ownership on http_upload directory.
-install_directory -o "$prosody_local_user" -g "$prosody_local_user" -m 0750 "$prosody_upload_dir"
+create_dataset -o "mountpoint=${prosody_db_dir}" "${state_dataset}/prosody"
+install_directory -o "$prosody_local_user" -g "$prosody_local_user" -m 0750 "$prosody_db_dir"
 
 # Create prosody user private group.
 ldap_add "cn=${prosody_username},${private_groups_basedn}" <<EOF
@@ -98,27 +97,28 @@ install_template -o root -g "$prosody_local_user" -m 0640 /usr/local/etc/prosody
 # Configure automatic roster.
 install_file -m 0555 /usr/local/libexec/prosody-update-roster
 install -Cv -m 0640 -o "$prosody_local_user" -g "$prosody_local_user" /dev/null "${prosody_conf_dir}/roster.ini"
-su -m "$prosody_local_user" -c "/usr/local/libexec/prosody-update-roster ${prosody_access_role} > ${prosody_roster_path}"
+su -m "$prosody_local_user" -c "/usr/local/libexec/prosody-update-roster ${prosody_access_role} ${prosody_roster_path}"
 
 # Copy prosody crontab.
 install_template -m 0644 /etc/cron.d/prosody
 
 # Configure nginx.
-install_template -m 0644 /usr/local/etc/nginx/nginx.conf
+install_template -m 0644 "${nginx_conf_dir}/nginx.conf"
+[ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
 sysrc -v nginx_enable=YES
 service nginx restart
 
+# Retrieve webserver certificate via ACME.
 install_template -m 0600 /usr/local/etc/sudoers.d/acme
 acme_install_certificate \
-  -C "$prosody_https_cacert" \
-  -c "$prosody_https_cert" \
-  -k "$prosody_https_key" \
   -g "$nginx_user" \
   -r 'sudo service nginx reload' \
+  nginx \
   "$prosody_public_fqdn"
 
-# Now that we have the ACME certs, add the nginx vhost.
-install_template -m 0644 /usr/local/etc/nginx/vhosts.conf
+# Now that we have the ACME certs, add the vhosts.
+install_template -m 0644 "${nginx_conf_dir}/vhosts.conf"
+service nginx restart
 
 # Enable and start daemons.
 sysrc -v prosody_enable=YES

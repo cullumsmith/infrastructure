@@ -38,10 +38,10 @@ ln -snfv "$postfix_keytab" "/var/krb5/user/${postfix_uid}/client.keytab"
 # Generate postfix configuration.
 install_template -m 0644 \
   "${postfix_conf_dir}/main.cf" \
+  "${postfix_conf_dir}/master.cf" \
   "${postfix_conf_dir}/virtual_mailboxes.cf" \
   "${postfix_conf_dir}/virtual_aliases.cf" \
   /usr/local/lib/sasl2/smtpd.conf
-install_file -m 0644 "${postfix_conf_dir}/master.cf"
 
 # Allow postfix to read the saslauthd socket.
 install_directory -m 0750 -o "$saslauthd_user" -g "$postfix_user" "$saslauthd_runtime_dir"
@@ -54,10 +54,9 @@ if [ "$postfix_public_fqdn" != "$fqdn" ]; then
   # Acquire public TLS certificate.
   install_template -m 0600 /usr/local/etc/sudoers.d/acme
   acme_install_certificate \
-    -c "$postfix_public_tls_cert" \
-    -k "$postfix_public_tls_key" \
     -g "$postfix_user" \
     -r 'sudo service postfix reload' \
+    postfix \
     "$postfix_public_fqdn"
 fi
 

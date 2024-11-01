@@ -72,9 +72,11 @@ automountKey: /nfs/media
 automountInformation: auto_media ${nfs_mount_opts}
 EOF
 
-# auto_media: music
-ldap_add "automountKey=music,automountMapName=auto_media,${automount_basedn}" <<EOF
+# auto_media: music, movies, etc
+for share in $media_shares; do
+  ldap_add "automountKey=${share},automountMapName=auto_media,${automount_basedn}" <<EOF
 objectClass: automount
-automountKey: music
-automountInformation: ${fqdn}:/media/music
+automountKey: ${share}
+automountInformation: ${fqdn}:/media/${share}
 EOF
+done

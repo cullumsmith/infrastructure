@@ -193,14 +193,14 @@ Options:
   zfs create -v "${JAIL_DATASET}/${name}"
   zfs clone \
     $ZFS_OPTS \
-    -o quota="$os_quota" \
+    -o refquota="$os_quota" \
     "$snapshot" "${JAIL_DATASET}/${name}/os"
 
   # Create delegated 'data' dataset.
   zfs create -v \
     $ZFS_OPTS \
     -o mountpoint=none \
-    -o quota="$data_quota" \
+    -o refquota="$data_quota" \
     "${JAIL_DATASET}/${name}/data"
 
   # Copy timezone configuration from host.
@@ -761,7 +761,7 @@ cmd::reprovision(){
   zfs::ensure_snapshot snapshot "${JAIL_DATASET}/templates/${template}"
 
   # Stash old configuration data.
-  old_quota=$(zfs get -Hp -o value quota "${JAIL_DATASET}/${jail}/os")
+  old_quota=$(zfs get -Hp -o value refquota "${JAIL_DATASET}/${jail}/os")
   old_hostname=$(sysrc -f "${JAIL_HOME}/${jail}/os/etc/rc.conf" -qn hostname)
   old_ifconfig=$(sysrc -f "${JAIL_HOME}/${jail}/os/etc/rc.conf" -qn ifconfig_jail0)
   old_defaultrouter=$(sysrc -f "${JAIL_HOME}/${jail}/os/etc/rc.conf" -qn defaultrouter) ||:
@@ -773,7 +773,7 @@ cmd::reprovision(){
   zfs destroy -v -f -r "${JAIL_DATASET}/${jail}/os"
   zfs clone \
     $ZFS_OPTS \
-    -o quota="$old_quota" \
+    -o refquota="$old_quota" \
     "$snapshot" "${JAIL_DATASET}/${jail}/os"
 
   # Copy timezone configuration from host.
@@ -839,7 +839,7 @@ cmd::shell(){
   jail::exists "$jail"  || die "no such jail: ${jail}"
   jail::running "$jail" || die "jail not running: ${jail}"
 
-  jail::exec "$jail" /bin/csh
+  jail::exec "$jail" /bin/sh
 }
 
 cmd::show(){
@@ -857,7 +857,7 @@ cmd::show(){
   printf -- '------------------------- JAIL CONFIGURATION -------------------------\n'
   cat "${JAIL_HOME}/${jail}/jail.conf"
   printf -- '\n---------------------------- ZFS DATASET -----------------------------\n'
-  zfs list -o name,quota,used,avail,mountpoint -S name \
+  zfs list -o name,refquota,used,avail,mountpoint -S name \
     "${JAIL_DATASET}/${jail}/os" \
     "${JAIL_DATASET}/${jail}/data"
 }
@@ -878,7 +878,7 @@ cmd::status(){
   printf -- '---------------------------- JAIL STATUS -----------------------------\n'
   jls -j "$jail" -h jid name path osrelease host.hostname 2>/dev/null | column -t
   printf -- '\n---------------------------- ZFS DATASET -----------------------------\n'
-  zfs list -o name,quota,used,avail,mountpoint -S name \
+  zfs list -o name,refquota,used,avail,mountpoint -S name \
     "${JAIL_DATASET}/${jail}/os" \
     "${JAIL_DATASET}/${jail}/data" \
     | sed "s|^${JAIL_DATASET}/${jail}/||" \

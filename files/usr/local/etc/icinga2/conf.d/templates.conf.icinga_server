@@ -7,8 +7,8 @@ template Host "generic-host" default {
 
 template Service "generic-service" default {
   max_check_attempts = 5
-  check_interval = 1m
-  retry_interval = 30s
+  check_interval = 5m
+  retry_interval = 1m
 }
 
 template User "generic-user" default {

@@ -5,7 +5,7 @@
 set -eu
 
 PROGNAME=pki
-USAGE="<init|cert|client-cert|renew>"
+USAGE="<init|cert|client-cert|renew|pkcs12|show>"
 BOXCONF_ROOT=$(dirname "$(readlink -f "$0")")
 
 BOXCONF_CA_PASSWORD_FILE="${BOXCONF_ROOT}/.ca_password"
@@ -342,6 +342,36 @@ pki_renew(){
   _pki_renew "${1}/${2}" "${days:-}"
 }
 
+pki_pkcs12(){
+  # Generate a pkcs12 bundle.
+  USAGE='pkcs12 HOSTNAME CERTNAME PATH'
+  [ $# -eq 3 ] || usage
+
+  [ -f "${BOXCONF_CA_DIR}/${1}/${2}.crt" ] || die "certificate does not exist: ${1}/${2}.crt"
+  [ -f "${BOXCONF_CA_DIR}/${1}/${2}.key" ] || die "key does not exist: ${1}/${2}.key"
+
+  _boxconf_get_vault_password
+
+  PASS="$BOXCONF_VAULT_PASSWORD" openssl pkcs12 -legacy -export \
+    -out "$3" \
+    -inkey "${BOXCONF_CA_DIR}/${1}/${2}.key" \
+    -in "${BOXCONF_CA_DIR}/${1}/${2}.crt" \
+    -name "$2" \
+    -passin env:PASS
+}
+
+pki_show(){
+  # Show a certificate and decrypted private key.
+  USAGE='show HOSTNAME CERTNAME'
+  [ -f "${BOXCONF_CA_DIR}/${1}/${2}.crt" ] || die "certificate does not exist: ${1}/${2}.crt"
+  [ -f "${BOXCONF_CA_DIR}/${1}/${2}.key" ] || die "key does not exist: ${1}/${2}.key"
+
+  _boxconf_get_vault_password
+
+  cat "${BOXCONF_CA_DIR}/${1}/${2}.crt"
+  _boxconf_decrypt_key "${BOXCONF_CA_DIR}/${1}/${2}.key"
+}
+
 [ $# -ge 1 ] || usage
 action=$1; shift
 
@@ -354,5 +384,7 @@ case $action in
   server-cert|server|cert) pki_server "$@" ;;
   client-cert|client)      pki_client "$@" ;;
   renew)                   pki_renew "$@" ;;
+  pkcs12)                  pki_pkcs12 "$@" ;;
+  show)                    pki_show "$@" ;;
   *)                       usage ;;
 esac

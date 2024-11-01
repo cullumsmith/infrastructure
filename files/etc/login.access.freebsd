@@ -2,7 +2,10 @@
 +:root:ALL
 +:${icinga_local_user}:ALL
 
-$(if [ -n "${login_access_groups:-}" ] || [ -n "${login_access_users:-}" ]; then
+$(if [ -n "${acmeproxy_client_group:-}" ]; then
+  echo "+:(${acmeproxy_client_group}):ALL"
+fi
+if [ -n "${login_access_groups:-}" ] || [ -n "${login_access_users:-}" ]; then
   printf -- '-:ALL EXCEPT '
 if [ -n "${login_access_groups:-}" ]; then
   printf    '(%s) ' ${login_access_groups}

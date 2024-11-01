@@ -1,16 +1,22 @@
 #!/bin/sh
 
-# media/music
-create_dataset -p "${nfs_dataset}/media/music"
-zfs set \
-  compression=off \
-  com.sun:auto-snapshot:daily=true \
-  com.sun:auto-snapshot:weekly=true \
-  "${nfs_dataset}/media/music"
-chgrp media-admin "${nfs_root}/media/music"
-chmod 2770 "${nfs_root}/media/music"
-set_facl "${nfs_root}/media/music" \
-   group:media-admin:rwpDdaARWcs:fd:allow \
-   group:media-admin:x:d:allow \
-   group:media-access:raRcs:fd:allow \
-   group:media-access:x:d:allow
+media_access_group='media-access'
+media_admin_group='media-admin'
+media_shares='music shows movies audiobooks roms books scores isos'
+
+# media shares
+for share in $media_shares; do
+  create_dataset -p "${nfs_dataset}/media/${share}"
+  zfs set \
+    compression=off \
+    com.sun:auto-snapshot:daily=true \
+    com.sun:auto-snapshot:weekly=true \
+    "${nfs_dataset}/media/${share}"
+  chgrp "$media_admin_group" "${nfs_root}/media/${share}"
+  chmod 2770 "${nfs_root}/media/${share}"
+  set_facl "${nfs_root}/media/${share}" \
+     "group:${media_admin_group}:rwpDdaARWcs:fd:allow" \
+     "group:${media_admin_group}:x:d:allow" \
+     "group:${media_access_group}:raRcs:fd:allow" \
+     "group:${media_access_group}:x:d:allow"
+done

@@ -2,4 +2,3 @@
 
 cnames=xmpp
 prosody_acme_host=www1
-prosody_public_fqdn=xmpp.example.com

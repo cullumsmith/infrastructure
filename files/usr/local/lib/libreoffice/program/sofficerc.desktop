@@ -1,8 +1,8 @@
 [Bootstrap]
 CrashDirectory=${$BRAND_BASE_DIR/program/bootstraprc:UserInstallation}/crash
-CrashDumpEnable=true
+CrashDumpEnable=false
 HideEula=1
-Logo=0
+Logo=1
 NativeProgress=false
 ProgressBarColor=0,0,0
 ProgressFrameColor=102,102,102

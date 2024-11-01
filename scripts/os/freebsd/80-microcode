@@ -7,8 +7,12 @@ if [ "$BOXCONF_VIRTUALIZATION_TYPE" != none ]; then
   return
 fi
 
-pkg install -y cpu-microcode
+if [ "${enable_microcode_updates:-}" = false ]; then
+  set_loader_conf cpu_microcode_load=NO
+else
+  pkg install -y cpu-microcode
 
-set_loader_conf \
-  cpu_microcode_load=YES \
-  cpu_microcode_name="/boot/firmware/${microcode_name}"
+  set_loader_conf \
+    cpu_microcode_load=YES \
+    cpu_microcode_name="/boot/firmware/${microcode_name}"
+fi

@@ -1,0 +1,20 @@
+[Desktop Entry]
+Categories=Network;InstantMessaging;GTK;Chat;
+Name=Gajim
+GenericName=XMPP Chat Client
+Comment=A fully-featured XMPP chat client
+Keywords=chat;messaging;im;xmpp;voip;
+Exec=gajim %u
+Icon=org.gajim.Gajim
+StartupNotify=false
+X-GNOME-SingleWindow=true
+X-GNOME-UsesNotifications=true
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/xmpp;
+Actions=StartChat;
+
+[Desktop Action StartChat]
+Exec=gajim --start-chat
+Name=Start a new chat
+Icon=org.gajim.Gajim

@@ -6,12 +6,12 @@ shared_lastcall         = yes
 log_membername_as_agent = yes
 
 $(for queue in ${asterisk_queues:-}; do
-  eval "queue_strategy=\${asterisk_queue_${queue}_strategy}"
+  eval "queue_strategy=\${asterisk_queue_${queue}_strategy:-ringall}"
   eval "queue_timeout=\${asterisk_queue_${queue}_timeout:-15}"
   eval "queue_retry=\${asterisk_queue_${queue}_retry:-5}"
   eval "queue_ringinuse=\${asterisk_queue_${queue}_ringinuse:-yes}"
-  eval "queue_members=\${asterisk_queue_${queue}_members}"
-  echo "\
+  eval "queue_members=\${asterisk_queue_${queue}_members:-}"
+  cat <<EOF
 [${queue}]
 strategy                    = ${queue_strategy}
 timeout                     = ${queue_timeout}
@@ -24,8 +24,12 @@ periodic-announce-frequency = 0
 joinempty                   = yes
 leavewhenempty              = no
 ringinuse                   = ${queue_ringinuse}
-timeoutrestart              = yes"
-for member in $queue_members; do
-  eval "member_name=\${asterisk_ext_${member}_cid_name}"
-  echo "member => PJSIP/${member},0,${member_name},PJSIP/${member}"
-done; done)
+timeoutrestart              = yes
+EOF
+  for member in $queue_members; do
+    eval "member_name=\${asterisk_ext_${member}_cid_name}"
+    cat <<EOF
+member => PJSIP/${member},0,${member_name},PJSIP/${member}
+EOF
+  done
+done)

@@ -1,4 +1,5 @@
 smtp      inet  n       -       n       -       -       smtpd
+  -o myhostname=${postfix_public_fqdn}
 submission inet n       -       n       -       -       smtpd
   -o smtpd_tls_security_level=encrypt
   -o smtpd_sasl_auth_enable=yes
@@ -16,7 +17,7 @@ proxymap  unix  -       -       n       -       -       proxymap
 proxywrite unix -       -       n       -       1       proxymap
 smtp      unix  -       -       n       -       -       smtp
 relay     unix  -       -       n       -       -       smtp
-        -o syslog_name=postfix/$service_name
+        -o syslog_name=postfix/\$service_name
 showq     unix  n       -       n       -       -       showq
 error     unix  -       -       n       -       -       error
 retry     unix  -       -       n       -       -       error

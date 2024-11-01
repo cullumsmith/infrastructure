@@ -12,6 +12,11 @@ session   required    pam_lastlog.so    no_fail
 session   required    pam_xdg.so
 session   required    /usr/local/lib/security/pam_krb5.so
 session   optional    /usr/local/lib/pam_mkhomedir.so mode=0700
+$(if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ] && [ "${enable_autofs:-}" != false ]; then
+cat <<EOF
+session   optional    pam_exec.so /usr/local/libexec/pam-create-local-homedir
+EOF
+fi)
 
 password  sufficient  /usr/local/lib/security/pam_krb5.so try_first_pass
 password  required    pam_unix.so no_warn try_first_pass

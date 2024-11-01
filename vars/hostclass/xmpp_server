@@ -1,5 +1,9 @@
 #!/bin/sh
 
+prosody_c2s_tls_port=5223
+prosody_s2s_tls_port=5270
+
+allowed_tcp_ports="ssh http https xmpp-client xmpp-server ${prosody_c2s_tls_port} ${prosody_s2s_tls_port}"
 acme=true
-allowed_tcp_ports='ssh http https xmpp-client xmpp-server'
 nginx_public=true
+

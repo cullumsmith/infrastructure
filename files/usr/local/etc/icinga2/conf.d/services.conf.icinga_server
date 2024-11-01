@@ -219,6 +219,20 @@ apply Service "cups-cert" {
   assign where ("cups-servers" in host.groups)
 }
 
+apply Service for (vhost in host.vars.xmpp_vhosts) {
+  check_command = "tcp"
+  name = vhost + "-xmpp"
+  display_name = vhost + " xmpp"
+  vars.tcp_port = 5223
+  vars.tcp_ssl = true
+  vars.tcp_sni = vhost
+  vars.tcp_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  vars.tcp_wtime = ${icinga_response_time_warn}
+  vars.tcp_ctime = ${icinga_response_time_crit}
+  vars.tcp_send = "<stream:stream to='" + vhost + "' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>"
+  vars.tcp_expect = "<?xml version='1.0'"
+}
+
 // Expect HTTP 200
 apply Service "http" {
   check_command = "http"
@@ -289,7 +303,6 @@ apply Service "https" {
   vars.http_warn_time = ${icinga_response_time_warn}
   vars.http_critical_time = ${icinga_response_time_crit}
   assign where ("pkg-repositories"  in host.groups
-             || "xmpp-servers"      in host.groups
              || "znc-servers"       in host.groups
              || "bitwarden-servers" in host.groups)
 }
@@ -331,7 +344,6 @@ apply Service "https-cert" {
              || "pkg-repositories"  in host.groups
              || "unifi-controllers" in host.groups
              || "web-servers"       in host.groups
-             || "xmpp-servers"      in host.groups
              || "znc-servers"       in host.groups
              || "bitwarden-servers" in host.groups
              || "dav-servers"       in host.groups
@@ -342,11 +354,11 @@ apply Service "https-cert" {
              && !host.vars.https_vhosts)
 }
 
-// Expect HTTPS 200
+// Certificate validity
 apply Service for (vhost in host.vars.https_vhosts) {
   check_command = "http"
-  name = vhost + "-cert"
-  display_name = vhost + " certificate"
+  name = vhost + "-https-cert"
+  display_name = vhost + " https certificate"
   vars.http_vhost = vhost
   vars.http_expect = "HTTP/1.1 200 OK"
   vars.http_ssl = true
@@ -354,13 +366,12 @@ apply Service for (vhost in host.vars.https_vhosts) {
   vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
 }
 
-// Certificate validity
+// Expect HTTPS 200
 apply Service for (vhost in host.vars.https_vhosts) {
   check_command = "http"
-  name = vhost
-  display_name = vhost
+  name = vhost + "-https-status"
+  display_name = vhost + " https status"
   vars.http_vhost = vhost
-  vars.http_expect = "HTTP/1.1 200 OK"
   vars.http_ssl = true
   vars.http_sni = true
   vars.http_expect = "HTTP/1.1 200 OK"

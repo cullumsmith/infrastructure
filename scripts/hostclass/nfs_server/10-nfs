@@ -48,3 +48,4 @@ install_template -m 0644 /etc/exports
 for service in gssd nfsuserd mountd nfsd; do
   service "$service" status || service "$service" start
 done
+service mountd reload

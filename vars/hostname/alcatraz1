@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Causes UEFI exception on boot, "invalid opcode" ???
+enable_microcode_updates=false

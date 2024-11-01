@@ -37,7 +37,7 @@ md5_old=$(cat "$CHECKSUM_FILE")
   printf 'get certs/%s.crt\n' "$@"
   printf 'get certs/%s.key\n' "$@"
   printf 'quit\n'
-} | sftp -b - "$acmeproxy_target"
+} | /usr/local/bin/sftp -b - "$acmeproxy_target"
 
 # Get md5 of the new certificates.
 md5_new=$(md5sum "$CERT_DIR"/*.crt "$CERT_DIR"/*.key | tee "$CHECKSUM_FILE")

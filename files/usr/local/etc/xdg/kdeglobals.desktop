@@ -1,0 +1,5 @@
+# Broken with consolekit: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=221452
+# VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
+[KDE Action Restrictions]
+action/start_new_session=false
+action/switch_user=false

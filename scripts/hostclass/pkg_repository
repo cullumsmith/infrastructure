@@ -83,9 +83,11 @@ for version in $poudriere_versions; do
   abi="FreeBSD:${version%%.*}:$(uname -p)"
 
   [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
-  poudriere jail -u -j "$jail"
-  poudriere bulk -v -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
-  poudriere bulk -v -j "$jail" -f "${poudriere_conf_dir}/pkglist" -p latest
+  poudriere jail -u  -j "$jail"
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest -y
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
   ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
@@ -102,7 +104,7 @@ install_directory -m 0555 "${poudriere_data_dir}/data/packages/poudriere"
 
 # Create cron job to update packages automatically.
 install_file -m 0555 /usr/local/libexec/poudriere-cron
-install_file -m 0644 /etc/cron.d/poudriere
+install_template -m 0644 /etc/cron.d/poudriere
 
 # Now that we have a valid repo, switch the pkg repo to the local filesystem.
 install_directory -m 0755 \
