@@ -34,7 +34,7 @@ set_sysctl \
   net.inet.tcp.msl=2500 \
   net.inet.tcp.mssdflt=1448 \
   net.inet.tcp.nolocaltimewait=1 \
-  net.inet.tcp.path_mtu_discovery=0 \
+  net.inet.tcp.path_mtu_discovery=1 \
   net.inet.tcp.recvbuf_max="$tcp_buffer_size" \
   net.inet.tcp.recvspace=65536 \
   net.inet.tcp.sendbuf_inc=65536 \
@@ -70,8 +70,8 @@ if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
     security.bsd.see_other_gids="$see_other_uids" \
     security.bsd.see_other_uids="$see_other_uids" \
     security.bsd.unprivileged_read_msgbuf=0 \
-    vfs.nfsd.enable_locallocks=0 \
-    vfs.nfsd.issue_delegations=1 \
+    vfs.nfsd.enable_locallocks=1 \
+    vfs.nfsd.issue_delegations=0 \
     vfs.zfs.min_auto_ashift=12
 
   # FreeBSD automatically scales kern.maxfilesperproc with the amount of memory.

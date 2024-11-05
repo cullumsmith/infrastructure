@@ -29,7 +29,8 @@ pkg install -y \
   postfix \
   redis \
   rspamd \
-  nginx
+  nginx \
+  ca_root_nss
 
 # Create ZFS dataset for Redis DBs.
 create_dataset -o "mountpoint=${redis_data_dir}" "${state_dataset}/redis"
