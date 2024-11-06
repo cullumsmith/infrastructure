@@ -1,4 +1,11 @@
 polkit.addRule(function (action, subject) {
+$(if [ "${polkit_disable_suspend:-}" = true ]; then cat <<EOF
+  if (action.id == "org.freedesktop.consolekit.system.suspend" ||
+      action.id == "org.freedesktop.consolekit.system.hibernate") {
+    return polkit.Result.NO;
+  }
+EOF
+fi)
   if ((action.id == "org.freedesktop.consolekit.system.restart" ||
       action.id == "org.freedesktop.consolekit.system.stop" ||
       action.id == "org.freedesktop.consolekit.system.suspend")
