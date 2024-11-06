@@ -101,6 +101,7 @@ net/wireguard-tools
 ports-mgmt/poudriere
 print/cups
 print/cups-filters
+print/pdftk
 security/acme.sh
 security/bitwarden-cli
 security/cyrus-sasl2-saslauthd
@@ -157,6 +158,7 @@ x11-fonts/droid-fonts-ttf
 x11-fonts/inconsolata-ttf
 x11-fonts/noto-basic
 x11-fonts/noto-emoji
+x11-fonts/roboto-fonts-ttf
 x11-fonts/terminus-font
 x11-fonts/terminus-ttf
 x11-fonts/ubuntu-font

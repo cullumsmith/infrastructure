@@ -3,6 +3,9 @@
 desktop_access_role='desktop-access'
 login_access_groups="${login_access_groups:-} ${desktop_access_role}"
 
+# I don't want desktops to suspend or hibernate.
+polkit_disable_suspend=true
+
 # Let users run gdb/truss.
 allow_proc_debug=1
 
@@ -48,10 +51,12 @@ neofetch
 noto-basic
 noto-emoji
 password-store
+pdftk
 postgresql16-client
 pulseaudio
 python
 py${python_version}-pip
+roboto-fonts-ttf
 rsync
 signal-desktop
 sndio

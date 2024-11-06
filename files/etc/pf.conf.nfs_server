@@ -18,7 +18,7 @@ set skip on lo
 $([ -n "${pf_skip_interfaces:-}" ] && printf \
   'set skip on %s\n' $pf_skip_interfaces)
 
-scrub in on \$egress all fragment reassemble no-df
+scrub in on \$egress all fragment reassemble
 
 $([ "${acme_standalone:-}" = true ] && echo \
   'rdr on $egress inet proto tcp to port http -> ($egress) port $acme_standalone_port'

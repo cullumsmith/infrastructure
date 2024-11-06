@@ -3,3 +3,8 @@ add path 'drm/*'       mode 0660 group ${desktop_access_role}
 add path 'backlight/*' mode 0660 group ${desktop_access_role}
 add path 'video*'      mode 0660 group ${desktop_access_role}
 add path 'usb/*'       mode 0660 group ${desktop_access_role}
+add path 'xpt*'        mode 0660 group ${desktop_access_role}
+add path 'cd*'         mode 0660 group ${desktop_access_role}
+$(if [ -n "${desktop_rw_devices:-}" ]; then
+printf "add path '%s' mode 0660 group ${desktop_access_role}\n" $desktop_rw_devices
+fi)

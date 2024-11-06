@@ -76,6 +76,7 @@ install_template -m 0644 \
   /usr/local/etc/vmctl.conf
 
 install_template -m 0644 /etc/devfs.rules
+service devfs restart
 
 # Enable jails/bhyve to start on boot.
 sysrc -v \

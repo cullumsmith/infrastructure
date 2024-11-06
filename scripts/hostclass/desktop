@@ -55,7 +55,7 @@ add_group -g "$desktop_access_gid" "$desktop_access_role"
 # Create desktop devfs ruleset.
 install_template -m 0644 /etc/devfs.rules
 sysrc -v "devfs_system_ruleset=${devfs_local_ruleset_name}"
-service devd restart
+service devfs restart
 
 # Enable webcamd.
 load_kernel_module cuse
