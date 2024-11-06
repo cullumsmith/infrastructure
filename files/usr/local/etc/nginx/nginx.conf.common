@@ -57,7 +57,6 @@ fi
 
 $([ "${nginx_gssapi:-}" = true ] && cat <<EOF
   auth_gss_realm ${realm};
-  auth_gss_force_realm on;
 EOF
 )
 
