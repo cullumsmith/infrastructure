@@ -37,6 +37,8 @@ disable_vrfy_command         = yes
 show_user_unknown_table_name = no
 tls_medium_cipherlist        = ${postfix_cipherlist}
 tls_preempt_cipherlist       = no
+always_add_missing_headers   = yes
+local_header_rewrite_clients = permit_inet_interfaces, permit_mynetworks
 
 $(if [ "$postfix_public_fqdn" != "$fqdn" ]; then
 cat <<EOF
