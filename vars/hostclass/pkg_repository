@@ -2,3 +2,9 @@
 
 allowed_tcp_ports='ssh http https'
 nginx_redirect=false
+
+poudriere_patches='
+chromium-gssapi
+postgresql16-gssapi
+gstreamer1-plugins-good-fix-v4l-einval
+'

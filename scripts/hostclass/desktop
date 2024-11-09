@@ -101,6 +101,11 @@ case $desktop_type in
       /usr/local/etc/xdg/plasma-workspace/shutdown
     install_file -m 0555 /usr/local/etc/xdg/plasma-workspace/shutdown/cleanup.sh
 
+    # Disable baloo file search.
+    # Don't know anyone that uses it, and litters $HOME with .nfs files whenever
+    # any file is deleted.
+    install_file -m 0644 /usr/local/etc/xdg/baloofilerc
+
     # Disable user switching
     # Broken with consolekit: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=221452
     # VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
@@ -127,6 +132,10 @@ set_loader_conf \
 # Create policy file for firefox.
 install_directory -m 0755 /usr/local/lib/firefox/distribution
 install_template -m 0644  /usr/local/lib/firefox/distribution/policies.json
+
+# Create policy file for thunderbird.
+install_directory -m 0755 /usr/local/lib/thunderbird/distribution
+install_template -m 0644  /usr/local/lib/thunderbird/distribution/policies.json
 
 # Create policy file for chromium.
 install_directory -m 0755 \

@@ -17,6 +17,7 @@ server {
   location / {
     auth_gss on;
     satisfy any;
+    auth_request /authenticate;
 $(printf '    deny %s;\n' $kerberized_cidrs)
     allow all;
     try_files \$uri \$uri/ /caldav.php\$uri?\$query_string;
@@ -24,6 +25,13 @@ $(printf '    deny %s;\n' $kerberized_cidrs)
 
   location /.well-known/ {
     try_files \$uri \$uri/ /caldav.php\$uri?\$query_string;
+  }
+
+  location /authenticate {
+    if (\$http_user_agent ~ 'Thunderbird') {
+      return 200;
+    }
+    return 403;
   }
 
   location ~ ^/caldav\.php/\.well-known/ {
@@ -40,6 +48,7 @@ $(printf '    deny %s;\n' $kerberized_cidrs)
   location ~ [^/]\.php(/|$) {
     auth_gss on;
     satisfy any;
+    auth_request /authenticate;
 $(printf '    deny %s;\n' $kerberized_cidrs)
     allow all;
 

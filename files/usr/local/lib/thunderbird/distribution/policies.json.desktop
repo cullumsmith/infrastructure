@@ -1,0 +1,77 @@
+{
+  "policies": {
+    "Cookies": {
+      "AcceptThirdParty": "never",
+      "RejectTracker": true
+    },
+    "Authentication": {
+      "SPNEGO": ["${domain}"],
+      "AllowNonFQDN": {
+        "SPNEGO": true
+      },
+      "AllowProxies": {
+        "SPNEGO": true
+      }
+    },
+    "AppAutoUpdate": false,
+    "DisableAppUpdate": true,
+    "CaptivePortal": false,
+    "Certificates": {
+      "Install": [
+        "${site_cacert_path}"
+      ]
+    },
+    "DisableTelemetry": true,
+    "DNSOverHTTPS": {
+      "Enabled": false
+    },
+    "ExtensionUpdate": true,
+    "Preferences": {
+      "dom.security.https_only_mode": {
+        "Value": true,
+        "Status": "locked"
+      },
+      "dom.push.connection.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "privacy.trackingprotection.socialtracking.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.safebrowsing.malware.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.safebrowsing.phishing.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.safebrowsing.downloads.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "mail.shell.checkDefaultClient": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "mail.phishing.detection.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "font.size.variable.x-unicode": {
+        "Value": 13,
+        "Status": "default"
+      },
+      "font.size.variable.x-western": {
+        "Value": 13,
+        "Status": "default"
+      },
+      "mail.uifontsize": {
+        "Value": 13,
+        "Status": "default"
+      }
+    }
+  }
+}
+

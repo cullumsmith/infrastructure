@@ -1,0 +1,20 @@
+--- multimedia/gstreamer1-plugins-good/files/patch-sys_v4l2_gstv4l2object.c	2024-11-08 16:46:07.003565000 -0500
++++ multimedia/gstreamer1-plugins-good/files/patch-sys_v4l2_gstv4l2object.c	2024-11-08 16:46:11.030787000 -0500
+@@ -1,6 +1,15 @@
+---- sys/v4l2/gstv4l2object.c.orig	2024-09-19 10:01:21 UTC
++--- sys/v4l2/gstv4l2object.c.orig	2024-11-08 18:59:59 UTC
+ +++ sys/v4l2/gstv4l2object.c
+-@@ -5078,7 +5078,9 @@ gst_v4l2_object_probe_caps (GstV4l2Object * v4l2object
++@@ -3159,7 +3159,7 @@ gst_v4l2_object_is_dmabuf_supported (GstV4l2Object * v
++ 
++   /* Expected to fail, but ENOTTY tells us that it is not implemented. */
++   v4l2object->ioctl (v4l2object->video_fd, VIDIOC_EXPBUF, &expbuf);
++-  if (errno == ENOTTY)
+++  if (errno == ENOTTY || errno == EINVAL)
++     ret = FALSE;
++ 
++   return ret;
++@@ -4886,7 +4886,9 @@ gst_v4l2_object_probe_caps (GstV4l2Object * v4l2object
+      if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_CROPCAP, &cropcap) < 0) {
+  
+        switch (errno) {

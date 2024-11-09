@@ -4,6 +4,7 @@ archivers/php${php_version}-zip
 archivers/unzip
 archivers/zip
 audio/elisa
+audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf5
 audio/kmix
@@ -18,6 +19,7 @@ databases/php${php_version}-pgsql
 databases/postgresql${postgresql_version}-client
 databases/postgresql${postgresql_version}-server
 databases/redis
+deskutils/merkuro
 deskutils/py-vdirsyncer
 devel/android-tools
 devel/ccache
@@ -62,6 +64,7 @@ mail/mutt
 mail/postfix
 mail/rspamd
 mail/sieve-connect
+mail/thunderbird
 misc/php${php_version}-calendar
 multimedia/audacious-plugins@qt5
 multimedia/audacious@qt5
@@ -73,6 +76,7 @@ multimedia/v4l-utils
 multimedia/v4l_compat
 multimedia/vdpauinfo
 multimedia/webcamd
+net-im/dino
 net-im/farstream
 net-im/gajim
 net-im/prosody

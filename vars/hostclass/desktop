@@ -58,11 +58,13 @@ python
 py${python_version}-pip
 roboto-fonts-ttf
 rsync
+sound-theme-freedesktop
 signal-desktop
 sndio
 stow
 terminus-font
 terminus-ttf
+thunderbird
 tmux
 tree
 ubuntu-font
@@ -79,6 +81,7 @@ android-file-transfer-qt5
 audacious-qt5
 audacious-plugins-qt5
 digikam
+dino
 elisa
 ${gajim_packages}
 gtksourceview4
@@ -88,6 +91,7 @@ kid3-kf5
 kmix
 konversation
 en-hunspell
+merkuro
 sddm"
 
 desktop_i3_packages='

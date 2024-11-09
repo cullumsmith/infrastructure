@@ -5,7 +5,7 @@
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='8'}
 : ${poudriere_priority_boost:='gcc* llvm* rust'}
-: ${poudriere_allow_make_jobs_packages:='ImageMagick* bitwarden-cli cargo-c *chromium* cmake cmake-core eclipse electron* ffmpeg firefox gcc* gnutls gtk3* icu libreoffice* llvm* mongodb* mysql*-client mysql*-server node* openjdk* openssl pkg qt*-webengine rust webkit* vaultwarden'}
+: ${poudriere_allow_make_jobs_packages:='ImageMagick* bitwarden-cli cargo-c *chromium* cmake cmake-core eclipse electron* ffmpeg firefox thunderbird gcc* gnutls gtk3* icu libreoffice* llvm* mongodb* mysql*-client mysql*-server node* openjdk* openssl pkg qt*-webengine rust webkit* vaultwarden'}
 : ${poudriere_ccache_size:='50.0G'}
 : ${poudriere_default_versions:='imagemagick=7-nox11'}
 
@@ -63,14 +63,14 @@ service nginx restart
 [ -d "${poudriere_data_dir}/ports/latest" ] || poudriere ports -c -v -p latest
 git -C "${poudriere_data_dir}/ports/latest" restore :/
 git -C "${poudriere_data_dir}/ports/latest" clean -f
-poudriere ports -v -u -p latest
+[ "${poudriere_update:-}" = true ] && poudriere ports -v -u -p latest
 
 # Apply custom patches.
 install_directory -m 0755 "$poudriere_patch_dir"
 rm -f "${poudriere_patch_dir}/"*.patch
-install_file -m 0644 \
-  "${poudriere_patch_dir}/postgresql16-gssapi.patch" \
-  "${poudriere_patch_dir}/chromium-gssapi.patch"
+for patch in $poudriere_patches; do
+  install_file -m 0644 "${poudriere_patch_dir}/${patch}.patch"
+done
 
 for patch in "${poudriere_patch_dir}/"*.patch; do
   [ -f "$patch" ] || continue
