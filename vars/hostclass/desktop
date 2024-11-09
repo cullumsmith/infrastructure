@@ -3,6 +3,9 @@
 desktop_access_role='desktop-access'
 login_access_groups="${login_access_groups:-} ${desktop_access_role}"
 
+# Video chat with others on the local network requires UDP ports for RTP/WebRTC
+allowed_udp_ports='1024:65535'
+
 # I don't want desktops to suspend or hibernate.
 polkit_disable_suspend=true
 
@@ -29,6 +32,7 @@ farstream
 gsound"
 
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
+# Also, freedesktop-sound-theme is required for notification sounds in Dino
 desktop_common_packages="
 android-tools
 bind-tools
@@ -58,7 +62,7 @@ python
 py${python_version}-pip
 roboto-fonts-ttf
 rsync
-sound-theme-freedesktop
+freedesktop-sound-theme
 signal-desktop
 sndio
 stow
