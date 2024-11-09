@@ -10,6 +10,8 @@ server {
 
   add_header Strict-Transport-Security "max-age=63072000" always;
 
+  client_max_body_size ${prosody_upload_sizelimit};
+
   location / {
     proxy_http_version 1.1;
     proxy_set_header Host \$host;
