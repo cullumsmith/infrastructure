@@ -1,0 +1,52 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Net::LDAP::Util qw(ldap_explode_dn escape_filter_value);
+use Authen::SASL;
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or die($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech         = $config{SASL_MECH}   // 'GSSAPI';
+my $uri          = $config{URI}         // die("URI not specified\n");
+my $user_basedn  = $config{USERS_BASE}  // die("USERS_BASE not specified\n");
+my $group_basedn = $config{GROUPS_BASE} // die("GROUPS_BASE not specified\n");
+my $role_basedn  = $config{ROLES_BASE}  // die("ROLES_BASE not specified\n");
+
+my $GITOLITE_SHELL = '/usr/local/libexec/gitolite/gitolite-shell';
+
+my $conn = Net::LDAP->new($uri, version => '3') or die "$0: $@";
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and die "$0: ".$status->error;
+
+my $filter = '(sshPublicKey=*)';
+if (@ARGV) {
+  $filter = '(&(sshPublicKey=*)(|('.join(')(', map { 'memberOf=cn='.escape_filter_value($_).",$role_basedn" } @ARGV).')))';
+}
+
+my $search = $conn->search(
+  scope  => 'sub',
+  base   => $user_basedn,
+  filter => $filter,
+  attrs  => ['uid', 'sshPublicKey']);
+$search->code and die "$0: ".$search->error;
+
+foreach my $entry ($search->entries) {
+  my $uid = ($entry->get_value('uid'))[0];
+  foreach my $pubkey ($entry->get_value('sshPublicKey')) {
+    next unless rindex($pubkey, 'ssh-', 0) == 0;
+    print "command=\"$GITOLITE_SHELL $uid\",restrict $pubkey\n";
+  }
+}

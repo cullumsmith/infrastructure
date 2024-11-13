@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cnames=git
+cgit_clone_urls="https://git.${domain} ssh://git@git.${domain}"}

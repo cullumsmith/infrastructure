@@ -1,5 +1,7 @@
 # Always allow root logins.
 +:root:ALL
+
+# Allow icinga user for monitoring via SSH.
 +:${icinga_local_user}:ALL
 
 $(if [ -n "${acmeproxy_client_group:-}" ]; then

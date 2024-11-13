@@ -1,0 +1,7 @@
+#!/bin/sh
+
+gitolite_local_user=git
+
+allowed_tcp_ports='ssh http https'
+nginx_gssapi=true
+login_access_users="${login_access_users:-} ${gitolite_local_user}"

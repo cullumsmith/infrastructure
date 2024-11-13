@@ -1,0 +1,28 @@
+%RC = (
+  UMASK           =>  0027,
+  GIT_CONFIG_KEYS =>  '.*',
+  LOG_DEST        => 'syslog',
+  LOG_FACILITY    => 'daemon',
+  ROLES => {
+    READERS       =>  1,
+    WRITERS       =>  1,
+  },
+  ENABLE => [
+    'help',
+    'desc',
+    'info',
+    'perms',
+    'writable',
+    'fork',
+    'D',
+    'git-config',
+    'gitweb',
+    'set-default-roles',
+    'upstream',
+    'cgit',
+  ],
+  GROUPLIST_PGM   =>  '/usr/local/libexec/gitolite-grouplist',
+  HTTP_ANON_USER  =>  'nobody',
+);
+
+1;

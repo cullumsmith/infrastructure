@@ -1,0 +1,51 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Net::LDAP;
+use Net::LDAP::Util qw(ldap_explode_dn escape_filter_value);
+use Authen::SASL;
+
+open my $fh, '<', '/usr/local/etc/openldap/ldap.conf' or die($!);
+my %config;
+while (<$fh>) {
+  chomp;
+  next if /^#/;
+  my @pair = split(' ', $_, 2);
+  next unless (@pair == 2);
+  $config{$pair[0]} = $pair[1];
+}
+close($fh);
+
+my $mech         = $config{SASL_MECH}   // 'GSSAPI';
+my $uri          = $config{URI}         // die("URI not specified\n");
+my $user_basedn  = $config{USERS_BASE}  // die("USERS_BASE not specified\n");
+my $group_basedn = $config{GROUPS_BASE} // die("GROUPS_BASE not specified\n");
+
+@ARGV == 1 or die "usage: $0 USERNAME\n";
+my $username = $ARGV[0];
+
+my $conn = Net::LDAP->new($uri, version => '3') or die "$0: $@";
+my $sasl = Authen::SASL->new($mech);
+my $status = $conn->bind(sasl => $sasl);
+$status->code and die "$0: ".$status->error;
+
+my $search = $conn->search(
+  scope  => 'sub',
+  base   => $user_basedn,
+  filter => '(uid='.escape_filter_value($username).')',
+  attrs  => ['memberOf']);
+$search->code and die "$0: ".$search->error;
+
+$search->entries == 0 and die "no such user: $username\n";
+$search->entries  > 1 and die "multiple results returned for user: $username\n";
+
+foreach my $group_dn (($search->entries)[0]->get_value('memberOf')) {
+  next unless $group_dn =~ /,\Q$group_basedn\E$/;
+
+  my $parts = ldap_explode_dn($group_dn);
+  next unless exists $parts->[0]{'CN'};
+
+  print $parts->[0]{'CN'} =~ s/\s/_/gr . "\n";
+}

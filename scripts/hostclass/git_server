@@ -1,0 +1,163 @@
+#!/bin/sh
+
+: ${git_public_fqdn:="$fqdn"}
+: ${git_basic_auth:='on'}
+: ${gitolite_username:='s-gitolite'}
+: ${gitolite_access_role:='gitolite-access'}
+: ${gitolite_admin_role:='gitolite-admin'}
+: ${cgit_clone_urls:="https://${fqdn} ssh://git@${fqdn}"}
+: ${cgit_root_title:="${site} Git Repo"}
+: ${cgit_root_desc:="Source code for various ${site} projects."}
+: ${cgit_pygments_style:='xcode'}
+: ${cgit_cache_size:='16000'}
+
+gitolite_dn="uid=${gitolite_username},${robots_basedn}"
+git_keytab="${keytab_dir}/nginx.keytab"
+git_https_cert="${nginx_conf_dir}/git.crt"
+git_https_key="${nginx_conf_dir}/git.key"
+gitolite_home=/usr/local/git
+gitolite_client_keytab="${keytab_dir}/gitolite.client.keytab"
+gitolite_fcgiwrap_socket=/var/run/fcgiwrap/gitolite.sock
+cgit_cache_dir=/var/cache/cgit
+cgit_fcgiwrap_socket=/var/run/fcgiwrap/cgit.sock
+cgit_webroot=/usr/local/www/cgit
+
+# Install packages.
+pkg install -y \
+  python \
+  nginx \
+  cgit \
+  gitolite \
+  fcgiwrap \
+  py${python_version}-pygments \
+  py${python_version}-docutils \
+  py${python_version}-markdown
+
+# Create ZFS dataset for gitolite repositories.
+create_dataset -o "mountpoint=${gitolite_home}" "${state_dataset}/git"
+zfs set \
+  com.sun:auto-snapshot:hourly=true \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  com.sun:auto-snapshot:monthly=true \
+  "${state_dataset}/git"
+
+# Set ownership on gitolite dataset.
+install_directory -o "$gitolite_local_user" -g "$gitolite_local_user" -m 0700 "$gitolite_home"
+
+# Add www user to git group, so it can read git repositories.
+pw groupmod "$gitolite_local_user" -m "$nginx_user"
+
+# Create gitolite principal and keytab.
+ldap_add "$gitolite_dn" <<EOF
+objectClass: account
+uid: ${gitolite_username}
+EOF
+add_principal -nokey -x "dn=${gitolite_dn}" "$gitolite_username"
+
+ktadd -k "$gitolite_client_keytab" "$gitolite_username"
+chgrp "$gitolite_local_user" "$gitolite_client_keytab"
+chmod 640 "$gitolite_client_keytab"
+
+gitolite_uid=$(id -u "$gitolite_local_user")
+install_directory -o "$gitolite_local_user" -m 0700 "/var/krb5/user/${gitolite_uid}"
+ln -snfv "$gitolite_client_keytab" "/var/krb5/user/${gitolite_uid}/client.keytab"
+
+# Generate gitolite configuration.
+install_directory -o "$gitolite_local_user" -g "$gitolite_local_user" -m 0750 \
+  "$gitolite_home" \
+  "${gitolite_home}/.gitolite" \
+  "${gitolite_home}/.gitolite/conf" \
+  "${gitolite_home}/.gitolite/logs"
+install_file -o "$gitolite_local_user" -g "$gitolite_local_user" -m 0600 "${gitolite_home}/.gitolite.rc"
+
+[ -f "${gitolite_home}/.gitolite/conf/gitolite.conf" ] \
+  || install_template -o "$gitolite_local_user" -g "$gitolite_local_user" -m 0640 "${gitolite_home}/.gitolite/conf/gitolite.conf"
+
+[ -f "${gitolite_home}/.gitolite/conf/gitolite.conf-compiled.pm" ] \
+  || su "$gitolite_local_user" -c 'gitolite setup'
+
+install_file -m 0555 \
+  /usr/local/libexec/gitolite-grouplist \
+  /usr/local/libexec/gitolite-authorizedkeys
+
+# Generate cgit configuration.
+install_template -m 0644 /usr/local/etc/cgitrc
+install_template -m 0555 /usr/local/lib/cgit/filters/syntax-highlighting-custom.py
+
+# Create cgit cache directory.
+install_directory -o root -g "$nginx_user" -m 0770 "$cgit_cache_dir"
+
+# Copy custom assets.
+install_file -m 0644 \
+  "${cgit_webroot}/custom-style.css" \
+  "${cgit_webroot}/custom-favicon.ico" \
+  "${cgit_webroot}/custom-logo.png" \
+  "${cgit_webroot}/custom-robots.txt" \
+  "${cgit_webroot}/custom-head-include.html" \
+  "${cgit_webroot}/custom-header.html"
+
+# Generate nginx configuration.
+install_file     -m 0644 /usr/local/etc/nginx/fastcgi_params
+install_template -m 0644 /usr/local/etc/nginx/nginx.conf
+[ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
+sysrc -v nginx_enable=YES
+service nginx restart
+
+if [ "$git_public_fqdn" != "$fqdn" ]; then
+  # Acquire public TLS certificate.
+  install_template -m 0600 /usr/local/etc/sudoers.d/acme
+  acme_install_certificate \
+    -g "$nginx_user" \
+    -r 'sudo service nginx reload' \
+    nginx \
+    "$git_public_fqdn"
+else
+  # Copy local TLS certificate for nginx.
+  install_certificate     -m 0644 nginx "$git_https_cert"
+  install_certificate_key -m 0600 nginx "$git_https_key"
+fi
+
+# Generate nginx vhosts (once certificate is acquired).
+install_template -m 0644 /usr/local/etc/nginx/vhosts.conf
+service nginx restart
+
+# Create HTTP principal and keytab.
+nginx_uid=$(id -u "$nginx_user")
+add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
+ktadd -k "$git_keytab" "HTTP/${fqdn}"
+chgrp "$nginx_user" "$git_keytab"
+chmod 640 "$git_keytab"
+install_directory -o "$nginx_user" -m 0700 "/var/krb5/user/${nginx_uid}"
+ln -snfv "$git_keytab" "/var/krb5/user/${nginx_uid}/keytab"
+
+# Generate sshd configuration.
+install_template -m 0600 /usr/local/etc/ssh/sshd_config.d/gitolite.conf
+
+# Enable and start daemons.
+sysrc -v \
+  fcgiwrap_enable=YES \
+  fcgiwrap_profiles+='cgit gitolite' \
+  fcgiwrap_cgit_flags='-f' \
+  fcgiwrap_cgit_user="$nginx_user" \
+  fcgiwrap_cgit_group="$nginx_user" \
+  fcgiwrap_cgit_socket_owner="$nginx_user" \
+  fcgiwrap_cgit_socket_group="$nginx_user" \
+  fcgiwrap_cgit_socket="unix:${cgit_fcgiwrap_socket}" \
+  fcgiwrap_gitolite_flags='-f' \
+  fcgiwrap_gitolite_user="$gitolite_local_user" \
+  fcgiwrap_gitolite_group="$gitolite_local_user" \
+  fcgiwrap_gitolite_socket_owner="$nginx_user" \
+  fcgiwrap_gitolite_socket_group="$nginx_user" \
+  fcgiwrap_gitolite_socket="unix:${gitolite_fcgiwrap_socket}"
+
+service fcgiwrap restart
+service openssh restart
+
+# Create access role.
+for role in "$gitolite_access_role" "$gitolite_admin_role"; do
+  ldap_add "cn=${role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${role}
+EOF
+done

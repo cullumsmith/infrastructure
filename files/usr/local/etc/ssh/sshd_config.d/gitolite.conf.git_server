@@ -1,0 +1,12 @@
+Match User ${gitolite_local_user}
+  GSSAPIAuthentication no
+  KbdInteractiveAuthentication no
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+  AuthenticationMethods publickey
+  AuthorizedKeysFile none
+  AuthorizedKeysCommand /usr/local/libexec/gitolite-authorizedkeys ${gitolite_admin_role} ${gitolite_access_role}
+  AuthorizedKeysCommandUser ${gitolite_local_user}
+  DisableForwarding yes
+  PermitUserRC no
+  PermitTTY no
