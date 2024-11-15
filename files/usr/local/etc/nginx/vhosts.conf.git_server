@@ -39,6 +39,11 @@ $(printf '    deny %s;\n' $kerberized_cidrs)
     fastcgi_pass unix:${gitolite_fcgiwrap_socket};
   }
 
+  location /custom-style.css {
+    add_header Cache-Control "public";
+    expires 1d;
+  }
+
   location @cgit {
     include fastcgi_params;
     fastcgi_param SCRIPT_FILENAME ${cgit_webroot}/cgit.cgi;

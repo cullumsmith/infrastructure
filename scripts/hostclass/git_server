@@ -8,7 +8,7 @@
 : ${cgit_clone_urls:="https://${fqdn} ssh://git@${fqdn}"}
 : ${cgit_root_title:="${site} Git Repo"}
 : ${cgit_root_desc:="Source code for various ${site} projects."}
-: ${cgit_pygments_style:='xcode'}
+: ${cgit_pygments_style:='default'}
 : ${cgit_cache_size:='16000'}
 
 gitolite_dn="uid=${gitolite_username},${robots_basedn}"

@@ -263,7 +263,8 @@ apply Service "http" {
              || "xmpp-servers"      in host.groups
              || "znc-servers"       in host.groups
              || "icinga-servers"    in host.groups
-             || "bitwarden-servers" in host.groups)
+             || "bitwarden-servers" in host.groups
+             || "git-servers"       in host.groups)
 }
 
 // Expect HTTP 302
@@ -304,7 +305,8 @@ apply Service "https" {
   vars.http_critical_time = ${icinga_response_time_crit}
   assign where ("pkg-repositories"  in host.groups
              || "znc-servers"       in host.groups
-             || "bitwarden-servers" in host.groups)
+             || "bitwarden-servers" in host.groups
+             || "git-servers"       in host.groups)
 }
 
 // Expect HTTPS 404
@@ -350,7 +352,8 @@ apply Service "https-cert" {
              || "smtp-servers"      in host.groups
              || "icinga-servers"    in host.groups
              || "web-servers"       in host.groups
-             || "ttrss-servers"     in host.groups)
+             || "ttrss-servers"     in host.groups
+             || "git-servers"       in host.groups)
              && !host.vars.https_vhosts)
 }
 

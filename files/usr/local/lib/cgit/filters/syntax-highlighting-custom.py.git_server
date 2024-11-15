@@ -13,7 +13,7 @@ sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8', errors='replace
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 data = sys.stdin.read()
 filename = sys.argv[1]
-formatter = HtmlFormatter(style='${cgit_pygments_style}', nobackground=True)
+formatter = HtmlFormatter(style='${cgit_pygments_style}')
 
 try:
 	lexer = guess_lexer_for_filename(filename, data)

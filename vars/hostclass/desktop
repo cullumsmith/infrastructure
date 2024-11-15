@@ -47,6 +47,7 @@ git
 gnupg
 hs-pandoc
 inconsolata-ttf
+jq
 krb5
 libreoffice
 libva-utils
