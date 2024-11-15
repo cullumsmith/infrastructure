@@ -20,9 +20,11 @@
     'set-default-roles',
     'upstream',
     'cgit',
+    'repo-specific-hooks',
   ],
   GROUPLIST_PGM   =>  '/usr/local/libexec/gitolite-grouplist',
   HTTP_ANON_USER  =>  'nobody',
+  LOCAL_CODE      =>  "$rc{GL_ADMIN_BASE}/local",
 );
 
 1;

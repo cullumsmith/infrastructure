@@ -29,6 +29,7 @@ pkg install -y \
   cgit \
   gitolite \
   fcgiwrap \
+  ca_root_nss \
   py${python_version}-pygments \
   py${python_version}-docutils \
   py${python_version}-markdown

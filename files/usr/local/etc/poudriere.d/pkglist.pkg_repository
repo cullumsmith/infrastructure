@@ -40,6 +40,7 @@ dns/unbound
 editors/libreoffice
 editors/vim@console
 editors/vim@tiny
+filesystems/zfstools
 finance/gnucash
 finance/kmymoney
 ftp/php${php_version}-curl
@@ -136,7 +137,6 @@ sysutils/pwgen
 sysutils/stow
 sysutils/tmux
 sysutils/tree
-sysutils/zfstools
 textproc/en-hunspell
 textproc/hs-pandoc
 textproc/jq
