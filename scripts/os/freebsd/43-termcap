@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Fix xterm-256color termcap
+# https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=280679
+pkg install terminfo-db

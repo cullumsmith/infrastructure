@@ -67,6 +67,7 @@ mail/rspamd
 mail/sieve-connect
 mail/thunderbird
 misc/php${php_version}-calendar
+misc/terminfo-db
 multimedia/audacious-plugins@qt5
 multimedia/audacious@qt5
 multimedia/libva-intel-media-driver
