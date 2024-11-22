@@ -55,8 +55,6 @@ sysrc -v "devfs_system_ruleset=${devfs_local_ruleset_name}"
 service devfs restart
 
 # Enable webcamd.
-load_kernel_module cuse
-set_loader_conf cuse_load=YES
 sysrc -v webcamd_enable=YES
 service webcamd status || service webcamd start
 
