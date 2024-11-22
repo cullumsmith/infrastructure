@@ -22,13 +22,10 @@ EOF
 fi
 
 # Load linux kernel modules.
-load_kernel_module linux linux64
-set_loader_conf \
-  linux_load=YES \
-  linux64_load=YES
+sysrc -v linux_enable=YES
 
 # Enable FUSE.
-set_loader_conf fusefs_load=YES
+sysrc -v kld_list+=fusefs
 
 # Install packages common to all DEs.
 pkg install -y $desktop_common_packages
