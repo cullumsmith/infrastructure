@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Needed to burn CDs without root.
+desktop_rw_devices='pass2'
