@@ -19,12 +19,12 @@ databases/php${php_version}-pgsql
 databases/postgresql${postgresql_version}-client
 databases/postgresql${postgresql_version}-server
 databases/redis
+deskutils/plasma5-sddm-kcm
 deskutils/merkuro
 deskutils/py-vdirsyncer
 devel/android-tools
 devel/ccache
 devel/cgit
-devel/electron30
 devel/git@lite
 devel/gitolite
 devel/php${php_version}-gettext

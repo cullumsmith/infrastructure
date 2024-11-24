@@ -14,8 +14,6 @@ databases_luadbi_SET=PGSQL
 databases_postgresql${postgresql_version}-client_SET=PAM LDAP
 databases_postgresql${postgresql_version}-server_SET=PAM LDAP
 devel_apr1_SET=LDAP
-devel_electron30_SET=PULSEAUDIO
-devel_electron30_UNSET=SNDIO
 devel_gitolite_SET=GITUSER
 devel_kio-extras_UNSET=AFC
 devel_librelp_UNSET=GNUTLS
@@ -44,14 +42,21 @@ mail_postfix_SET=LDAP SASL SASLKRB5
 mail_rspamd_SET=HYPERSCAN
 misc_kdeutils_UNSET=KFLOPPY KTEATIME
 mail_thunderbird_UNSET=PROFILE
+
+# With using virutal_oss, the OSS plugin causes a red error bar every
+# time the music is stopped paused. SNDIO seems fine.
 multimedia_audacious-plugins_SET=LAME SNDIO
 multimedia_audacious-plugins_UNSET=OSS
+
 multimedia_ffmpeg_SET=OPENSSL
 multimedia_ffmpeg_UNSET=GNUTLS
 multimedia_kdemultimedia_UNSET=KDENLIVE
 multimedia_pipewire_UNSET=JACK
+
+# Without PULSEAUDIO, sound doesn't work when playing videos in digikam.
 multimedia_qt5-multimedia_SET=PULSEAUDIO ALSA
 multimedia_qt6-multimedia_SET=PULSEAUDIO ALSA
+
 multimedia_vlc_SET=FLAC MPEG2 X264 X265 VPX DCA FAAD AOM
 multimedia_webcamd_UNSET=DVB INPUT RADIO
 net-im_py-matrix-synapse_SET=PGSQL URLPREVIEW LDAP
