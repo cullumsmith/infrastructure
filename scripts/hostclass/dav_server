@@ -126,6 +126,7 @@ install_file -m 0644 "${nginx_conf_dir}/fastcgi_params"
 install_template -m 0644 \
   "${nginx_conf_dir}/nginx.conf" \
   "${nginx_conf_dir}/vhosts.conf"
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 # Generate php-fpm configuration.
 install_file -m 0644 \

@@ -53,6 +53,7 @@ install_directory -m 0750 -o "$saslauthd_user" -g "$znc_user" "$saslauthd_runtim
 install_template -m 0644 \
   /usr/local/etc/nginx/nginx.conf \
   /usr/local/etc/nginx/vhosts.conf
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 sysrc -v \
   saslauthd_enable=YES \

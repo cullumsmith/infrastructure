@@ -78,6 +78,7 @@ install_certificate_key invidious "$invidious_https_key"
 install_template -m 0644 \
   /usr/local/etc/nginx/nginx.conf \
   /usr/local/etc/nginx/vhosts.conf
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 # Start daemons.
 sysrc -v \

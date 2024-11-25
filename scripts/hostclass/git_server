@@ -104,6 +104,7 @@ install_template -m 0644 /usr/local/etc/nginx/nginx.conf
 [ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
 sysrc -v nginx_enable=YES
 service nginx restart
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 if [ "$git_public_fqdn" != "$fqdn" ]; then
   # Acquire public TLS certificate.

@@ -1,0 +1,2 @@
+/var/log/nginx/access.log  644  7  1024  *  JC  /var/run/nginx.pid  SIGUSR1
+/var/log/nginx/error.log   644  7  1024  *  JC  /var/run/nginx.pid  SIGUSR1

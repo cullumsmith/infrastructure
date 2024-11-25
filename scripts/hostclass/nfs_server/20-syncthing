@@ -33,6 +33,7 @@ install_file -m 0555 /usr/local/etc/rc.d/syncthing_user
 install_template -m 0644 \
   /usr/local/etc/nginx/nginx.conf \
   /usr/local/etc/nginx/vhosts.conf
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 # Create HTTP service principal and keytab.
 add_principal -nokey -x "containerdn=${services_basedn}" "HTTP/${fqdn}"
