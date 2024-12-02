@@ -174,12 +174,16 @@ case $graphics_type in
     set_loader_conf \
       compat.linuxkpi.i915_enable_fbc=1 \
       compat.linuxkpi.i915_fastboot=1
+    : ${mpv_hwdec:='vaapi-copy'}
     ;;
 esac
 
 # On some graphics cards, kern.vt.suspendswitch=1 (the default) breaks graphics
 # acceleration after resuming from sleep.
 set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
+
+# Generate mpv configuration.
+install_template -m 0644 /usr/local/etc/mpv/mpv.conf
 
 # Start login manager.
 case $desktop_type in

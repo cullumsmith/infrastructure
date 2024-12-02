@@ -1,0 +1,5 @@
+hwdec=${mpv_hwdec:-auto}
+vo=${mpv_vo}
+vd-lavc-dr=${mpv_direct_rendering}
+audio-channels=${mpv_audio_channels}
+sid=no

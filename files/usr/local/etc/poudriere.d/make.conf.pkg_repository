@@ -51,6 +51,8 @@ multimedia_audacious-plugins_UNSET=OSS
 multimedia_ffmpeg_SET=OPENSSL
 multimedia_ffmpeg_UNSET=GNUTLS
 multimedia_kdemultimedia_UNSET=KDENLIVE
+multimedia_mpv_SET=CDIO LIBBLURAY
+multimedia_mpv_UNSET=NVDEC
 multimedia_pipewire_UNSET=JACK
 
 # Without PULSEAUDIO, sound doesn't work when playing videos in digikam.

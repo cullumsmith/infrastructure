@@ -25,6 +25,11 @@ clear_tmp_enable=false
 # Chromium seems to need this to enable VAAPI video decoding on intel.
 chrome_flags='--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan'
 
+# Default mpv configs
+mpv_vo=gpu-next
+mpv_direct_rendering=yes
+mpv_audio_channels=stereo
+
 gajim_packages="
 gajim
 py${python_version}-omemo-dr
@@ -52,6 +57,7 @@ krb5
 libreoffice
 libva-utils
 libvdpau-va-gl
+mpv
 neofetch
 noto-basic
 noto-emoji

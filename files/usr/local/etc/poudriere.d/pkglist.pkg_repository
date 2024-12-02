@@ -19,8 +19,8 @@ databases/php${php_version}-pgsql
 databases/postgresql${postgresql_version}-client
 databases/postgresql${postgresql_version}-server
 databases/redis
-deskutils/plasma5-sddm-kcm
 deskutils/merkuro
+deskutils/plasma5-sddm-kcm
 deskutils/py-vdirsyncer
 devel/android-tools
 devel/ccache
@@ -74,6 +74,8 @@ multimedia/libva-intel-media-driver
 multimedia/libva-utils
 multimedia/libvdpau-va-gl
 multimedia/makemkv
+multimedia/mpv
+multimedia/smplayer
 multimedia/v4l-utils
 multimedia/v4l_compat
 multimedia/vdpauinfo
