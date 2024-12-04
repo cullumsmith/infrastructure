@@ -81,4 +81,5 @@ service devfs restart
 # Enable jails/bhyve to start on boot.
 sysrc -v \
   vmctl_enable=YES \
-  jail_enable=YES
+  jail_enable=YES \
+  jail_reverse_stop=YES

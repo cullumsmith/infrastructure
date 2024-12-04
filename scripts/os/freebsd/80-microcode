@@ -9,10 +9,17 @@ fi
 
 if [ "${enable_microcode_updates:-}" = false ]; then
   set_loader_conf cpu_microcode_load=NO
+  sysrc -v microcode_update_enable=NO
 else
   pkg install -y cpu-microcode
 
-  set_loader_conf \
-    cpu_microcode_load=YES \
-    cpu_microcode_name="/boot/firmware/${microcode_name}"
+  if [ "${microcode_after_boot:-}" = true ];
+    set_loader_conf cpu_microcode_load=NO
+    sysrc -v microcode_update_enable=YES
+  else
+    sysrc -v microcode_update_enable=NO
+    set_loader_conf \
+      cpu_microcode_load=YES \
+      cpu_microcode_name="/boot/firmware/${microcode_name}"
+  fi
 fi

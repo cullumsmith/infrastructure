@@ -1,4 +1,4 @@
 #!/bin/sh
 
 # Causes UEFI exception on boot, "invalid opcode" ???
-enable_microcode_updates=false
+microcode_after_boot=true
