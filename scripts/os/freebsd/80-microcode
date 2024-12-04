@@ -13,7 +13,7 @@ if [ "${enable_microcode_updates:-}" = false ]; then
 else
   pkg install -y cpu-microcode
 
-  if [ "${microcode_after_boot:-}" = true ];
+  if [ "${microcode_after_boot:-}" = true ]; then
     set_loader_conf cpu_microcode_load=NO
     sysrc -v microcode_update_enable=YES
   else
