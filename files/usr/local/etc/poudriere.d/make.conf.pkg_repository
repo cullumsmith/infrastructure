@@ -54,11 +54,6 @@ multimedia_kdemultimedia_UNSET=KDENLIVE
 multimedia_mpv_SET=CDIO LIBBLURAY
 multimedia_mpv_UNSET=NVDEC
 multimedia_pipewire_UNSET=JACK
-
-# Without PULSEAUDIO, sound doesn't work when playing videos in digikam.
-multimedia_qt5-multimedia_SET=PULSEAUDIO ALSA
-multimedia_qt6-multimedia_SET=PULSEAUDIO ALSA
-
 multimedia_vlc_SET=FLAC MPEG2 X264 X265 VPX DCA FAAD AOM
 multimedia_webcamd_UNSET=DVB INPUT RADIO
 net-im_py-matrix-synapse_SET=PGSQL URLPREVIEW LDAP
