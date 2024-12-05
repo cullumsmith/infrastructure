@@ -5,6 +5,7 @@ archivers/unzip
 archivers/zip
 audio/elisa
 audio/freedesktop-sound-theme
+audio/pulseaudio
 audio/gsound
 audio/kid3@kf5
 audio/kmix
@@ -20,6 +21,7 @@ databases/postgresql${postgresql_version}-client
 databases/postgresql${postgresql_version}-server
 databases/redis
 deskutils/merkuro
+deskutils/pim-sieve-editor
 deskutils/plasma5-sddm-kcm
 deskutils/py-vdirsyncer
 devel/android-tools

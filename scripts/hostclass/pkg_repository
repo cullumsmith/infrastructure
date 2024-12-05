@@ -5,7 +5,7 @@
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='8'}
 : ${poudriere_priority_boost:='gcc* llvm* rust'}
-: ${poudriere_allow_make_jobs_packages:='ImageMagick* bitwarden-cli cargo-c *chromium* cmake cmake-core eclipse electron* ffmpeg firefox thunderbird gcc* gnutls gtk3* icu libreoffice* llvm* mongodb* mysql*-client mysql*-server node* openjdk* openssl pkg postgresql* qt*-webengine rust webkit* vaultwarden'}
+: ${poudriere_allow_make_jobs_packages:='ImageMagick* bitwarden-cli cargo-c *chromium* cmake cmake-core digikam eclipse electron* ffmpeg firefox thunderbird gcc* gnutls gtk3* icu libreoffice* llvm* mongodb* mysql*-client mysql*-server node* openjdk* openssl pkg postgresql* qt*-webengine rust webkit* vaultwarden'}
 : ${poudriere_ccache_size:='50.0G'}
 : ${poudriere_default_versions:='imagemagick=7-nox11'}
 
