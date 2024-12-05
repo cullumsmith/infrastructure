@@ -41,6 +41,7 @@ mail_mutt_UNSET=HTML
 mail_postfix_SET=LDAP SASL SASLKRB5
 mail_rspamd_SET=HYPERSCAN
 misc_kdeutils_UNSET=KFLOPPY KTEATIME
+misc_kdeedu_UNSET=KITEN
 mail_thunderbird_UNSET=PROFILE
 
 # With using virutal_oss, the OSS plugin causes a red error bar every
@@ -94,5 +95,5 @@ www_firefox_UNSET=PROFILE
 www_nginx_SET=HTTPV3 HTTPV3_QTLS HTTP_AUTH_KRB5 HTTP_AUTH_LDAP
 www_nginx_UNSET=MAIL
 x11-toolkits_gtk30_UNSET=COLORD BROADWAY
-x11_kde5_UNSET=KDEADMIN KDEEDU
+x11_kde5_UNSET=KDEADMIN
 x11_libinput_UNSET=LIBWACOM
