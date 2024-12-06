@@ -5,7 +5,7 @@
 
 : ${acme_certs:=''}
 
-vhosts_dir=/usr/local/www
+vhosts_dir=/usr/local/www/vhosts
 
 # Install packages.
 pkg install -y \
