@@ -86,7 +86,7 @@
       "update_url": "https://clients2.google.com/service/update2/crx"
     },
     "cimiefiiaegbelhefglklhhakcgmhkai": {
-      "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo normal_installed; else echo allowed; fi)",
+      "installation_mode": "normal_installed",
       "update_url": "https://clients2.google.com/service/update2/crx"
     }
   },

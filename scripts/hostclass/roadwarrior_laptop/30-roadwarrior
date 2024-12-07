@@ -8,3 +8,13 @@ install_file -m 0600 \
 # Configure devd for Android USB tethering.
 install_file -m 0644 /etc/devd/usb-tether.conf
 service devd restart
+
+# Configure KRB5/LDAP. But only for manual use, not for NSS/PAM.
+pkg install -y \
+  krb5 \
+  cyrus-sasl-gssapi \
+  openldap26-client
+
+install_template -m 0644 \
+  /etc/krb5.conf \
+  /usr/local/etc/openldap/ldap.conf

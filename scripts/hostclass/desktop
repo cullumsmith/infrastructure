@@ -23,15 +23,19 @@ fi
 
 # Load linux kernel modules.
 sysrc -v linux_enable=YES
+service linux start
 
 # Enable FUSE.
 sysrc -v kld_list+=fusefs
+load_kernel_module fusefs
 
 # Install packages common to all DEs.
-pkg install -y $desktop_common_packages
+pkg install -y $desktop_packages
 
 # Install profile script for improving experience on NFS homedirs.
-install_file -m 0555 /etc/profile.d/local-homedir.sh
+if [ "${enable_idm:-}" != false ]; then
+  install_file -m 0555 /etc/profile.d/local-homedir.sh
+fi
 
 # Create ZFS dataset for local homedirs.
 create_dataset -o mountpoint=/usr/local/home "${state_dataset}/home"
@@ -65,51 +69,41 @@ install_file -m 0555 /usr/local/libexec/nss-trust-root-ca
 # Install gajim desktop file.
 install_file -m 0644 /usr/local/share/applications/gajim.desktop
 
-case $desktop_type in
-  i3)
-    pkg install -y $desktop_i3_packages
-    ;;
-  kde)
-    # Install KDE packages.
-    pkg install -y $desktop_kde_packages
+# Add sddm user to drm access group.
+pw groupmod "$desktop_access_role" -m "$sddm_user"
 
-    # Add sddm user to drm access group.
-    pw groupmod "$desktop_access_role" -m "$sddm_user"
+# Configure pam services.
+install_file -m 0644 \
+  /etc/pam.d/sddm \
+  /etc/pam.d/kde
 
-    # Configure pam services.
-    install_file -m 0644 \
-      /etc/pam.d/sddm \
-      /etc/pam.d/kde
+# Copy SDDM config file.
+install_template -m 0644 /usr/local/etc/sddm.conf
 
-    # Copy SDDM config file.
-    install_template -m 0644 /usr/local/etc/sddm.conf
+# Create profile script for KDE environment variables.
+install_file -m 0644 /etc/profile.d/kde.sh
 
-    # Create profile script for KDE environment variables.
-    install_file -m 0644 /etc/profile.d/kde.sh
+# Create SDDM local homedir.
+install_directory -o sddm -g sddm -m 0700 /usr/local/home/sddm
 
-    # Create SDDM local homedir.
-    install_directory -o sddm -g sddm -m 0700 /usr/local/home/sddm
+# Create shutdown script to cleanup lingering processes.
+install_directory -m 0755 \
+  /usr/local/etc/xdg/plasma-workspace \
+  /usr/local/etc/xdg/plasma-workspace/shutdown
+install_file -m 0555 /usr/local/etc/xdg/plasma-workspace/shutdown/cleanup.sh
 
-    # Create shutdown script to cleanup lingering processes.
-    install_directory -m 0755 \
-      /usr/local/etc/xdg/plasma-workspace \
-      /usr/local/etc/xdg/plasma-workspace/shutdown
-    install_file -m 0555 /usr/local/etc/xdg/plasma-workspace/shutdown/cleanup.sh
+# Disable baloo file search.
+# Don't know anyone that uses it, and litters $HOME with .nfs files whenever
+# any file is deleted.
+install_file -m 0644 /usr/local/etc/xdg/baloofilerc
 
-    # Disable baloo file search.
-    # Don't know anyone that uses it, and litters $HOME with .nfs files whenever
-    # any file is deleted.
-    install_file -m 0644 /usr/local/etc/xdg/baloofilerc
+# Disable user switching
+# Broken with consolekit: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=221452
+# VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
+install_file -m 0644 /usr/local/etc/xdg/kdeglobals
 
-    # Disable user switching
-    # Broken with consolekit: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=221452
-    # VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
-    install_file -m 0644 /usr/local/etc/xdg/kdeglobals
-
-    # Enable sddm.
-    sysrc -v sddm_enable=YES
-    ;;
-esac
+# Enable sddm.
+sysrc -v sddm_enable=YES
 
 # Tune sysctls for desktop usage.
 set_sysctl \
@@ -186,9 +180,4 @@ set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
 install_template -m 0644 /usr/local/etc/mpv/mpv.conf
 
 # Start login manager.
-case $desktop_type in
-  kde)
-    # We have to redirect the output here because sddm holds FDs open :(
-    service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm'
-    ;;
-esac
+service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm'

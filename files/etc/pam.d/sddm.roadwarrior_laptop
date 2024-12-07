@@ -1,11 +1,6 @@
-# NB: FreeBSD has no pam_stack.so or substack functionality, so we can't
-# try multiple authentication sources (like krb5 but fall back to pam_unix)
-# if we want pam_kwallet5 to execute.
-# Hence, for sddm, we try krb5 only (no local accounts).
 auth      sufficient  pam_self.so no_warn
-auth      required    pam_unix.so
-auth      required    /usr/local/lib/security/pam_krb5.so try_first_pass
-auth      optional    pam_exec.so /usr/local/libexec/pam-create-local-homedir
+auth      optional    /usr/local/lib/security/pam_krb5.so try_first_pass
+auth      required    pam_unix.so try_first_pass
 auth      optional    pam_kwallet5.so
 
 account   requisite   pam_securetty.so
@@ -20,4 +15,5 @@ session   required    /usr/local/lib/security/pam_krb5.so
 session   optional    /usr/local/lib/pam_mkhomedir.so mode=0700
 session   optional    pam_kwallet5.so auto_start
 
-password  required    /usr/local/lib/security/pam_krb5.so try_first_pass
+password  required    pam_unix.so no_warn try_first_pass
+password  optional    /usr/local/lib/security/pam_krb5.so try_first_pass

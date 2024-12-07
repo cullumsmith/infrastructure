@@ -4,7 +4,7 @@ case $BOXCONF_HOSTCLASS in
   pkg_repository)
     return # Do nothing.
     ;;
-  freebsd_hypervisor|roadwarrior_laptop)
+  freebsd_hypervisor)
     ;; # Keep default FreeBSD pkg repository.
   *)
     # Configure on-prem pkg repository.

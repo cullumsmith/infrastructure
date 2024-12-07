@@ -40,7 +40,6 @@ nproc=$(nproc)
 
 allowed_tcp_ports=ssh
 bootstrap_resolvers='1.1.1.1'
-desktop_type=kde
 enable_serial_console=true
 graphics_type=intel
 boxconf_username='s-boxconf'

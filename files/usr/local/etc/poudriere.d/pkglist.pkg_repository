@@ -93,6 +93,7 @@ net-mgmt/icingadb
 net-mgmt/icingaweb2
 net-mgmt/icingaweb2-module-icingadb
 net-mgmt/monitoring-plugins
+net-mgmt/networkmgr
 net-mgmt/unifi8
 net/asterisk18
 net/freeradius3

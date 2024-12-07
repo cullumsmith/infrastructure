@@ -11,11 +11,11 @@
       },
       "{9cbd40c5-5275-443e-811b-dc57d8c7c5d2}": {
         "install_url": "https://addons.mozilla.org/firefox/downloads/latest/kde-default-breeze/latest.xpi",
-        "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo 'normal_installed'; else echo 'allowed'; fi)"
+        "installation_mode": "normal_installed"
       },
       "plasma-browser-integration@kde.org": {
         "install_url": "https://addons.mozilla.org/firefox/downloads/latest/plasma-integration/latest.xpi",
-        "installation_mode": "$(if [ "${desktop_type:-}" = kde ]; then echo normal_installed; else echo allowed; fi)"
+        "installation_mode": "normal_installed"
       }
     },
     "3rdparty": {

@@ -4,11 +4,6 @@
 usbconfig | awk -F: '{ print $1 }' | xargs -rtn1 -I% usbconfig -d % power_save ||:
 install_file /etc/rc.local
 
-# Create devd rule for lid close.
-install_file -m 0555 /usr/local/libexec/lid-close
-install_file -m 0644 /etc/devd/lid-close.conf
-service devd restart
-
 # Enable kernel module for Android USB tethering.
 load_kernel_module if_urndis
 set_loader_conf if_urndis_load=YES
