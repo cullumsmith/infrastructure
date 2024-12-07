@@ -15,5 +15,5 @@ session   required    /usr/local/lib/security/pam_krb5.so
 session   optional    /usr/local/lib/pam_mkhomedir.so mode=0700
 session   optional    pam_kwallet5.so auto_start
 
-password  required    pam_unix.so no_warn try_first_pass
 password  optional    /usr/local/lib/security/pam_krb5.so try_first_pass
+password  required    pam_unix.so no_warn try_first_pass
