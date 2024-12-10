@@ -6,14 +6,14 @@
   permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96
   default_keytab_name = FILE:/var/krb5/user/%{euid}/keytab
   default_client_keytab_name = FILE:/var/krb5/user/%{euid}/client.keytab
+  forwardable = true
+  ticket_lifetime = ${krb5_ticket_lifetime}
+  renew_lifetime = ${krb5_renew_lifetime}
 
 [appdefaults]
   pam = {
     minimum_uid = 1000
     ccache = FILE:/tmp/krb5cc_%u_XXXXXX
-    forwardable = true
-    ticket_lifetime = ${krb5_ticket_lifetime}
-    renew_lifetime = ${krb5_renew_lifetime}
   }
 
 [realms]

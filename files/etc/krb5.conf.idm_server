@@ -4,14 +4,14 @@
   dns_lookup_realm = false
   allow_weak_crypto = false
   permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96
+  forwardable = true
+  ticket_lifetime = ${krb5_ticket_lifetime}
+  renew_lifetime = ${krb5_renew_lifetime}
 
 [appdefaults]
   pam = {
     minimum_uid = 1000
     ccache = FILE:/tmp/krb5cc_%u_XXXXXX
-    forwardable = true
-    ticket_lifetime = ${krb5_ticket_lifetime}
-    renew_lifetime = ${krb5_renew_lifetime}
   }
 
 [realms]

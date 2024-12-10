@@ -13,8 +13,13 @@ service devd restart
 pkg install -y \
   krb5 \
   cyrus-sasl-gssapi \
-  openldap26-client
+  openldap26-client \
+  perl5 \
+  p5-perl-ldap \
+  p5-Authen-SASL
 
 install_template -m 0644 \
   /etc/krb5.conf \
   /usr/local/etc/openldap/ldap.conf
+
+install_file -m 0555 /usr/local/libexec/idm-ssh-known-hosts
