@@ -41,6 +41,7 @@ dns/unbound
 editors/libreoffice
 editors/vim@console
 editors/vim@tiny
+emulators/wine
 filesystems/zfstools
 finance/gnucash
 finance/kmymoney
