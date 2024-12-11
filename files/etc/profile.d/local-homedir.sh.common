@@ -13,6 +13,8 @@ export PYTHONUSERBASE="${LOCAL_HOME}/.local"
 export npm_config_cache="${LOCAL_HOME}/.npm"
 export CARGO_HOME="${LOCAL_HOME}/.cargo"
 export GOPATH="${LOCAL_HOME}/go"
+export WINE_i386_ROOT="${LOCAL_HOME}/.i386-wine-pkg"
+export WINEPREFIX="${LOCAL_HOME}/.wine"
 
 # firefox
 mkdir -p "${LOCAL_HOME}/.mozilla"
