@@ -100,5 +100,6 @@ v4l_compat
 vdpauinfo
 webcamd
 webfonts 
+wine
 wireguard-tools
 xorg"
