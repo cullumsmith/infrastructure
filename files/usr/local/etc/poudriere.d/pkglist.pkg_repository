@@ -5,10 +5,10 @@ archivers/unzip
 archivers/zip
 audio/elisa
 audio/freedesktop-sound-theme
-audio/pulseaudio
 audio/gsound
 audio/kid3@kf5
 audio/kmix
+audio/pulseaudio
 audio/virtual_oss
 converters/php${php_version}-iconv
 converters/php${php_version}-mbstring
@@ -87,6 +87,7 @@ net-im/farstream
 net-im/gajim
 net-im/prosody
 net-im/prosody-modules
+net-im/py-matrix-synapse
 net-im/signal-desktop
 net-mgmt/icinga2
 net-mgmt/icingadb
@@ -104,6 +105,7 @@ net/openldap26-server
 net/p5-perl-ldap
 net/php${php_version}-ldap
 net/php${php_version}-sockets
+net/py-matrix-synapse-ldap3
 net/py-python-ldap
 net/rsync
 net/syncthing
