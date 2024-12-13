@@ -1,0 +1,39 @@
+#!/bin/sh
+
+: ${synapse_signing_key:='changeme'}
+: ${synapse_macaroon_secret_key:='changeme'}
+: ${synapse_form_secret:='changeme'}
+: ${synapse_ldap_password:='changeme'}
+: ${synapse_domain:="$email_domain"}
+: ${synapse_public_fqdn:="$fqdn"}
+: ${synapse_local_client_port:='8008'}
+: ${synapse_local_federation_port:='8009'}
+: ${synapse_client_port:='8443'}
+: ${synapse_federation_port:='8448'}
+: ${synapse_mail_from:="Matrix <matrix-noreply@${email_domain}>"}
+: ${synapse_username:='s-synapse'}
+: ${synapse_local_media_retention:='365d'}
+: ${synapse_remote_media_retention:='90d'}
+: ${synapse_upload_sizelimit:='104857600'} # 100 MB
+: ${synapse_turn_host:="$turn_domain"}
+: ${synapse_turn_secret:="$turn_secret"}
+: ${synapse_access_role:='matrix-access'}
+
+synapse_db_dir=/var/db/matrix-synapse
+synapse_conf_dir=/usr/local/etc/matrix-synapse
+synapse_local_user=synapse
+
+# Install required packages.
+pkg install -y \
+  py${python_version}-matrix-synapse \
+  py${python_version}-matrix-synapse-ldap3 \
+  nginx
+
+# Generate synapse configuration.
+install_template -o "$synapse_local_user" -g "$synapse_local_user" -m 0600 \
+  "${synapse_conf_dir}/homeserver.yaml" \
+  "${synapse_conf_dir}/${synapse_domain}.signing.key"
+
+install_file -o "$synapse_local_user" -g "$synapse_local_user" -m 0644 \
+  "${synapse_conf_dir}/log.config"
+
