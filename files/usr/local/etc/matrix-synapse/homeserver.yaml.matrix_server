@@ -1,6 +1,6 @@
 server_name: ${synapse_domain}
 pid_file: /var/run/matrix-synapse/homeserver.pid
-public_baseurl: https://${synapse_public_fqdn}:${synapse_client_port}/
+public_baseurl: https://${synapse_public_fqdn}/
 
 listeners:
   - port: ${synapse_local_client_port}
@@ -32,9 +32,9 @@ client_base_url: https://${synapse_public_fqdn}
 database:
   name: psycopg2
   args:
-    user: ${synapse_db_user}
-    database: ${synapse_username}
-    host: ${synapse_db_host}
+    user: ${synapse_username}
+    database: ${synapse_dbname}
+    host: ${synapse_dbhost}
     cp_min: 5
     cp_max: 10
     keepalives_idle: 10
@@ -78,15 +78,15 @@ autocreate_auto_join_rooms: true
 autocreate_auto_join_rooms_federated: false
 
 turn_uris: ['turn:${synapse_turn_host}']
-turn_shared_secret: ${synapse_turn_secret}
+turn_shared_secret: "${synapse_turn_secret}"
 turn_allow_guests: false
 
 report_stats: false
 
-macaroon_secret_key: ${synapse_macaroon_secret_key}
-form_secret: ${synapse_form_secret}
+macaroon_secret_key: "${synapse_macaroon_secret_key}"
+form_secret: "${synapse_form_secret}"
 
-signing_key_path: ${synapse_conf_dir}/${synapse_domain}.signing.key
+signing_key_path: ${synapse_conf_dir}/signing.key
 
 trusted_key_servers:
   - server_name: matrix.org
@@ -96,7 +96,8 @@ modules:
   - module: ldap_auth_provider.LdapAuthProviderModule
     config:
       enabled: true
-      uri: ${ldap_uri}
+      uri:
+$(printf -- '         - ldap://%s:389\n' $ldap_hosts)
       start_tls: true
       base: ${users_basedn}
       attributes:

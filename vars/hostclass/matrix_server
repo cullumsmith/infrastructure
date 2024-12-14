@@ -1,0 +1,7 @@
+#!/bin/sh
+
+synapse_federation_port=8448
+
+allowed_tcp_ports="ssh http https ${synapse_federation_port}"
+acme=true
+nginx_public=true

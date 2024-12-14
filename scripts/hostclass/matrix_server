@@ -6,11 +6,7 @@
 : ${synapse_ldap_password:='changeme'}
 : ${synapse_domain:="$email_domain"}
 : ${synapse_public_fqdn:="$fqdn"}
-: ${synapse_local_client_port:='8008'}
-: ${synapse_local_federation_port:='8009'}
-: ${synapse_client_port:='8443'}
-: ${synapse_federation_port:='8448'}
-: ${synapse_mail_from:="Matrix <matrix-noreply@${email_domain}>"}
+: ${synapse_email_from:="Matrix <matrix-noreply@${email_domain}>"}
 : ${synapse_username:='s-synapse'}
 : ${synapse_local_media_retention:='365d'}
 : ${synapse_remote_media_retention:='90d'}
@@ -18,22 +14,90 @@
 : ${synapse_turn_host:="$turn_domain"}
 : ${synapse_turn_secret:="$turn_secret"}
 : ${synapse_access_role:='matrix-access'}
+: ${synapse_dbhost:="$postgres_host"}
+: ${synapse_dbname:='synapse'}
 
 synapse_db_dir=/var/db/matrix-synapse
 synapse_conf_dir=/usr/local/etc/matrix-synapse
 synapse_local_user=synapse
+synapse_dn="uid=${synapse_username},${robots_basedn}"
+synapse_client_keytab="${keytab_dir}/synapse.client.keytab"
+synapse_https_cacert="${acme_cert_dir}/nginx.ca.crt"
+synapse_https_cert="${acme_cert_dir}/nginx.crt"
+synapse_https_key="${acme_cert_dir}/nginx.key"
+synapse_local_client_port=8008
+synapse_local_federation_port=8009
+synapse_element_webroot=/usr/local/www/element
 
 # Install required packages.
 pkg install -y \
   py${python_version}-matrix-synapse \
   py${python_version}-matrix-synapse-ldap3 \
-  nginx
+  nginx \
+  element-web
+
+# Create ZFS dataset for HTTP upload files.
+create_dataset -o "mountpoint=${synapse_db_dir}" "${state_dataset}/synapse"
+install_directory -o "$synapse_local_user" -g wheel -m 0700 "$synapse_db_dir"
+
+# Create synapse principal.
+ldap_add "$synapse_dn" <<EOF
+objectClass: account
+objectClass: simpleSecurityObject
+uid: ${synapse_username}
+userPassword: {SSHA-512}
+EOF
+ldap_passwd "$synapse_dn" "$synapse_ldap_password"
+add_principal -nokey -x "dn=${synapse_dn}" "$synapse_username"
+
+ktadd -k "$synapse_client_keytab" "$synapse_username"
+chgrp "$synapse_local_user" "$synapse_client_keytab"
+chmod 640 "$synapse_client_keytab"
+synapse_uid=$(id -u "$synapse_local_user")
+install_directory -o "$synapse_local_user" -m 0700 "/var/krb5/user/${synapse_uid}"
+ln -snfv "$synapse_client_keytab" "/var/krb5/user/${synapse_uid}/client.keytab"
+
+# Create postgres user and database.
+postgres_create_role "$synapse_dbhost" "$synapse_username"
+postgres_create_database "$synapse_dbhost" "$synapse_dbname" "$synapse_username" UTF8 C
 
 # Generate synapse configuration.
 install_template -o "$synapse_local_user" -g "$synapse_local_user" -m 0600 \
   "${synapse_conf_dir}/homeserver.yaml" \
-  "${synapse_conf_dir}/${synapse_domain}.signing.key"
+  "${synapse_conf_dir}/signing.key"
 
 install_file -o "$synapse_local_user" -g "$synapse_local_user" -m 0644 \
   "${synapse_conf_dir}/log.config"
 
+# Configure nginx.
+install_template -m 0644 "${nginx_conf_dir}/nginx.conf"
+[ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
+sysrc -v nginx_enable=YES
+service nginx restart
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
+
+# Retrieve webserver certificate via ACME.
+install_template -m 0600 /usr/local/etc/sudoers.d/acme
+acme_install_certificate \
+  -g "$nginx_user" \
+  -r 'sudo service nginx reload' \
+  nginx \
+  "$synapse_public_fqdn"
+
+# Now that we have the ACME certs, add the vhosts.
+install_template -m 0644 "${nginx_conf_dir}/vhosts.conf"
+service nginx restart
+
+# Enable and start daemons.
+sysrc -v synapse_enable=YES
+service synapse restart
+service nginx restart
+
+# Create access role.
+ldap_add "cn=${synapse_access_role},${roles_basedn}" <<EOF
+objectClass: groupOfMembers
+cn: ${synapse_access_role}
+EOF
+
+# Generate element-web config file.
+install_template -m 0644 "${synapse_element_webroot}/config.json"

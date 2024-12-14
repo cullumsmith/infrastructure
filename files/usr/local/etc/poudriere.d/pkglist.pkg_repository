@@ -159,6 +159,7 @@ textproc/py-docutils
 textproc/py-markdown
 textproc/py-pygments
 www/chromium
+www/element-web
 www/fcgiwrap
 www/firefox
 www/linux-widevine-cdm
