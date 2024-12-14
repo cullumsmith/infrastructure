@@ -124,12 +124,20 @@
         "url": "https://dav.${domain}/"
       },
       {
+        "name": "Git (External)",
+        "url": "https://git.${email_domain}/"
+      },
+      {
+        "name": "Git (Internal)",
+        "url": "https://git.${domain}/"
+      },
+      {
         "name": "Icinga",
         "url": "https://icinga.${domain}/"
       },
       {
-        "name": "Invidious",
-        "url": "https://invidious.${domain}/"
+        "name": "Matrix",
+        "url": "https://matrix.${email_domain}/"
       },
       {
         "name": "Poudriere",

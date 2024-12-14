@@ -13,7 +13,7 @@ samplerate=48000
 bits=16
 buffer_ms=100
 microphone_gain=50
-max_channels=8
+max_channels=2
 
 pkg install -y virtual_oss
 sysrc -v \
