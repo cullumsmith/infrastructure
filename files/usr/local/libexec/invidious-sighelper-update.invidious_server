@@ -41,8 +41,9 @@ upstream_rev=$(as_invidious 'git rev-parse "@{u}"')
 if [ "$local_rev" != "$upstream_rev" ]; then
   echo "updating inv_sig_helper to rev ${upstream_rev}"
   as_invidious 'git pull --ff-only && cargo build --release'
+  service inv_sig_helper status 2>/dev/null && service inv_sig_helper restart
+  service invidious status      2>/dev/null && service invidious restart
 else
   echo "inv_sig_helper already up to date at rev ${local_rev}"
 fi
 
-service inv_sig_helper status 2>/dev/null && service inv_sig_helper restart
