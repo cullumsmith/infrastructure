@@ -1,28 +1,28 @@
 #!/bin/sh
 
-# Note: does not work. inv_sig_helper does not build on FreeBSD...
-
 # Generate using: https://github.com/iv-org/youtube-trusted-session-generator
 : ${invidious_po_token:='changeme'}
 : ${invidious_visitor_data:='changeme'}
-
+: ${invidious_hmac_key:='changemeeeeeeeeeeee'}
 : ${invidious_username:='s-invidious'}
 : ${invidious_password:='changeme'}
-: ${invidious_hmac_key:='changemeeeeeeeeeeee'}
 : ${invidious_dbname:='invidious'}
 : ${invidious_dbhost:="$postgres_host"}
 : ${invidious_fqdn:="$fqdn"}
 : ${invidious_repo='https://github.com/iv-org/invidious'}
 : ${invidious_branch='master'}
+: ${invidious_sighelper_repo='https://github.com/cullumsmith/inv_sig_helper'}
+: ${invidious_sighelper_branch='fix-build-on-freebsd'}
 
 invidious_dn="uid=${invidious_username},${robots_basedn}"
 invidious_local_username=$nginx_user
 invidious_home=/usr/local/invidious
 invidious_port=8080
 invidious_repo_dir="${invidious_home}/invidious.git"
+invidious_sighelper_repo_dir="${invidious_home}/inv_sig_helper.git"
 invidious_https_cert="${nginx_conf_dir}/invidious.crt"
 invidious_https_key="${nginx_conf_dir}/invidious.key"
-invidious_signature_sock=/tmp/inv_sig_helper.sock
+invidious_signature_sock=/var/run/invidious/inv_sig_helper.sock
 
 # Install required packages.
 pkg install -y \
@@ -50,11 +50,27 @@ ldap_passwd "$invidious_dn" "$invidious_password"
 postgres_create_role "$invidious_dbhost" "$invidious_username"
 postgres_create_database "$invidious_dbhost" "$invidious_dbname" "$invidious_username"
 
-# Clone git repo.
+# Create invidious home directory.
 install_directory -o "$invidious_local_username" -g "$invidious_local_username" -m 0775 "$invidious_home"
-[ -d "${invidious_repo_dir}" ] || su -m "$invidious_local_username" -c "git clone ${invidious_repo} ${invidious_repo_dir}"
 
-# Update git repo.
+# Clone sighelper git repo.
+[ -d "${invidious_sighelper_repo_dir}" ] || su -m "$invidious_local_username" -c \
+  "git clone ${invidious_sighelper_repo} ${invidious_sighelper_repo_dir}"
+
+# Update sighelper git repo.
+su -m "$invidious_local_username" -c "git -C ${invidious_sighelper_repo_dir} pull --ff-only"
+su -m "$invidious_local_username" -c "git -C ${invidious_sighelper_repo_dir} switch ${invidious_sighelper_branch}"
+
+# Build sighelper.
+( cd "$invidious_sighelper_repo_dir"
+  su -m "$invidious_local_username" -c "HOME=${invidious_home} cargo build --release"
+)
+
+# Clone invidious git repo.
+[ -d "${invidious_repo_dir}" ] || su -m "$invidious_local_username" -c \
+  "git clone ${invidious_repo} ${invidious_repo_dir}"
+
+# Update invidious git repo.
 su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} pull --ff-only"
 su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} switch ${invidious_branch}"
 
@@ -68,7 +84,9 @@ su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} switch ${invi
 install_template -o "$invidious_local_username" -g "$invidious_local_username" -m 0600 "${invidious_repo_dir}/config/config.yml"
 
 # Copy invidious rc script.
-install_file -m 0555 /usr/local/etc/rc.d/invidious
+install_file -m 0555 \
+  /usr/local/etc/rc.d/invidious \
+  /usr/local/etc/rc.d/inv_sig_helper
 
 # Copy TLS certificate for nginx.
 install_certificate     invidious "$invidious_https_cert"
@@ -82,11 +100,15 @@ install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 # Start daemons.
 sysrc -v \
+  inv_sig_helper_enable=YES \
   invidious_enable=YES \
   nginx_enable=YES
+service inv_sig_helper restart
 service invidious restart
 service nginx restart
 
 # Copy invidous auto-update script.
-install_file -m 0555 /usr/local/libexec/invidious-update
+install_file -m 0555 \
+  /usr/local/libexec/invidious-update \
+  /usr/local/libexec/invidious-sighelper-update
 install_template -m 0644 /etc/cron.d/invidious

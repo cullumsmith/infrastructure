@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 prog=$(basename "$(readlink -f "$0")")
-usage="${prog} [-q] INVIDIOUS_USER INVIDIOUS_SRCDIR"
+usage="${prog} [-q] INVIDIOUS_USER SIGHELPER_SRCDIR"
 
 die() {
   printf '%s: %s\n' "$prog" "$*" 1>&2
@@ -16,7 +16,7 @@ usage(){
 }
 
 as_invidious(){
-  su -m "$invidious_user" -c "HOME=$(dirname "$invidious_dir") ${@}"
+  su -m "$invidious_user" -c "HOME=$(dirname "$sighelper_dir") ${@}"
 }
 
 while getopts hq opt; do
@@ -30,19 +30,19 @@ shift $((OPTIND - 1))
 [ $# -eq 2 ] || usage
 
 invidious_user=$1
-invidious_dir=$2
+sighelper_dir=$2
 
-cd "$invidious_dir"
+cd "$sighelper_dir"
 
 as_invidious 'git fetch'
 local_rev=$(as_invidious 'git rev-parse HEAD')
 upstream_rev=$(as_invidious 'git rev-parse "@{u}"')
 
 if [ "$local_rev" != "$upstream_rev" ]; then
-  echo "updating invidious to rev ${upstream_rev}"
-  as_invidious 'git pull --ff-only && shards install --production && crystal build src/invidious.cr --release'
+  echo "updating inv_sig_helper to rev ${upstream_rev}"
+  as_invidious 'git pull --ff-only && cargo build --release'
 else
-  echo "invidious already up to date at rev ${local_rev}"
+  echo "inv_sig_helper already up to date at rev ${local_rev}"
 fi
 
-service invidious status 2>/dev/null && service invidious restart
+service inv_sig_helper status 2>/dev/null && service inv_sig_helper restart
