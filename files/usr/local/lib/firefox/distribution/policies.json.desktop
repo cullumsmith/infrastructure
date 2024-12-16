@@ -136,6 +136,10 @@
         "url": "https://icinga.${domain}/"
       },
       {
+        "name": "Invidious",
+        "url": "https://invidious.${domain}/"
+      },
+      {
         "name": "Matrix",
         "url": "https://matrix.${email_domain}/"
       },
