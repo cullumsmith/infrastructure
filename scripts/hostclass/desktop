@@ -30,7 +30,7 @@ sysrc -v kld_list+=fusefs
 load_kernel_module fusefs
 
 # Install packages common to all DEs.
-pkg install -y $desktop_packages
+#pkg install -y $desktop_packages
 
 # Install profile script for improving experience on NFS homedirs.
 if [ "${enable_idm:-}" != false ]; then

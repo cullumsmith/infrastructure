@@ -10,6 +10,9 @@
 : ${davical_awl_repo:='https://gitlab.com/davical-project/awl.git'}
 : ${davical_awl_branch:='master'}
 : ${davical_admins:=''}
+: ${webdav_users:=''}
+: ${webdav_user_quota:='2g'}
+: ${webdav_upload_sizelimit:='104857600'} # 100 MB
 
 davical_dn="uid=${davical_username},${robots_basedn}"
 davical_repo_dir=/usr/local/www/davical
@@ -21,6 +24,7 @@ davical_https_cacert="${nginx_conf_dir}/davical.ca.crt"
 davical_keytab="${keytab_dir}/davical.keytab"
 davical_client_keytab="${keytab_dir}/davical.client.keytab"
 davical_fpm_socket=/var/run/fpm-davical.sock
+webdav_dir=/usr/local/www/webdav
 
 davical_psql(){
   postgres_run --host="$davical_dbhost" --dbname="$davical_dbname" "$@"
@@ -44,6 +48,15 @@ pkg install -y \
   p5-DBD-Pg \
   p5-DBI \
   p5-YAML
+
+# Create ZFS datasets for WebDAV files.
+create_dataset -o "mountpoint=${webdav_dir}" "${state_dataset}/webdav"
+install_directory -o root -g "$nginx_user" -m 0770 "$webdav_dir"
+
+for user in $webdav_users; do
+  create_dataset -o "refquota=${webdav_user_quota}" "${state_dataset}/webdav/${user}"
+  install_directory -o root -g "$nginx_user" -m 0770 "${webdav_dir}/${user}"
+done
 
 # Install davical from git.
 [ -d "$davical_repo_dir" ]     || git clone "$davical_repo"     "$davical_repo_dir"

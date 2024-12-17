@@ -1,6 +1,7 @@
 worker_processes      ${nginx_worker_processes};
 worker_rlimit_nofile  ${nginx_nofile};
-$([ "${nginx_gssapi:-}" = true ] && echo 'load_module "/usr/local/libexec/nginx/ngx_http_auth_spnego_module.so";')
+$([ "${nginx_gssapi:-}"  = true ] && echo 'load_module "/usr/local/libexec/nginx/ngx_http_auth_spnego_module.so";')
+$([ "${nginx_dav_ext:-}" = true ] && echo 'load_module "/usr/local/libexec/nginx/ngx_http_dav_ext_module.so";')
 
 events {
   worker_connections  ${nginx_worker_connections};

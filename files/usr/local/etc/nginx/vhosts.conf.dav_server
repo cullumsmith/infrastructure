@@ -14,6 +14,8 @@ server {
   auth_gss_keytab ${davical_keytab};
   auth_gss_allow_basic_fallback off;
 
+  client_max_body_size ${webdav_upload_sizelimit};
+
   location / {
     auth_gss on;
     satisfy any;
@@ -32,6 +34,16 @@ $(printf '    deny %s;\n' $kerberized_cidrs)
       return 200;
     }
     return 403;
+  }
+
+  location ~ ^/webdav($|/(?<dav_path>.*)$) {
+    auth_gss on;
+    auth_gss_allow_basic_fallback on;
+    alias ${webdav_dir}/\$remote_user/\$dav_path;
+    create_full_put_path on;
+    dav_methods PUT DELETE MKCOL COPY MOVE;
+    dav_ext_methods PROPFIND OPTIONS;
+    autoindex on;
   }
 
   location ~ ^/caldav\.php/\.well-known/ {

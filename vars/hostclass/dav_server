@@ -2,3 +2,4 @@
 
 allowed_tcp_ports='ssh http https'
 nginx_gssapi=true
+nginx_dav_ext=true
