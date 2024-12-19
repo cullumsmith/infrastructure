@@ -1,4 +1,4 @@
 MAILTO=root
 0  3 * * * root /usr/local/libexec/invidious-update           -q ${invidious_local_username} ${invidious_repo_dir}
 30 3 * * * root /usr/local/libexec/invidious-sighelper-update -q ${invidious_local_username} ${invidious_sighelper_repo_dir}
-0  4 * * * root /usr/sbin/service invidious restart
+0  4 * * * root /usr/sbin/service invidious restart > /dev/null
