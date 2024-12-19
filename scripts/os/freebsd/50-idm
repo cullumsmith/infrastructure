@@ -58,7 +58,7 @@ objectClass: ldapPublicKey
 cn: ${BOXCONF_HOSTNAME}
 associatedDomain: ${fqdn}
 $(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
-description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+description: FreeBSD $(freebsd-version) ${BOXCONF_HOSTCLASS}
 EOF
 
 # Create A record.
@@ -97,7 +97,7 @@ replace: sshPublicKey
 $(cat /usr/local/etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
 -
 replace: description
-description: $(uname -mrs) ${BOXCONF_HOSTCLASS}
+description: FreeBSD $(freebsd-version) ${BOXCONF_HOSTCLASS}
 EOF
 
 # Create host principal and keytab.
