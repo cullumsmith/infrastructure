@@ -11,8 +11,8 @@
 : ${invidious_fqdn:="$fqdn"}
 : ${invidious_repo='https://github.com/iv-org/invidious'}
 : ${invidious_branch='master'}
-: ${invidious_sighelper_repo='https://github.com/cullumsmith/inv_sig_helper'}
-: ${invidious_sighelper_branch='fix-build-on-freebsd'}
+: ${invidious_sighelper_repo='https://github.com/iv-org/inv_sig_helper'}
+: ${invidious_sighelper_branch='master'}
 
 invidious_dn="uid=${invidious_username},${robots_basedn}"
 invidious_local_username=$nginx_user

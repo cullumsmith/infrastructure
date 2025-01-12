@@ -8,6 +8,7 @@ audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf5
 audio/kmix
+audio/musescore
 audio/pulseaudio
 audio/virtual_oss
 converters/php${php_version}-iconv
@@ -72,10 +73,11 @@ misc/php${php_version}-calendar
 misc/terminfo-db
 multimedia/audacious-plugins@qt5
 multimedia/audacious@qt5
+multimedia/handbrake
+multimedia/libdvdcss
 multimedia/libva-intel-media-driver
 multimedia/libva-utils
 multimedia/libvdpau-va-gl
-multimedia/makemkv
 multimedia/mpv
 multimedia/smplayer
 multimedia/v4l-utils

@@ -60,6 +60,7 @@ freedesktop-sound-theme
 git
 gnupg
 gtksourceview4
+handbrake
 hs-pandoc
 inconsolata-ttf
 jq
@@ -70,6 +71,7 @@ kmix
 kmymoney
 konversation
 krb5
+libdvdcss
 libreoffice
 libva-utils
 libvdpau-va-gl
