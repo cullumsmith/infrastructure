@@ -8,6 +8,7 @@ audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf5
 audio/kmix
+audio/musescore
 audio/pulseaudio
 audio/virtual_oss
 converters/php${php_version}-iconv
