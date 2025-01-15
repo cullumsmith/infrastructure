@@ -50,6 +50,7 @@ ftp/php${php_version}-curl
 graphics/ImageMagick7@nox11
 graphics/digikam
 graphics/drm-kmod
+graphics/gimp
 graphics/p5-Image-ExifTool
 graphics/php${php_version}-exif
 graphics/php${php_version}-gd
@@ -117,6 +118,7 @@ ports-mgmt/poudriere
 print/cups
 print/cups-filters
 print/pdftk
+print/texlive-full
 security/acme.sh
 security/bitwarden-cli
 security/cyrus-sasl2-saslauthd
