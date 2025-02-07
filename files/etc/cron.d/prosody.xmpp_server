@@ -1,3 +1,3 @@
 MAILTO=root
 0 0 * * * ${prosody_local_user} /usr/local/libexec/prosody-acme-proxy -q ${prosody_username}@${prosody_acme_host} ${prosody_domains}
-0 0 * * * ${prosody_local_user} /usr/local/libexec/prosody-update-roster ${prosody_access_role} ${prosody_roster_path}
+0 0 * * * ${prosody_local_user} /usr/local/libexec/prosody-update-roster ${prosody_access_role} ${prosody_roster_path} > /dev/null
