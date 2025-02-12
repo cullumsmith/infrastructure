@@ -205,6 +205,10 @@
       "browser.safebrowsing.downloads.enabled": {
         "Value": false,
         "Status": "locked"
+      },
+      "media.cubeb.backend": {
+        "Value": "oss",
+        "Status": "locked"
       }
     }
   }
