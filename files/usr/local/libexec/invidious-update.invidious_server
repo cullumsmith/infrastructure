@@ -40,7 +40,9 @@ upstream_rev=$(as_invidious 'git rev-parse "@{u}"')
 
 if [ "$local_rev" != "$upstream_rev" ]; then
   echo "updating invidious to rev ${upstream_rev}"
-  as_invidious 'git pull --ff-only && shards install --production && crystal build src/invidious.cr --release'
+  as_invidious 'git pull --ff-only'
+  as_invidious 'shards install --production'
+  as_invidious 'crystal build src/invidious.cr --release'
   service invidious status 2>/dev/null && service invidious restart
 else
   echo "invidious already up to date at rev ${local_rev}"

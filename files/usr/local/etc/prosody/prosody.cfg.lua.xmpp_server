@@ -92,10 +92,11 @@ https_external_url = "https://${prosody_public_fqdn}/"
 trusted_proxies = { "127.0.0.1" }
 http_max_content_size = ${prosody_upload_sizelimit}
 
-Component "${prosody_public_fqdn}" "http_upload"
-http_upload_file_size_limit = ${prosody_upload_sizelimit}
-http_upload_expire_after = ${prosody_upload_expiration}
-http_upload_quota = ${prosody_upload_quota}
+Component "${prosody_public_fqdn}" "http_file_share"
+http_file_share_size_limit = ${prosody_upload_sizelimit}
+http_file_share_expires_after = ${prosody_upload_expiration}
+http_file_share_daily_quota = ${prosody_upload_quota}
+http_file_share_global_quota = ${prosody_upload_quota}
 
 $(for vhost in $prosody_domains; do cat <<EOF
 VirtualHost "${vhost}"

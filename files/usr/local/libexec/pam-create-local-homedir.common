@@ -1,3 +1,4 @@
 #!/bin/sh
 
 install -o "$PAM_USER" -g "$PAM_USER" -m 0700 -d "/usr/local/home/${PAM_USER}"
+install -o "$PAM_USER" -g "$PAM_USER" -l s "/usr/local/home/${PAM_USER}" "/home/${PAM_USER}/localdisk"

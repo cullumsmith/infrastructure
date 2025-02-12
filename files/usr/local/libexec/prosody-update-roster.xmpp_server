@@ -46,4 +46,4 @@ foreach my $entry ($search->entries) {
 }
 close $fh;
 
-system('prosodyctl reload');
+system('service prosody reload');

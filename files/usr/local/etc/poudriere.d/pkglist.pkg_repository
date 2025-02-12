@@ -4,9 +4,10 @@ archivers/php${php_version}-zip
 archivers/unzip
 archivers/zip
 audio/elisa
+audio/fooyin
 audio/freedesktop-sound-theme
 audio/gsound
-audio/kid3@kf5
+audio/kid3@kf6
 audio/kmix
 audio/musescore
 audio/pulseaudio
@@ -22,7 +23,7 @@ databases/postgresql${postgresql_version}-client
 databases/postgresql${postgresql_version}-server
 databases/redis
 deskutils/pim-sieve-editor
-deskutils/plasma5-sddm-kcm
+deskutils/plasma6-sddm-kcm
 deskutils/py-vdirsyncer
 devel/android-tools
 devel/ccache
@@ -72,8 +73,6 @@ mail/sieve-connect
 mail/thunderbird
 misc/php${php_version}-calendar
 misc/terminfo-db
-multimedia/audacious-plugins@qt5
-multimedia/audacious@qt5
 multimedia/handbrake
 multimedia/libdvdcss
 multimedia/libva-intel-media-driver
@@ -111,6 +110,7 @@ net/php${php_version}-sockets
 net/py-matrix-synapse-ldap3
 net/py-python-ldap
 net/rsync
+net/socat
 net/syncthing
 net/turnserver
 net/wireguard-tools
@@ -174,6 +174,7 @@ www/w3m
 x11-fonts/cantarell-fonts
 x11-fonts/droid-fonts-ttf
 x11-fonts/inconsolata-ttf
+x11-fonts/montserrat
 x11-fonts/noto-basic
 x11-fonts/noto-emoji
 x11-fonts/roboto-fonts-ttf
@@ -181,8 +182,9 @@ x11-fonts/terminus-font
 x11-fonts/terminus-ttf
 x11-fonts/ubuntu-font
 x11-fonts/webfonts
+x11-themes/sddm-freebsd-black-theme
 x11-toolkits/gtksourceview4
-x11/kde5
+x11/kde
 x11/sddm
 x11/xev
 x11/xorg

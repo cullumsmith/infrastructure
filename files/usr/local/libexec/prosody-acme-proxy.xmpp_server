@@ -44,8 +44,8 @@ md5_new=$(md5sum "$CERT_DIR"/*.crt "$CERT_DIR"/*.key | tee "$CHECKSUM_FILE")
 
 # If any certificates differ, reload prosody.
 if [ "$md5_old" != "$md5_new" ]; then
-  if prosodyctl status >/dev/null 2>&1; then
-    prosodyctl reload
+  if service prosody status >/dev/null; then
+    service prosody reload
   else
     echo 'prosody not running, not reloading'
   fi

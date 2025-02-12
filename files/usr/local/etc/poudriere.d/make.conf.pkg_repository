@@ -4,7 +4,7 @@ DEFAULT_VERSIONS+=${poudriere_default_versions:-}
 MAKE_JOBS_NUMBER=${poudriere_make_jobs_number}
 
 # Global port options
-OPTIONS_UNSET=TEST DEBUG GSSAPI_HEIMDAL GSSAPI_BASE GSSAPI_NONE HEIMDAL HEIMDAL_BASE NLS DOCS AVAHI LIBWRAP MYSQL MSQLND ODBC READLINE PULSEAUDIO UPNP BASH ZSH INFO SAMBA WAYLAND PLATFORM_WAYLAND PIPEWIRE TCP_WRAPPERS COMPAT32 JACK KDEPIM
+OPTIONS_UNSET=TEST DEBUG GSSAPI_HEIMDAL GSSAPI_BASE GSSAPI_NONE HEIMDAL HEIMDAL_BASE NLS DOCS AVAHI LIBWRAP MYSQL MSQLND ODBC READLINE PULSEAUDIO UPNP BASH ZSH INFO SAMBA TCP_WRAPPERS COMPAT32 JACK KDEPIM WAYLAND PLATFORM_WAYLAND PIPEWIRE
 OPTIONS_SET=GSSAPI GSSAPI_MIT MIT NONFREE LIBEDIT
 
 WINE_CROSS_BUILD=yes
@@ -46,16 +46,12 @@ mail_rspamd_SET=HYPERSCAN
 misc_kdeutils_UNSET=KFLOPPY KTEATIME
 misc_kdeedu_UNSET=KITEN
 mail_thunderbird_UNSET=PROFILE
-
-# With using virutal_oss, the OSS plugin causes a red error bar every
-# time the music is stopped paused. SNDIO seems fine.
-multimedia_audacious-plugins_SET=LAME SNDIO
-
 multimedia_ffmpeg_SET=OPENSSL
 multimedia_ffmpeg_UNSET=GNUTLS
 multimedia_kdemultimedia_UNSET=KDENLIVE
 multimedia_mpv_SET=CDIO LIBBLURAY
 multimedia_mpv_UNSET=NVDEC
+multimedia_qt6-multimedia_SET=ALSA
 multimedia_vlc_SET=FLAC MPEG2 X264 X265 VPX DCA FAAD AOM
 multimedia_webcamd_UNSET=DVB INPUT RADIO
 net-im_py-matrix-synapse_SET=PGSQL URLPREVIEW LDAP
@@ -79,8 +75,11 @@ security_heimdal_SET=LDAP
 security_heimdal_UNSET=BDB
 security_kf5-kdesu_SET=SUDO
 security_kf5-kdesu_UNSET=SU
+security_kf6-kdesu_SET=SUDO
+security_kf6-kdesu_UNSET=SU
 security_krb5_SET=DNS_FOR_REALM
 security_krb5_UNSET=KRB5_HTML KRB5_PDF
+security_p5-Authen-SASL_SET=KERBEROS
 security_pinentry-qt5_SET=LIBSECRET
 security_sudo_SET=LDAP
 security_sudo_UNSET=GSSAPI_MIT
@@ -98,5 +97,5 @@ www_firefox_UNSET=PROFILE
 www_nginx_SET=HTTPV3 HTTPV3_QTLS HTTP_AUTH_KRB5 HTTP_AUTH_LDAP HTTP_DAV_EXT
 www_nginx_UNSET=MAIL
 x11-toolkits_gtk30_UNSET=COLORD BROADWAY
-x11_kde5_UNSET=KDEADMIN
+x11_kde_UNSET=KDEADMIN
 x11_libinput_UNSET=LIBWACOM

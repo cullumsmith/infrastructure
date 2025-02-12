@@ -45,9 +45,9 @@ zfs set \
   com.sun:auto-snapshot:weekly=true \
   "${state_dataset}/home"
 
-# Enable sndio.
-sysrc -v sndiod_enable=YES
-service sndiod status || service sndiod start
+# Disable sndiod (not needed).
+sysrc -v sndiod_enable=NO
+service sndiod status && service sndiod stop
 
 # Create local group for desktop-access.
 # This is for *local* users that need access to the drm device.
@@ -66,11 +66,11 @@ service webcamd status || service webcamd start
 install_file -m 0644 /usr/local/etc/xdg/autostart/nss-trust-root-ca.desktop
 install_file -m 0555 /usr/local/libexec/nss-trust-root-ca
 
-# Install gajim desktop file.
-install_file -m 0644 /usr/local/share/applications/gajim.desktop
-
 # Add sddm user to drm access group.
 pw groupmod "$desktop_access_role" -m "$sddm_user"
+
+# Install gajim desktop file.
+install_file -m 0644 /usr/local/share/applications/gajim.desktop
 
 # Configure pam services.
 install_file -m 0644 \

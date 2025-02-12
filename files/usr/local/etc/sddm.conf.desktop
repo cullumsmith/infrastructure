@@ -7,3 +7,6 @@ SessionDir = /dev/null
 [Users]
 MinimumUid = ${sddm_min_uid}
 MaximumUid = ${sddm_max_uid}
+
+[Theme]
+Current=sddm-freebsd-black-theme

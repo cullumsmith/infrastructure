@@ -18,10 +18,6 @@ enable_serial_console=false
 # UID/GID hiding breaks consolekit and KDE screen locker.
 see_other_uids=1
 
-# sndiod's control socket lives under /tmp, but sndoid starts *before* /tmp is
-# cleared out, resulting in the socket being blown away.
-clear_tmp_enable=false
-
 # Chromium seems to need this to enable VAAPI video decoding on intel.
 chrome_flags='--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan'
 
@@ -38,17 +34,16 @@ gsound"
 
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
 # Also, freedesktop-sound-theme is required for notification sounds in Dino
+# digikam port currently broken
+# kwalletd requires socat?
 desktop_packages="
 ${gajim_packages}
 android-file-transfer-qt5
 android-tools
-audacious-plugins-qt5
-audacious-qt5
 bind-tools
 ca_root_nss
 cantarell-fonts
 chromium
-digikam
 dino
 droid-fonts-ttf
 eclipse
@@ -56,6 +51,7 @@ elisa
 en-hunspell
 ffmpeg
 firefox
+fooyin
 freedesktop-sound-theme
 git
 gnupg
@@ -65,8 +61,8 @@ hs-pandoc
 inconsolata-ttf
 jq
 k3b
-kde5
-kid3-kf5
+kde
+kid3-kf6
 kmix
 kmymoney
 konversation
@@ -89,8 +85,10 @@ python
 roboto-fonts-ttf
 rsync
 sddm
+sddm-freebsd-black-theme
 signal-desktop
 sndio
+socat
 stow
 terminus-font
 terminus-ttf

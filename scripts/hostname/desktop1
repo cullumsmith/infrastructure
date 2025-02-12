@@ -11,7 +11,7 @@ playback_device=1
 recording_device=0
 samplerate=48000
 bits=16
-buffer_ms=100
+buffer_ms=4
 microphone_gain=50
 max_channels=2
 

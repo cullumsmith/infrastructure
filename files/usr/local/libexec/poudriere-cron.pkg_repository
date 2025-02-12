@@ -16,11 +16,11 @@ done
 
 for jail in "$@"; do
   poudriere jail -u  -j "$jail" > /dev/null
-  poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/idm-pkglist   -p "$ports_tree" -z idm    > /dev/null
+  poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/idm-pkglist   -p "$ports_tree" -z idm
   poudriere pkgclean -j "$jail"        -f /usr/local/etc/poudriere.d/idm-pkglist   -p "$ports_tree" -z idm -y > /dev/null 2>&1
-  poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/pkglist       -p "$ports_tree"           > /dev/null
+  poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/pkglist       -p "$ports_tree"
   poudriere pkgclean -j "$jail"        -f /usr/local/etc/poudriere.d/pkglist       -p "$ports_tree" -y        > /dev/null 2>&1
-  poudriere bulk     -j "${jail}-i386" -f /usr/local/etc/poudriere.d/i386-pkglist  -p "$ports_tree"           > /dev/null
+  poudriere bulk     -j "${jail}-i386" -f /usr/local/etc/poudriere.d/i386-pkglist  -p "$ports_tree"
   poudriere pkgclean -j "${jail}-i386" -f /usr/local/etc/poudriere.d/i386-pkglist  -p "$ports_tree" -y        > /dev/null 2>&1
 done
 

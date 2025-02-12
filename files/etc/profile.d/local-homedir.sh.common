@@ -23,9 +23,3 @@ ln -sfn "${LOCAL_HOME}/.mozilla" "${HOME}/.mozilla"
 # thunderbird
 mkdir -p "${LOCAL_HOME}/.thunderbird"
 ln -sfn "${LOCAL_HOME}/.thunderbird" "${HOME}/.thunderbird"
-
-# kwallet
-# The kwallet PAM module hard-codes ~/.local/share/kwalletd, but kwallet itself
-# honors XDG_DATA_HOME! So we symlink from the local disk back into NFS. Gross!
-mkdir -p "${LOCAL_HOME}/.local/share/kwalletd"
-ln -sfn "${HOME}/.local/share/kwalletd/kwallet.salt" "${LOCAL_HOME}/.local/share/kwalletd/kdewallet.salt"
