@@ -8,7 +8,6 @@ audio/fooyin
 audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf6
-audio/kmix
 audio/musescore
 audio/pulseaudio
 audio/virtual_oss
@@ -79,6 +78,7 @@ multimedia/libva-intel-media-driver
 multimedia/libva-utils
 multimedia/libvdpau-va-gl
 multimedia/mpv
+multimedia/phonon-mpv
 multimedia/smplayer
 multimedia/v4l-utils
 multimedia/v4l_compat
@@ -114,6 +114,7 @@ net/socat
 net/syncthing
 net/turnserver
 net/wireguard-tools
+ports-mgmt/pkg
 ports-mgmt/poudriere
 print/cups
 print/cups-filters

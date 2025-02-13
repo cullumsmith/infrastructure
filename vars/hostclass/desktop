@@ -63,7 +63,6 @@ jq
 k3b
 kde
 kid3-kf6
-kmix
 kmymoney
 konversation
 krb5
@@ -78,6 +77,7 @@ noto-emoji
 password-store
 pdftk
 pim-sieve-editor
+phonon-mpv
 postgresql16-client
 pulseaudio
 py${python_version}-pip

@@ -18,7 +18,7 @@ max_channels=2
 pkg install -y virtual_oss
 sysrc -v \
   virtual_oss_enable=YES \
-  virtual_oss_dsp="-T /dev/sndstat -C "$max_channels" -c "$max_channels" -S -r ${samplerate} -b ${bits} -s ${buffer_ms}ms -O /dev/dsp${playback_device} -R /dev/dsp${recording_device} -d dsp -t vsdp.ctl"
+  virtual_oss_dsp="-T /dev/sndstat -C "$max_channels" -c "$max_channels" -r ${samplerate} -b ${bits} -s ${buffer_ms}ms -O /dev/dsp${playback_device} -R /dev/dsp${recording_device} -d dsp -t vsdp.ctl"
 service virtual_oss restart
 
 set_loader_conf "hint.pcm.${recording_device}.mic=${microphone_gain}"
