@@ -16,6 +16,10 @@ dhparams_path=/etc/ssl/dhparams.pem
 
 pkg install -y acme.sh
 
+# Create dataset to persist acme data across OS rebuilds.
+create_dataset -o "mountpoint=${acme_home}" "${state_dataset}/acme"
+install_directory -o "$acme_user" -g "$acme_user" -m 0750 "$acme_home"
+
 install_directory -m 0775 -o root -g "$acme_user" "$acme_cert_dir"
 install_template -m 0644 /etc/cron.d/acme
 
