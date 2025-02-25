@@ -34,7 +34,6 @@ gsound"
 
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
 # Also, freedesktop-sound-theme is required for notification sounds in Dino
-# digikam port currently broken
 # kwalletd requires socat?
 desktop_packages="
 ${gajim_packages}
@@ -44,6 +43,7 @@ bind-tools
 ca_root_nss
 cantarell-fonts
 chromium
+digikam
 dino
 droid-fonts-ttf
 eclipse
