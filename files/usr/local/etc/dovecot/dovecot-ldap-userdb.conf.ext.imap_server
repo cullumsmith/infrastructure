@@ -11,7 +11,7 @@ user_attrs = \\
   =uid=${dovecot_vmail_uid}, \\
   =gid=${dovecot_vmail_uid}, \\
   =home=${dovecot_vmail_dir}/%{ldap:uid}, \\
-  mailQuota=quota_rule=\*:storage=%{ldap:mailQuota}
+  mailQuota=quota_rule=*:storage=%{ldap:mailQuota}
 
 iterate_attrs = uid=user
 iterate_filter = (mailAddress=*)

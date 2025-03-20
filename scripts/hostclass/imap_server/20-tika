@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: ${tika_version:='2.9.2'}
+: ${tika_version:='3.1.0'}
 : ${tika_uid:='787'}
 
 tika_user=tika

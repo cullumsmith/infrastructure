@@ -3,6 +3,9 @@
 # For IDM servers, the resolver is localhost. In that case, we delay copying
 # this file until the IDM stack is fully up and running.
 if [ "$BOXCONF_HOSTCLASS" = idm_server ]; then
+  if [ "${idm_bootstrap:-}" = true ]; then
+    printf 'nameserver %s\n' "$bootstrap_resolvers" > /etc/resolv.conf
+  fi
   return
 fi
 

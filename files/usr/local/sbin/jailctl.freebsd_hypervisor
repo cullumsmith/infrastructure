@@ -561,7 +561,7 @@ Options:
 
   [ $# -eq 0 ] || cmd::usage 'too many arguments'
 
-  { [ $terse = true ] || echo 'JAIL STATUS'
+  { [ $terse = true ] || echo 'JAIL STATUS VERSION'
     for file in "$JAIL_HOME"/*/jail.conf; do
       [ -e "$file" ] || continue
 
@@ -575,7 +575,7 @@ Options:
         else
           status=stopped
         fi
-        printf '%s %s\n' "$name" "$status"
+        printf '%s %s %s\n' "$name" "$status" "$("${JAIL_HOME}/${name}/os/bin/freebsd-version" 2>/dev/null)"
       fi
     done
   } | column -t
@@ -854,6 +854,8 @@ cmd::show(){
 
   jail::exists "$jail" || die "no such jail: ${jail}"
 
+  printf -- '---------------------------- FREEBSD VERSION -----------------------------\n'
+  "${JAIL_HOME}/${jail}/os/bin/freebsd-version" ||:
   printf -- '------------------------- JAIL CONFIGURATION -------------------------\n'
   cat "${JAIL_HOME}/${jail}/jail.conf"
   printf -- '\n---------------------------- ZFS DATASET -----------------------------\n'
