@@ -45,7 +45,6 @@ editors/vim@tiny
 emulators/wine
 filesystems/zfstools
 finance/gnucash
-finance/kmymoney
 ftp/php${php_version}-curl
 graphics/ImageMagick7@nox11
 graphics/digikam
