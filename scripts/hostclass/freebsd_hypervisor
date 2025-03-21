@@ -31,13 +31,15 @@ sysrc -v kld_list+='kgssapi kgssapi_krb5'
 set_sysctl vfs.zfs.vol.mode=2
 
 # Load required kernel modules.
-load_kernel_module vmm nmdm linux linux64
+load_kernel_module vmm nmdm
 set_loader_conf \
   vmm_load=YES \
   nmdm_load=YES \
-  linux_load=YES \
-  linux64_load=YES \
   kern.racct.enable=1
+
+# Enable Linux ABI
+sysrc -v linux_enable=YES
+service linux start
 
 # Install vm/jail management dependencies.
 pkg install -y \
