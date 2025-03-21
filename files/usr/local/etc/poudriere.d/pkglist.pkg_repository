@@ -46,7 +46,7 @@ emulators/wine
 filesystems/zfstools
 finance/gnucash
 ftp/php${php_version}-curl
-graphics/ImageMagick7@nox11
+graphics/ImageMagick7
 graphics/digikam
 graphics/drm-kmod
 graphics/gimp
