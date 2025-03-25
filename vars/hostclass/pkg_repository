@@ -5,5 +5,4 @@ nginx_redirect=false
 
 poudriere_patches='
 chromium-gssapi
-gstreamer1-plugins-good-fix-v4l-einval
 '

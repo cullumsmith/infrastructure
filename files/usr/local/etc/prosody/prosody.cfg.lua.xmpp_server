@@ -40,6 +40,7 @@ modules_enabled = {
     "groups"; -- Shared roster support
     "csi_battery_saver";
     "reload_modules";
+    "unified_push";
 }
 
 reload_modules = { "groups", "tls" }
@@ -98,10 +99,14 @@ http_file_share_expires_after = ${prosody_upload_expiration}
 http_file_share_daily_quota = ${prosody_upload_quota}
 http_file_share_global_quota = ${prosody_upload_quota}
 
+Component "${prosody_push_fqdn}" "unified_push"
+  unified_push_backend = "storage"
+  http_host = "${prosody_public_fqdn}"
+
 $(for vhost in $prosody_domains; do cat <<EOF
 VirtualHost "${vhost}"
   disco_items = {
-    { "${prosody_public_fqdn}" }
+    { "${prosody_public_fqdn}"; "${prosody_push_fqdn}"; }
   }
 Component "conference.${vhost}" "muc"
   modules_enabled = { "muc_mam"}

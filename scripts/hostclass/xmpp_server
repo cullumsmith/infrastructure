@@ -6,6 +6,7 @@
 # prosody_acme_host=
 : ${prosody_admins:=''}
 : ${prosody_public_fqdn:="$fqdn"}
+: ${prosody_push_fqdn:="push.${email_domain}"}
 : ${prosody_domains:="$email_domain"}
 : ${prosody_ldap_password:='changeme'}
 : ${prosody_dbname:='prosody'}
