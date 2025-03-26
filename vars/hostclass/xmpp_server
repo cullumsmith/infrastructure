@@ -2,7 +2,8 @@
 
 prosody_c2s_tls_port=5223
 prosody_s2s_tls_port=5270
+mollysocket_port=8443
 
-allowed_tcp_ports="ssh http https xmpp-client xmpp-server ${prosody_c2s_tls_port} ${prosody_s2s_tls_port}"
+allowed_tcp_ports="ssh http https xmpp-client xmpp-server ${prosody_c2s_tls_port} ${prosody_s2s_tls_port} ${mollysocket_port}"
 acme=true
 nginx_public=true

@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# mollysocket allows sending push notifications to Molly (Signal clone)
+# via UnifiedPush.
+
+: ${mollysocket_repo='https://github.com/mollyim/mollysocket'}
+: ${mollysocket_branch='1.6.0'}
+: ${mollysocket_vapid_key='changeme'}
+
+mollysocket_username=mollysocket
+mollysocket_uid=794
+mollysocket_home=/usr/local/mollysocket
+mollysocket_repo_dir="${mollysocket_home}/mollysocket.git"
+mollysocket_db_dir=/var/db/mollysocket
+mollysocket_conf_file=/usr/local/etc/mollysocket.conf
+
+# Install required packages.
+pkg install -y \
+  git-lite \
+  rust \
+  sqlite3
+
+# Add local mollysocket user.
+add_user \
+  -u "$mollysocket_uid" \
+  -c "Mollysocket User" \
+  -d "$mollysocket_home" \
+  -s /usr/sbin/nologin \
+  "$mollysocket_username"
+
+# Create persistent ZFS dataset for mollysocket's sqlite db.
+create_dataset -o "mountpoint=${mollysocket_db_dir}" "${state_dataset}/mollysocket"
+
+# Set permissions on the mollysocket db directory.
+install_directory -m 0770 -o "$mollysocket_username" -g "$mollysocket_username" "$mollysocket_db_dir"
+
+# Create mollysocket home directory.
+install_directory -o "$mollysocket_username" -g "$mollysocket_username" -m 0775 "$mollysocket_home"
+
+# Clone mollysocket git repo.
+[ -d "${mollysocket_repo_dir}" ] || su -m "$mollysocket_username" -c \
+  "git clone ${mollysocket_repo} ${mollysocket_repo_dir}"
+
+# Update mollysocket git repo.
+su -m "$mollysocket_username" -c "git -C ${mollysocket_repo_dir} fetch"
+su -m "$mollysocket_username" -c "git -C ${mollysocket_repo_dir} switch --detach ${mollysocket_branch}"
+
+# Build mollysocket.
+( cd "$mollysocket_repo_dir"
+  su -m "$mollysocket_username" -c "HOME=${mollysocket_home} RUSTFLAGS=-L/usr/local/lib cargo build --release"
+)
+
+# Copy mollysocket rc.d script.
+install_file -m 0555 /usr/local/etc/rc.d/mollysocket
+
+# Copy mollysocket config file.
+install_template -m 0640 -g "$mollysocket_username" "$mollysocket_conf_file"
+
+# Enable and start mollysocket.
+sysrc -v mollysocket_enable=YES
+service mollysocket restart

@@ -1,0 +1,5 @@
+host = "127.0.0.1"
+port = ${mollysocket_local_port}
+webserver = true
+allowed_endpoints = ["https://${prosody_public_fqdn}/"]
+vapid_privkey = "${mollysocket_vapid_key}"

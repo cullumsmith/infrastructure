@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# PROVIDE: mollysocket
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=mollysocket
+rcvar=mollysocket_enable
+
+load_rc_config "$name"
+
+: ${mollysocket_enable:='NO'}
+: ${mollysocket_dir:='/usr/local/mollysocket/mollysocket.git'}
+: ${mollysocket_user='mollysocket'}
+: ${mollysocket_log_level:='info'}
+: ${mollysocket_syslog_facility:='daemon'}
+: ${mollysocket_conf_file:='/usr/local/etc/mollysocket.conf'}
+
+mollysocket_syslog_tag=mollysocket
+mollysocket_run_dir=/var/run/mollysocket
+mollysocket_db_dir=/var/db/mollysocket
+mollysocket_env="MOLLY_CONF=${mollysocket_conf_file} MOLLY_DB=${mollysocket_db_dir}/db.sqlite RUST_LOG=${mollysocket_log_level}"
+
+required_files="${mollysocket_conf_file}"
+sig_stop=SIGINT
+
+mollysocket_chdir=$mollysocket_dir
+pidfile=${mollysocket_run_dir}/mollysocket.pid
+command=/usr/sbin/daemon
+
+command_args="-f \
+-s ${mollysocket_log_level} \
+-l ${mollysocket_syslog_facility} \
+-T ${mollysocket_syslog_tag} \
+-p ${pidfile} \
+-t ${name} \
+${mollysocket_dir}/target/release/mollysocket server"
+
+procname="${mollysocket_dir}/target/release/mollysocket"
+start_precmd=mollysocket_prestart
+
+mollysocket_prestart(){
+  install -d -m 0755 -o ${mollysocket_user} ${mollysocket_run_dir}
+  install -d -m 0750 -o ${mollysocket_user} ${mollysocket_db_dir}
+}
+
+run_rc_command "$1"
+

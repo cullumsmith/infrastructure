@@ -35,13 +35,16 @@ prosody_https_cacert="${acme_cert_dir}/nginx.ca.crt"
 prosody_https_cert="${acme_cert_dir}/nginx.crt"
 prosody_https_key="${acme_cert_dir}/nginx.key"
 
+mollysocket_local_port=8081
+
 # Install required packages.
 pkg install -y \
   prosody \
   prosody-modules \
   lua54-luadbi \
   lua54-lualdap \
-  nginx
+  nginx \
+  ca_root_nss
 
 # Create ZFS dataset for HTTP upload files.
 create_dataset -o "mountpoint=${prosody_db_dir}" "${state_dataset}/prosody"
