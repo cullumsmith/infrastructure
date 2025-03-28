@@ -14,6 +14,8 @@ audio/virtual_oss
 converters/php${php_version}-iconv
 converters/php${php_version}-mbstring
 databases/luadbi
+databases/mariadb$(echo "${mariadb_version}" | tr -d '.')-client
+databases/mariadb$(echo "${mariadb_version}" | tr -d '.')-server
 databases/p5-DBD-Pg
 databases/p5-DBI
 databases/php${php_version}-pdo_pgsql
@@ -162,6 +164,7 @@ textproc/php${php_version}-xmlwriter
 textproc/py-docutils
 textproc/py-markdown
 textproc/py-pygments
+www/authelia
 www/chromium
 www/element-web
 www/fcgiwrap

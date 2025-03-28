@@ -1,0 +1,21 @@
+[mysqld]
+user                      = ${mysql_user}
+bind-address              = 0.0.0.0
+basedir                   = /usr/local
+net_retry_count           = 16384
+log_error                 = ${mysql_log_dir}/mysqld.err
+datadir                   = ${mysql_home}/data
+innodb_log_group_home_dir = ${mysql_home}/log
+log_bin                   = ${mysql_home}/log/mysql-bin
+relay_log                 = ${mysql_home}/log/relay-log
+innodb_doublewrite        = 0
+innodb_flush_method       = O_DSYNC
+plugin_load_add           = auth_gssapi
+# The new sandboxed auth_pam does not seem to work.
+plugin_load_add           = auth_pam_v1
+gssapi_keytab_path        = ${mysql_keytab}
+pam_use_cleartext_plugin
+ssl_ca                    = ${site_cacert_path}
+ssl_cert                  = ${mysql_tls_cert}
+ssl_key                   = ${mysql_tls_key}
+require_secure_transport

@@ -1,0 +1,2 @@
+auth required /usr/local/lib/security/pam_krb5.so try_first_pass no_ccache ignore_k5login keytab=${mysql_keytab}
+account required pam_permit.so

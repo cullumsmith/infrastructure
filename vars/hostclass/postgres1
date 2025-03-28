@@ -1,4 +1,0 @@
-#!/bin/sh
-
-memsize=$(( 8 * 1024 * 1024 * 1024))
-cnames=postgres

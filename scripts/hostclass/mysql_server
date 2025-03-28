@@ -1,0 +1,65 @@
+#!/bin/sh
+
+mysql_user=mysql
+mysql_home=/var/db/mysql
+mysql_tls_cert="${mysql_home}/mysql.crt"
+mysql_tls_key="${mysql_home}/mysql.key"
+mysql_keytab="${keytab_dir}/mariadb.keytab"
+mysql_conf_dir=/usr/local/etc/mysql
+mysql_log_dir=/var/log/mysql
+
+# Install packages.
+pkg install -y "mariadb$(echo "$mariadb_version" | tr -d .)-server"
+
+# Create ZFS dataset for mysql data.
+create_dataset \
+  -o "mountpoint=${mysql_home}" \
+  -o primarycache=metadata \
+  -o atime=off \
+  "${state_dataset}/mysql"
+create_dataset \
+  -o "mountpoint=${mysql_home}/data" \
+  -o recordsize=16k \
+  "${state_dataset}/mysql/data"
+create_dataset \
+  -o "mountpoint=${mysql_home}/log" \
+  "${state_dataset}/mysql/log"
+
+zfs set \
+  com.sun:auto-snapshot:daily=true \
+  com.sun:auto-snapshot:weekly=true \
+  com.sun:auto-snapshot:monthly=true \
+  "${state_dataset}/mysql/data"
+
+install_directory -m 0755 -o "$mysql_user" -g "$mysql_user" "$mysql_home"
+install_directory -m 0770 -o "$mysql_user" -g "$mysql_user" "${mysql_home}/data" "${mysql_home}/log"
+
+# Create service principal and keytab.
+add_principal -nokey -x "containerdn=${services_basedn}" "mariadb/${fqdn}"
+
+ktadd -k "$mysql_keytab" "mariadb/${fqdn}"
+chgrp "$mysql_user" "$mysql_keytab"
+chmod 640 "$mysql_keytab"
+
+mysql_uid=$(id -u "$mysql_user")
+install_directory -o "$mysql_user" -m 0700 "/var/krb5/user/${mysql_uid}"
+ln -snfv "$mysql_keytab" "/var/krb5/user/${mysql_uid}/keytab"
+
+# Copy PAM configuration.
+install_template -m 0644 /etc/pam.d/mysql
+
+# Copy TLS certificate for mysql.
+install_certificate     -m 0644 -o root -g "$mysql_user" mysql "$mysql_tls_cert"
+install_certificate_key -m 0640 -o root -g "$mysql_user" mysql "$mysql_tls_key"
+
+# Generate mysql configuration.
+install_template -m 0644 "${mysql_conf_dir}/conf.d/server.cnf"
+
+# Start mariadb.
+sysrc -v mysql_enable=YES
+service mysql-server restart
+
+cat <<EOF | mysql --batch
+CREATE USER IF NOT EXISTS '${boxconf_username}' IDENTIFIED VIA pam;
+GRANT ALL PRIVILEGES ON *.* to '${boxconf_username}' WITH GRANT OPTION;
+EOF

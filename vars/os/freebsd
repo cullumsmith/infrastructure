@@ -14,6 +14,7 @@ memsize=$(sysctl -n hw.physmem)
 export ASSUME_ALWAYS_YES=yes
 devfs_local_ruleset_name=localrules
 keytab_dir=/var/db/keytabs
+mariadb_version='11.4'
 nfscbd_port=7745
 nginx_user=www
 nginx_conf_dir=/usr/local/etc/nginx
