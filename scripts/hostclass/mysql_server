@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: ${mysql_max_packet_size:='67108864'} # 64M
+: ${mysql_max_packet_size:='134217728'} # 128M - digikam needs this for big collections
 
 mysql_user=mysql
 mysql_home=/var/db/mysql
