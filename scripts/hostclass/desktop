@@ -6,6 +6,8 @@
 : ${cups_host:='cups'}
 : ${ublock_whitelist:=''}
 : ${chrome_flags:=''}
+: ${digikam_db_users:=''}
+: ${digikam_db_host:="$mysql_host"}
 
 sddm_user=sddm
 cups_conf_dir=/usr/local/etc/cups
@@ -181,3 +183,9 @@ install_template -m 0644 /usr/local/etc/mpv/mpv.conf
 
 # Start login manager.
 service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm'
+
+# Create users for digikam db.
+for user in $digikam_db_users; do
+  mysql_create_user "$digikam_db_host" "$user" gssapi
+  mysql_create_database "$digikam_db_host" digikam "$user"
+done

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+mysql_run(){
+  MYSQL_PWD="$boxconf_password" mysql \
+    --batch \
+    --ssl-verify-server-cert \
+    --user="$boxconf_username" \
+    "$@"
+}
+
+mysql_create_user(){
+  # $1 = mysql_host, $2 = username $3 = via
+  cat <<EOF | mysql_run --host="${1}"
+CREATE USER IF NOT EXISTS '${2}' IDENTIFIED VIA ${3};
+EOF
+}
+
+mysql_create_database(){
+  # $1 = mysql_host, $2 = dbname, $3 = owner $4 = options
+  cat <<EOF | mysql_run --host="${1}"
+CREATE DATABASE IF NOT EXISTS ${2} ${4:-};
+GRANT ALL PRIVILEGES ON ${2}.* TO '${3}';
+FLUSH PRIVILEGES;
+EOF
+}

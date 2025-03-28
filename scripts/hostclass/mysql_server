@@ -1,5 +1,7 @@
 #!/bin/sh
 
+: ${mysql_max_packet_size:='67108864'} # 64M
+
 mysql_user=mysql
 mysql_home=/var/db/mysql
 mysql_tls_cert="${mysql_home}/mysql.crt"

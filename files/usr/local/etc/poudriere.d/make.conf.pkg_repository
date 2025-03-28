@@ -32,6 +32,7 @@ editors_vim_SET=CTAGS_EXUBERANT XTERM_SAVE
 editors_vim_UNSET=CTAGS_BASE
 emulators_wine_SET=CUPS
 finance_gnucash_UNSET=AQBANKING
+graphics_digikam_SET=MYSQL
 graphics_vips_UNSET=MATIO
 irc_znc_SET=CYRUS
 lang_lua53_SET=LIBEDIT_DL

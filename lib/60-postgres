@@ -9,6 +9,7 @@ postgres_run(){
     -v ON_ERROR_STOP=1 \
     "$@"
 }
+
 postgres_create_role(){
   # $1 = postgres_host, $2 = username
   cat <<EOF | postgres_run -h "${1}" -d postgres
