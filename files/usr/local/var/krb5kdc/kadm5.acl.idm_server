@@ -1,2 +1,2 @@
 */admin@${realm} * *
-${boxconf_username}@${realm} * *
+${boxconf_username}@${realm} xe *

@@ -165,6 +165,16 @@ apply Service "postgres" {
   assign where "postgresql-servers" in host.groups
 }
 
+apply Service "mysql" {
+  check_command = "mysql"
+  vars.mysql_warning = ${icinga_response_time_warn}
+  vars.mysql_critical = ${icinga_response_time_crit}
+  vars.mysql_username = "${icinga_username}"
+  vars.mysql_password = IcingaPassword
+  vars.mysql_ssl = true
+  assign where "mysql-servers" in host.groups
+}
+
 apply Service "eap-cert" {
   check_command = "eapol"
   vars.eapol_secret = IcingaRadiusSecret
@@ -231,6 +241,28 @@ apply Service for (vhost in host.vars.xmpp_vhosts) {
   vars.tcp_ctime = ${icinga_response_time_crit}
   vars.tcp_send = "<stream:stream to='" + vhost + "' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>"
   vars.tcp_expect = "<?xml version='1.0'"
+}
+
+apply Service "mollysocket" {
+  check_command = "http"
+  display_name = "mollysocket status"
+  vars.http_vhost = "\$address\$"
+  vars.http_port = 8443
+  vars.http_expect = "HTTP/1.1 200 OK"
+  vars.http_ssl = true
+  vars.http_warn_time = ${icinga_response_time_warn}
+  vars.http_critical_time = ${icinga_response_time_crit}
+  assign where ("xmpp-servers" in host.groups)
+}
+
+apply Service "mollysocket-cert" {
+  check_command = "http"
+  display_name = "mollysocket certificate"
+  vars.http_port = 8443
+  vars.http_vhost = "\$address\$"
+  vars.http_ssl = true
+  vars.http_certificate = ${icinga_cert_days_warn} + "," + ${icinga_cert_days_crit}
+  assign where ("xmpp-servers" in host.groups)
 }
 
 // Expect HTTP 200

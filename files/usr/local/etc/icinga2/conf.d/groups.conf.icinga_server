@@ -43,6 +43,11 @@ object HostGroup "postgresql-servers" {
   assign where regex("^postgres[0-9]+", host.name)
 }
 
+object HostGroup "mysql-servers" {
+  display_name = "MySQL Servers"
+  assign where regex("^mysql[0-9]+", host.name)
+}
+
 object HostGroup "dav-servers" {
   display_name = "DAV Servers"
   assign where regex("^dav[0-9]+", host.name)

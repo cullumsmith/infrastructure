@@ -61,7 +61,13 @@ install_template -m 0644 "${mysql_conf_dir}/conf.d/server.cnf"
 sysrc -v mysql_enable=YES
 service mysql-server restart
 
+# Create the boxconf superuser.
 cat <<EOF | mysql --batch
 CREATE USER IF NOT EXISTS '${boxconf_username}' IDENTIFIED VIA pam;
 GRANT ALL PRIVILEGES ON *.* to '${boxconf_username}' WITH GRANT OPTION;
+EOF
+
+# Create icinga user.
+cat <<EOF | mysql --batch
+CREATE USER IF NOT EXISTS '${icinga_username}' IDENTIFIED VIA pam;
 EOF

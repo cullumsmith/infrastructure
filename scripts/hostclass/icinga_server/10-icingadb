@@ -38,12 +38,11 @@ ldap_add "$icinga_dn" <<EOF
 objectClass: account
 objectClass: simpleSecurityObject
 uid: ${icinga_username}
-userPassword: {SSHA-512}
+userPassword: {SASL}${icinga_username}@${realm}
 EOF
-ldap_passwd "$icinga_dn" "$icinga_password"
-add_principal -nokey -x "dn=${icinga_dn}" "$icinga_username"
+add_principal -pw "$icinga_password" -x "dn=${icinga_dn}" "$icinga_username"
 
-ktadd -k "$icingaweb_client_keytab" "$icinga_username"
+ktadd -k "$icingaweb_client_keytab" -norandkey "$icinga_username"
 chgrp "$nginx_user" "$icingaweb_client_keytab"
 chmod 640 "$icingaweb_client_keytab"
 nginx_uid=$(id -u "$nginx_user")
