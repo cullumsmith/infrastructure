@@ -41,6 +41,7 @@ dns/bind-tools
 dns/nsd
 dns/powerdns
 dns/unbound
+editors/emacs
 editors/libreoffice
 editors/vim@console
 editors/vim@tiny
