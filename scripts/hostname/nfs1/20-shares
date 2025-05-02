@@ -2,7 +2,7 @@
 
 media_access_group='media-access'
 media_admin_group='media-admin'
-media_shares='music shows movies audiobooks roms books scores isos'
+media_shares='music shows movies audiobooks roms books scores isos kids'
 
 # media shares
 for share in $media_shares; do
