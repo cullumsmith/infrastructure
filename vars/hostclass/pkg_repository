@@ -3,6 +3,4 @@
 allowed_tcp_ports='ssh http https'
 nginx_redirect=false
 
-poudriere_patches='
-chromium-gssapi
-'
+poudriere_patches=''
