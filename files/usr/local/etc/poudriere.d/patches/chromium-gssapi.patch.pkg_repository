@@ -1,13 +1,13 @@
---- www/chromium/Makefile	2024-10-14 22:31:01.044557000 -0400
-+++ www/chromium/Makefile	2024-10-14 22:37:11.304192000 -0400
-@@ -144,19 +144,20 @@
+--- www/chromium/Makefile	2025-05-13 12:29:26.365339000 -0400
++++ www/chromium/Makefile	2025-05-13 12:33:29.151437000 -0400
+@@ -142,20 +142,22 @@
  SUB_FILES=	chromium-browser.desktop chrome
  SUB_LIST+=	COMMENT="${COMMENT}"
  
 -OPTIONS_DEFINE=		CODECS CUPS DEBUG DRIVER KERBEROS LTO PIPEWIRE TEST WIDEVINE
 -OPTIONS_DEFAULT=	CODECS CUPS DRIVER KERBEROS PIPEWIRE SNDIO ALSA PULSEAUDIO
 +OPTIONS_DEFINE=		CODECS CUPS DEBUG DRIVER LTO PIPEWIRE TEST WIDEVINE
-+OPTIONS_DEFAULT=	CODECS CUPS DRIVER KERBEROS PIPEWIRE SNDIO ALSA PULSEAUDIO GSSAPI_MIT
++OPTIONS_DEFAULT=	CODECS CUPS DRIVER PIPEWIRE SNDIO ALSA PULSEAUDIO GSSAPI_MIT
  OPTIONS_EXCLUDE_aarch64=LTO
  OPTIONS_GROUP=		AUDIO
  OPTIONS_GROUP_AUDIO=	ALSA PULSEAUDIO SNDIO
@@ -24,11 +24,13 @@
 +GSSAPI_NONE_DESC=	Build without GSSAPI support
 +GSSAPI_BASE_DESC=	Use GSSAPI from base
 +GSSAPI_HEIMDAL_DESC=	Use Heimdal GSSAPI from security/heimdal
-+GSSAPI_MIT_DESC=	Use MIT GSSAPI from security/krb5
++GSSAPI_MIT_DESC= 	Use MIT GSSAPI from security/krb5
  
++
  ALSA_LIB_DEPENDS=	libasound.so:audio/alsa-lib
  ALSA_RUN_DEPENDS=	${LOCALBASE}/lib/alsa-lib/libasound_module_pcm_oss.so:audio/alsa-plugins \
-@@ -189,16 +190,19 @@
+ 			alsa-lib>=1.1.1_1:audio/alsa-lib
+@@ -189,17 +191,19 @@
  
  DRIVER_MAKE_ARGS=	chromedriver
  
@@ -45,9 +47,10 @@
  
  LTO_VARS=		GN_ARGS+=use_thin_lto=true \
  			GN_ARGS+=thin_lto_enable_optimizations=true \
- 			WANTSPACE="14 GB"
+ 			WANTSPACE="40 GB" \
+ 			WANTMEM="16 GB"
  LTO_VARS_OFF=		GN_ARGS+=use_thin_lto=false
- 
+-
 -MIT_LIB_DEPENDS=	libkrb.so.3:security/krb5
  
  PIPEWIRE_DESC=		Screen capture via PipeWire
