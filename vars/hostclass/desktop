@@ -70,6 +70,7 @@ libdvdcss
 libreoffice
 libva-utils
 libvdpau-va-gl
+linux-widevine-cdm
 mpv
 neofetch
 noto-basic
@@ -78,7 +79,7 @@ password-store
 pdftk
 pim-sieve-editor
 phonon-mpv
-postgresql16-client
+postgresql${postgresql_version}-client
 pulseaudio
 py${python_version}-pip
 python
