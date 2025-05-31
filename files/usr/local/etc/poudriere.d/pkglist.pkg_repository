@@ -85,6 +85,7 @@ multimedia/smplayer
 multimedia/v4l-utils
 multimedia/v4l_compat
 multimedia/vdpauinfo
+multimedia/vlc
 multimedia/webcamd
 net-im/dino
 net-im/farstream
