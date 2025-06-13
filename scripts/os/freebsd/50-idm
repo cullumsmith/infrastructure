@@ -12,7 +12,7 @@ pkg install -y \
   cyrus-sasl-gssapi \
   nss-pam-ldapd-sasl \
   openldap26-client \
-  pam_krb5 \
+  pam_krb5-mit \
   perl5 \
   p5-perl-ldap \
   p5-Authen-SASL \

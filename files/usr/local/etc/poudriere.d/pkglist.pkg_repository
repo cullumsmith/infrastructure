@@ -3,6 +3,7 @@ archivers/php${php_version}-phar
 archivers/php${php_version}-zip
 archivers/unzip
 archivers/zip
+audio/audacity
 audio/elisa
 audio/fooyin
 audio/freedesktop-sound-theme

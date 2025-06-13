@@ -61,7 +61,7 @@ chown "$slapd_user" "$slapd_keytab"
 # Install PAM/NSS integration packages.
 pkg install -y \
   nss-pam-ldapd-sasl \
-  pam_krb5 \
+  pam_krb5-mit \
   perl5 \
   p5-perl-ldap \
   p5-Authen-SASL \
