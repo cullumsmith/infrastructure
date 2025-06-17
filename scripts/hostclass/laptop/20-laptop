@@ -36,6 +36,16 @@ case ${wireless_type:-} in
 
     sysrc -v wlans_iwm0='wlan0'
     ;;
+  iwlwifi*)
+    set_loader_conf \
+      devmatch_blocklist="if_iwm" \
+      compat.linuxkpi.iwlwifi_11n_disable="0" \
+      compat.linuxkpi.iwlwifi_disable_11ac="0"
+
+    sysrc -v wlans_iwlwifi0='wlan0'
+
+    pkg install "wifi-firmware-iwlwifi-kmod-${wireless_type#iwlwifi}"
+    ;;
 esac
 
 # Enable power saving for sound card.
@@ -43,7 +53,7 @@ set_sysctl hw.snd.latency=7
 
 # Configure wireless card.
 sysrc -v \
-  create_args_wlan0='country US regdomain FCC' \
+  create_args_wlan0='wlanmode sta country US regdomain FCC' \
   ifconfig_wlan0="WPA DHCP powersave"
 
 # Hardware-specific fixes.

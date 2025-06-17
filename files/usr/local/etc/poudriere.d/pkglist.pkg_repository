@@ -117,6 +117,7 @@ net/rsync
 net/socat
 net/syncthing
 net/turnserver
+net/wifi-firmware-iwlwifi-kmod@all
 net/wireguard-tools
 ports-mgmt/pkg
 ports-mgmt/poudriere

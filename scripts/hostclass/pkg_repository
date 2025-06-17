@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: ${poudriere_versions:='14.2-RELEASE'}
+: ${poudriere_versions:='14.3-RELEASE'}
 : ${poudriere_jobs:="$nproc"}
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='4'}

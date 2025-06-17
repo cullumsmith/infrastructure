@@ -12,11 +12,12 @@ pkg install -y \
   cyrus-sasl-gssapi \
   nss-pam-ldapd-sasl \
   openldap26-client \
-  pam_krb5-mit \
   perl5 \
   p5-perl-ldap \
   p5-Authen-SASL \
   pam_mkhomedir
+
+pkg install -y pam_krb5-mit || pkg install -y pam_krb5
 
 # Script to create /usr/local/home/${USER} on login.
 install_file -m 0555 /usr/local/libexec/pam-create-local-homedir
