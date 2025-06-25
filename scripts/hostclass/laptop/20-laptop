@@ -30,10 +30,6 @@ case ${wireless_type:-} in
       if_iwm_load=YES \
       "${wireless_type}fw_load=YES"
 
-    load_kernel_module \
-      if_iwm \
-      "${wireless_type}fw"
-
     sysrc -v wlans_iwm0='wlan0'
     ;;
   iwlwifi*)
