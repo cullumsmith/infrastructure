@@ -178,10 +178,6 @@
         "Value": false,
         "Status": "default"
       },
-      "privacy.trackingprotection.socialtracking.enabled": {
-        "Value": false,
-        "Status": "locked"
-      },
       "browser.urlbar.suggest.quicksuggest.nonsponsored": {
         "Value": false,
         "Status": "locked"
@@ -203,6 +199,10 @@
         "Status": "locked"
       },
       "browser.safebrowsing.downloads.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.newtabpage.activity-stream.feeds.section.topstories": {
         "Value": false,
         "Status": "locked"
       },

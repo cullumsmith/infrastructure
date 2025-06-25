@@ -101,11 +101,12 @@ net-mgmt/icingaweb2
 net-mgmt/icingaweb2-module-icingadb
 net-mgmt/monitoring-plugins
 net-mgmt/networkmgr
-net-mgmt/unifi8
+net-mgmt/unifi9
 net/asterisk18
 net/freeradius3
 net/lualdap
 net/nss-pam-ldapd-sasl
+net/onedrive
 net/openldap26-client
 net/openldap26-server
 net/p5-perl-ldap
@@ -113,6 +114,7 @@ net/php${php_version}-ldap
 net/php${php_version}-sockets
 net/py-matrix-synapse-ldap3
 net/py-python-ldap
+net/rclone
 net/rsync
 net/socat
 net/syncthing

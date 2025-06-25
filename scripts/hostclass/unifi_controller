@@ -7,7 +7,7 @@ unifi_https_key="${unifi_home}/data/unifi.key"
 unifi_keystore="${unifi_home}/data/keystore"
 
 # Install required packages.
-pkg install -y unifi8
+pkg install -y unifi9
 
 # Create ZFS dataset for unifi data.
 create_dataset -o "mountpoint=${unifi_home}/data" "${state_dataset}/unifi"
