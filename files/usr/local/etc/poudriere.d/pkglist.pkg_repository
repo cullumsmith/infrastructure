@@ -9,6 +9,7 @@ audio/fooyin
 audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf6
+audio/kmix
 audio/musescore
 audio/pulseaudio
 audio/virtual_oss
@@ -54,6 +55,7 @@ graphics/ImageMagick7
 graphics/digikam
 graphics/drm-kmod
 graphics/gimp
+graphics/kdegraphics
 graphics/p5-Image-ExifTool
 graphics/php${php_version}-exif
 graphics/php${php_version}-gd
@@ -73,9 +75,11 @@ mail/postfix
 mail/rspamd
 mail/sieve-connect
 mail/thunderbird
+misc/kdeutils
 misc/php${php_version}-calendar
 misc/terminfo-db
 multimedia/handbrake
+multimedia/kdemultimedia
 multimedia/libdvdcss
 multimedia/libva-intel-media-driver
 multimedia/libva-utils

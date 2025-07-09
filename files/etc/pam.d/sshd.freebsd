@@ -6,6 +6,8 @@ account   required    /usr/local/lib/security/pam_krb5.so
 account   required    pam_login_access.so nodefgroup
 account   required    pam_unix.so
 
+session   required    pam_lastlog.so    no_fail
+session   required    pam_xdg.so
 session   required    /usr/local/lib/security/pam_krb5.so
 session   required    /usr/local/lib/pam_mkhomedir.so mode=0700
 $(if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ] && [ "${enable_autofs:-}" != false ]; then
