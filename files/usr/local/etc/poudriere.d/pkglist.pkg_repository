@@ -161,7 +161,6 @@ sysutils/pwgen
 sysutils/stow
 sysutils/tmux
 sysutils/tree
-sysutils/x86info
 textproc/en-hunspell
 textproc/hs-pandoc
 textproc/jq
