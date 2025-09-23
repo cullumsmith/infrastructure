@@ -21,7 +21,7 @@ load_rc_config $name
 
 syncthing_user_rundir=/var/run/syncthing
 syncthing_user_confdir=/var/db/syncthing
-syncthing_user_args='serve --no-browser --no-upgrade --no-default-folder --logflags=0 --logfile=-'
+syncthing_user_args='serve --no-browser --no-upgrade --logflags=0 --logfile=-'
 syncthing_config_template=/usr/local/etc/syncthing.template.xml
 
 procname="/usr/local/bin/syncthing"
