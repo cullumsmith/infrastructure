@@ -31,6 +31,13 @@
   "SyncDisabled": true,
   "TranslateEnabled": false,
   "UrlKeyedAnonymizedDataCollectionEnabled": false,
+  "DefaultSearchProviderEnabled": true,
+  "DefaultSearchProviderName": "DuckDuckGo (No AI)",
+  "DefaultSearchProviderImageURL": "https://duckduckgo.com/favicon.ico",
+  "DefaultSearchProviderEncodings": ["UTF-8"],
+  "DefaultSearchProviderSearchURL": "https://noai.duckduckgo.com/?q={searchTerms}",
+  "DefaultSearchProviderSuggestURL": "https://duckduckgo.com/ac/?q={searchTerms}&type=list",
+  "DefaultSearchProviderNewTabURL": "https://duckduckgo.com/chrome_newtab",
   "ManagedBookmarks": [
     {
       "toplevel_name": "Internal"
@@ -89,7 +96,7 @@
     }
   ],
   "ExtensionSettings": {
-    "cjpalhdlnbpafiamejdnhcphjbkeiagm": {
+    "ddkjiahejlhfcafbddmgiahcphecmpfh": {
       "installation_mode": "force_installed",
       "update_url": "https://clients2.google.com/service/update2/crx"
     },
@@ -108,31 +115,22 @@
   },
   "3rdparty": {
     "extensions": {
-      "cjpalhdlnbpafiamejdnhcphjbkeiagm": {
-        "toOverwrite": {
-          "filterLists": [
-            "user-filters",
-            "ublock-filters",
-            "ublock-badware",
-            "ublock-privacy",
-            "ublock-quick-fixes",
-            "ublock-unbreak",
-            "easylist",
-            "easyprivacy",
-            "adguard-spyware-url",
-            "urlhaus-1",
-            "plowe-0",
-            "fanboy-cookiemonster",
-            "ublock-cookies-easylist",
-            "fanboy-thirdparty_social",
-            "ublock-annoyances"
-          ]
-        },
-        "toAdd": {
-          "trustedSiteDirectives": [
-            "$(join '","' "$domain" $ublock_whitelist)"
-          ]
-        }
+      "ddkjiahejlhfcafbddmgiahcphecmpfh": {
+        "disableFirstRunPage": true,
+        "defaultFiltering": "complete",
+        "noFiltering": [
+          "$(join '","' "$domain" $ublock_whitelist)"
+        ],
+        "rulesets": [
+          "+default",
+          "+annoyances-cookies",
+          "+annoyances-notifications",
+          "+annoyances-others",
+          "+annoyances-overlays",
+          "+annoyances-social",
+          "+annoyances-widgets",
+          "+adguard-spyware-url"
+        ]
       }
     }
   }
