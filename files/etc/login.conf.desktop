@@ -4,7 +4,7 @@ default:\\
 	:welcome=/var/run/motd:\\
 	:setenv=BLOCKSIZE=K,XDG_DATA_DIRS=${xdg_override_dir}\\c/usr/local/share,XDG_DATA_HOME=/usr/local/home/\$/.local/share,XDG_STATE_HOME=/usr/local/home/\$/.local/state,XDG_CACHE_HOME=/usr/local/home/\$/.cache,XDG_CONFIG_HOME=/usr/local/home/\$/.config,KDEHOME=/usr/local/home/\$/.kde:\\
 	:mail=/var/mail/\$:\\
-	:path=/sbin /bin /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin ~/bin:\\
+	:path=~/bin /usr/local/home/\$/.local/bin /sbin /bin /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin:\\
 	:nologin=/var/run/nologin:\\
 	:cputime=unlimited:\\
 	:datasize=unlimited:\\

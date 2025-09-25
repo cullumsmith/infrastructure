@@ -18,6 +18,7 @@ alias ...='cd ../..'
 alias mkdir='mkdir -p'
 alias df='df -h'
 alias du='du -ch'
+alias history='fc -l'
 
 bind ^[[A ed-search-prev-history
 bind ^[[B ed-search-next-history
