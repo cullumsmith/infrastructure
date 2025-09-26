@@ -81,6 +81,7 @@ install_file -m 0644 \
 
 # Copy SDDM config file.
 install_template -m 0644 /usr/local/etc/sddm.conf
+install_file -m 0644 /usr/local/share/sddm/theme.conf.user
 
 # Create profile script for KDE environment variables.
 install_file -m 0644 /etc/profile.d/kde.sh
