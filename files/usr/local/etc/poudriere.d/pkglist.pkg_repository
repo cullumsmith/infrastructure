@@ -86,6 +86,7 @@ multimedia/libva-utils
 multimedia/libvdpau-va-gl
 multimedia/mpv
 multimedia/phonon-mpv
+multimedia/simplescreenrecorder
 multimedia/smplayer
 multimedia/v4l-utils
 multimedia/v4l_compat
@@ -105,7 +106,7 @@ net-mgmt/icingaweb2-module-icingadb
 net-mgmt/monitoring-plugins
 net-mgmt/networkmgr
 net-mgmt/unifi9
-net/asterisk18
+net/asterisk22
 net/freeradius3
 net/lualdap
 net/nss-pam-ldapd-sasl
