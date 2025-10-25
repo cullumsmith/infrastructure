@@ -1,19 +1,15 @@
 auth      sufficient  pam_self.so no_warn
-auth      optional    /usr/local/lib/security/pam_krb5.so try_first_pass
 auth      required    pam_unix.so try_first_pass
 auth      optional    pam_kwallet5.so
 
 account   requisite   pam_securetty.so
 account   required    pam_nologin.so
-account   required    /usr/local/lib/security/pam_krb5.so
 account   required    pam_login_access.so nodefgroup
 account   required    pam_unix.so
 
 session   required    pam_lastlog.so no_fail
 session   required    pam_xdg.so no_fail
-session   required    /usr/local/lib/security/pam_krb5.so
 session   optional    /usr/local/lib/pam_mkhomedir.so mode=0700
 session   optional    pam_kwallet5.so auto_start
 
-password  optional    /usr/local/lib/security/pam_krb5.so try_first_pass
 password  required    pam_unix.so no_warn try_first_pass

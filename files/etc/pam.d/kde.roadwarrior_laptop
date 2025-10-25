@@ -1,6 +1,4 @@
-auth      optional    /usr/local/lib/security/pam_krb5.so try_first_pass
-auth      required    pam_exec.so     return_prog_exit_status expose_authtok use_first_pass /usr/local/libexec/unix-selfauth-helper
+auth      required    pam_exec.so     return_prog_exit_status expose_authtok /usr/local/libexec/unix-selfauth-helper
 
-account   required    /usr/local/lib/security/pam_krb5.so
 account   required    pam_login_access.so nodefgroup
 account   required    pam_unix.so
