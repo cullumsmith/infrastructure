@@ -48,6 +48,7 @@ editors/libreoffice
 editors/vim@console
 editors/vim@tiny
 emulators/wine
+filesystems/ntfs
 filesystems/zfstools
 finance/gnucash
 ftp/php${php_version}-curl
@@ -75,6 +76,7 @@ mail/postfix
 mail/rspamd
 mail/sieve-connect
 mail/thunderbird
+misc/findutils
 misc/kdeutils
 misc/php${php_version}-calendar
 misc/terminfo-db
@@ -148,6 +150,7 @@ security/sudo
 security/vaultwarden
 security/wpa_supplicant
 sysutils/android-file-transfer-qt5
+sysutils/coreutils
 sysutils/cpu-microcode
 sysutils/htop
 sysutils/k3b
