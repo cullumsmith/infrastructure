@@ -24,6 +24,8 @@ fi)
   root ${cgit_webroot};
   try_files \$uri @cgit;
 
+  include noai.conf;
+
   location ~ '^.+/(HEAD|info/refs|objects/(info/[^/]+|[0-9a-f]{2}/[0-9a-f]{38}|pack/pack-[0-9a-f]{40}\.(pack|idx))|git-(upload|receive)-pack)$' {
     auth_gss on;
     satisfy any;
@@ -37,6 +39,10 @@ $(printf '    deny %s;\n' $kerberized_cidrs)
     fastcgi_param GITOLITE_HTTP_HOME ${gitolite_home};
     fastcgi_param PATH /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin;
     fastcgi_pass unix:${gitolite_fcgiwrap_socket};
+  }
+
+  location /robots.txt {
+    alias ${cgit_webroot}/custom-robots.txt;
   }
 
   location /custom-style.css {

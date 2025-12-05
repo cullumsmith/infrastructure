@@ -1,0 +1,12 @@
+set \$block 0;
+if (\$http_user_agent ~* "${nginx_ai_regex}") {
+  set \$block 1;
+}
+
+if (\$request_uri = "/robots.txt") {
+  set \$block 0;
+}
+
+if (\$block) {
+  return 403;
+}

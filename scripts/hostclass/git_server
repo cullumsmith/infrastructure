@@ -94,13 +94,16 @@ install_file -m 0644 \
   "${cgit_webroot}/custom-style.css" \
   "${cgit_webroot}/custom-favicon.ico" \
   "${cgit_webroot}/custom-logo.png" \
-  "${cgit_webroot}/custom-robots.txt" \
   "${cgit_webroot}/custom-head-include.html" \
   "${cgit_webroot}/custom-header.html"
+install_template -m 0644 \
+  "${cgit_webroot}/custom-robots.txt"
 
 # Generate nginx configuration.
 install_file     -m 0644 /usr/local/etc/nginx/fastcgi_params
-install_template -m 0644 /usr/local/etc/nginx/nginx.conf
+install_template -m 0644 \
+  /usr/local/etc/nginx/nginx.conf \
+  /usr/local/etc/nginx/noai.conf
 [ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
 sysrc -v nginx_enable=YES
 service nginx restart

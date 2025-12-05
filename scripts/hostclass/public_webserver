@@ -20,7 +20,9 @@ zfs set \
   "${state_dataset}/vhosts"
 
 # Configure nginx.
-install_template -m 0644 "${nginx_conf_dir}/nginx.conf"
+install_template -m 0644 \
+  "${nginx_conf_dir}/nginx.conf" \
+  "${nginx_conf_dir}/noai.conf"
 [ -f "${nginx_conf_dir}/vhosts.conf" ] || install -Cv -m 0644 /dev/null "${nginx_conf_dir}/vhosts.conf"
 sysrc -v nginx_enable=YES
 service nginx restart
