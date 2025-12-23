@@ -22,7 +22,7 @@ install_template -m 0644 \
 if is_primary_server && ! ldap_dn_exists "$kdc_basedn"; then
   kdb5_ldap_util -P "$kdc_master_key" create -subtrees "$accounts_basedn" -sscope SUB -s
 elif ! [ -f "$kdc_master_key_path" ]; then
-  kdb5_util -P "$kdc_master_key" stash
+  /usr/local/sbin/kdb5_util -P "$kdc_master_key" stash
 fi
 
 # Start the KDC and kadmind.

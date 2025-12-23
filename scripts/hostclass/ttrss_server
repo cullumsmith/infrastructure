@@ -11,8 +11,8 @@
 ttrss_dn="uid=${ttrss_username},${robots_basedn}"
 ttrss_https_cert="${nginx_conf_dir}/ttrss.crt"
 ttrss_https_key="${nginx_conf_dir}/ttrss.key"
-ttrss_repo='https://git.tt-rss.org/fox/tt-rss.git/'
-ttrss_branch=master
+ttrss_repo='https://github.com/tt-rss/tt-rss/'
+ttrss_branch=main
 ttrss_repo_dir=/usr/local/www/tt-rss
 ttrss_keytab="${keytab_dir}/ttrss.keytab"
 ttrss_client_keytab="${keytab_dir}/ttrss.client.keytab"
@@ -92,6 +92,9 @@ install_template -m 0644 "${ttrss_repo_dir}/config.php"
 # Create postgres user and database.
 postgres_create_role "$ttrss_dbhost" "$ttrss_username"
 postgres_create_database "$ttrss_dbhost" "$ttrss_dbname" "$ttrss_username"
+
+# Allow git to run as nginx user despite mismatched webroot ownership
+git config --system --add safe.directory "$ttrss_repo_dir"
 
 # Initialize the database schema.
 su -m "$nginx_user" -c "${ttrss_repo_dir}/update.php --update-schema=force-yes"

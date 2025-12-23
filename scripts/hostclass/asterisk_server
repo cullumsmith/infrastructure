@@ -41,7 +41,7 @@ asterisk_user=asterisk
 
 # Install packages.
 pkg install -y \
-  asterisk18 \
+  asterisk22 \
   ca_root_nss
 
 # Create ZFS dataset for Asterisk DB.

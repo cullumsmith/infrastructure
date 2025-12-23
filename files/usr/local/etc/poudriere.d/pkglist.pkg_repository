@@ -9,10 +9,8 @@ audio/fooyin
 audio/freedesktop-sound-theme
 audio/gsound
 audio/kid3@kf6
-audio/kmix
 audio/musescore
 audio/pulseaudio
-audio/virtual_oss
 converters/php${php_version}-iconv
 converters/php${php_version}-mbstring
 databases/luadbi

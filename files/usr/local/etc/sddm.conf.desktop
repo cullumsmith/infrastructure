@@ -1,6 +1,8 @@
 [General]
 DisplayServer = x11
 
+# Alt-F2 (krunner) freezes the entire session under wayland.
+# https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=286592
 [Wayland]
 SessionDir = /dev/null
 

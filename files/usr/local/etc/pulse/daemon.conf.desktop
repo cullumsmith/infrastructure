@@ -1,0 +1,3 @@
+# This seems to solve lots of skipping/distortion with digikam video playback.
+default-fragments = 8
+default-fragment-size-msec = 5

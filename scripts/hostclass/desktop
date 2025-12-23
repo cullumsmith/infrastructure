@@ -191,6 +191,9 @@ for user in $digikam_db_users; do
   mysql_create_database "$digikam_db_host" digikam "$user"
 done
 
+# Fix pulseaudio choppiness
+install_file /usr/local/etc/pulse/daemon.conf
+
 # Mount linux filesystems.
 add_mountpoint(){
   awk -vpath="$1" 'BEGIN {rc=1} $2 == path {rc=0} END {exit rc}' /etc/fstab \

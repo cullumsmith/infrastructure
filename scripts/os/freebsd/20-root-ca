@@ -2,9 +2,9 @@
 
 # Create local CA certificates directory.
 install_directory -m 0755  \
-  /usr/local/etc           \
-  /usr/local/etc/ssl       \
-  /usr/local/etc/ssl/certs
+  /usr/local/share         \
+  /usr/local/share/certs   \
+  /usr/local/share/certs/trusted
 
 # Install our root CA.
 install_ca_certificate "$site_cacert_path"

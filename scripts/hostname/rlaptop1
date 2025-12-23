@@ -1,0 +1,3 @@
+#!/bin/sh
+
+set_loader_conf "exec=copy_staging enable"

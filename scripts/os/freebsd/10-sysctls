@@ -33,7 +33,7 @@ set_sysctl \
   net.inet.tcp.minmss=536 \
   net.inet.tcp.msl=2500 \
   net.inet.tcp.mssdflt=1448 \
-  net.inet.tcp.nolocaltimewait=1 \
+  net.inet.tcp.msl_local=1 \
   net.inet.tcp.path_mtu_discovery=1 \
   net.inet.tcp.recvbuf_max="$tcp_buffer_size" \
   net.inet.tcp.recvspace=65536 \
@@ -72,7 +72,7 @@ if [ "$BOXCONF_VIRTUALIZATION_TYPE" != jail ]; then
     security.bsd.unprivileged_read_msgbuf=0 \
     vfs.nfsd.enable_locallocks=1 \
     vfs.nfsd.issue_delegations=0 \
-    vfs.zfs.min_auto_ashift=12
+    vfs.zfs.vdev.min_auto_ashift=12
 
   # FreeBSD automatically scales kern.maxfilesperproc with the amount of memory.
   # On systems with large amounts of RAM, this can cause strange lags with some 

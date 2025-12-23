@@ -1,6 +1,7 @@
 #!/bin/sh
 
-: ${poudriere_versions:='14.3-RELEASE'}
+: ${poudriere_versions:='15.0-RELEASE'}
+: ${poudriere_idm_versions:='14.3-RELEASE'}
 : ${poudriere_jobs:="$nproc"}
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='4'}
@@ -41,8 +42,7 @@ install_template -m 0644 \
  "${poudriere_conf_dir}/make.conf" \
  "${poudriere_conf_dir}/idm-make.conf" \
  "${poudriere_conf_dir}/pkglist" \
- "${poudriere_conf_dir}/idm-pkglist" \
- "${poudriere_conf_dir}/i386-pkglist"
+ "${poudriere_conf_dir}/idm-pkglist"
 install_file -m 0400 /usr/local/etc/ssl/repo.key
 install_directory -m 0755 /usr/ports/distfiles
 install_directory -m 0755 -o nobody -g nobody "${poudriere_data_dir}/ccache"
@@ -87,25 +87,25 @@ for version in $poudriere_versions; do
   [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
 
   poudriere jail -u  -j "$jail"
-  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
-  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y
   poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest
   poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest -y
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
   ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
-  ln -snfv "../${jail}-latest-idm" "${poudriere_data_dir}/data/packages/${abi}/latest-idm"
+done
 
-  # Build 32-bit WINE (lol)
-  jail="$(echo "$version" | tr . _)-i386"
-  abi="FreeBSD:${version%%.*}:i386"
+for version in $poudriere_idm_versions; do
+  jail=$(echo "$version" | tr . _)
+  abi="FreeBSD:${version%%.*}:$(uname -p)"
 
-  [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -a i386 -v "$version"
-  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/i386-pkglist" -p latest
-  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/i386-pkglist" -p latest -y
+  [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
+
+  poudriere jail -u  -j "$jail"
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
-  ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
+  ln -snfv "../${jail}-latest-idm" "${poudriere_data_dir}/data/packages/${abi}/latest-idm"
 done
 
 # Clean stale distfiles and logs.

@@ -1,5 +1,15 @@
 #!/bin/sh
 
+case $BOXCONF_OS_VERSION in
+  14.*)
+    : # ok
+    ;;
+  *)
+    # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=291828
+    die "Only FreeBSD versions < 15 are supported for hostclass idm_server!"
+    ;;
+esac
+
 : ${slapd_root_dn:='cn=admin'}
 : ${slapd_replicator_dn:="cn=replicator,${basedn}"}
 : ${slapd_result_size_limit:='10000'}

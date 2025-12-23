@@ -13,7 +13,7 @@ case $BOXCONF_HOSTCLASS in
       /usr/local/etc/pkg/repos
 
     install_file -m 0644 \
-      /usr/local/etc/ssl/repo.crt \
+      /usr/local/etc/pkg/repos/repo.crt \
       /usr/local/etc/pkg/repos/FreeBSD.conf
 
     install_template -m 0644 /usr/local/etc/pkg/repos/onprem.conf

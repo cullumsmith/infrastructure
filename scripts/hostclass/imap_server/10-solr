@@ -1,6 +1,6 @@
 #!/bin/sh
 
-: ${solr_version:='9.8.1'}
+: ${solr_version:='9.10.0'}
 
 solr_uid=161
 solr_user=solr

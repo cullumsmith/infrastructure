@@ -5,5 +5,5 @@ ${site}: {
   enabled: yes,
   url: "http://${pkg_host}/\${ABI}/latest-idm",
   signature_type: "pubkey",
-  pubkey: "/usr/local/etc/ssl/repo.crt"
+  pubkey: "/usr/local/etc/pkg/repos/repo.crt"
 }
