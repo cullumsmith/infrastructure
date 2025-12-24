@@ -51,7 +51,6 @@ misc_kdeedu_UNSET=KITEN
 misc_kdeutils_UNSET=FILELIGHT KTEATIME KDF
 multimedia_ffmpeg_SET=OPENSSL VIDSTAB
 multimedia_ffmpeg_UNSET=GNUTLS
-multimedia_kdemultimedia_SET=KMIX
 multimedia_kdenlive_UNSET=DVDWIZARD
 multimedia_mpv_SET=CDIO LIBBLURAY
 multimedia_mpv_UNSET=NVDEC

@@ -222,7 +222,8 @@ Options:
     'syslogd_flags=-ss' \
     'sendmail_enable=NONE' \
     'dumpdev=NO' \
-    'pf_enable=YES'
+    'pf_enable=YES' \
+    'zfs_enable=YES'
 
   echo "$DEFAULT_PF_CONF" > "${JAIL_HOME}/${name}/os/etc/pf.conf"
 
@@ -257,12 +258,9 @@ ${name} {
   host.hostname = "\$name.${domain}";
 
   exec.prestart  = "jailctl _create-epair \$name vlan${vlan} bridge${vlan}";
-  exec.created   = "zfs set jailed=on ${JAIL_DATASET}/\$name/data";
-  exec.created  += "zfs jail \$name ${JAIL_DATASET}/\$name/data";
-  exec.start     = "zfs mount -a";
+  exec.prestart += "zfs set jailed=on ${JAIL_DATASET}/\$name/data";
   exec.start    += "/bin/sh /etc/rc";
   exec.stop      = "/bin/sh /etc/rc.shutdown";
-  exec.stop     += "zfs list -Ho name,jailed,mounted | awk '\$2 == \\"on\\" && \$3 == \\"yes\\" {print \$1}' | xargs -rtn1 zfs unmount";
   exec.poststop  = "jailctl _destroy-epair \$name";
   exec.poststop += "rctl -r jail:\$name:";
   exec.clean;
@@ -277,6 +275,8 @@ ${name} {
   allow.mount     = true;
   allow.mount.zfs = true;
   enforce_statfs  = 1;
+
+  zfs.dataset = "${JAIL_DATASET}/\$name/data";
 
   vnet;
   vnet.interface = "ej_${epair_name}";
@@ -788,7 +788,8 @@ cmd::reprovision(){
     'syslogd_flags=-ss' \
     'sendmail_enable=NONE' \
     'dumpdev=NO' \
-    "pf_enable=YES"
+    'pf_enable=YES' \
+    'zfs_enable=YES'
 
   [ -n "$old_defaultrouter" ] && sysrc -f "${JAIL_HOME}/${jail}/os/etc/rc.conf" "defaultrouter=${old_defaultrouter}"
 
@@ -1033,10 +1034,6 @@ jail::exists(){
   test -f "${JAIL_HOME}/${1}/jail.conf"
 }
 
-jail::restart(){
-  jail -v -f "${JAIL_HOME}/${1}/jail.conf" -rc "$1"
-}
-
 jail::running(){
   jls -j "$1" > /dev/null 2>&1
 }
@@ -1047,6 +1044,11 @@ jail::start(){
 
 jail::stop(){
   jail -v -f "${JAIL_HOME}/${1}/jail.conf" -r "$1"
+}
+
+jail::restart(){
+  jail::stop  "$1"
+  jail::start "$1"
 }
 
 template::exists(){
