@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # PROVIDE: invidious
-# REQUIRE: NETWORKING inv_sig_helper
+# REQUIRE: NETWORKING invidious_companion
 # KEYWORD: shutdown
 
 . /etc/rc.subr
@@ -33,9 +33,27 @@ ${invidious_dir}/invidious"
 
 procname="${invidious_dir}/invidious"
 start_precmd=invidious_prestart
+stop_postcmd=invidious_poststop
 
 invidious_prestart(){
   install -d -m 0755 -o ${invidious_user} /var/run/invidious
+}
+
+invidious_poststop(){
+  # This should not be necessary, but there appears to be a bug in pwait (?!)
+  # When restarting this daemon, pwait returns even though the companion PID is
+  # still running, causing the start job to fail.
+  # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293183
+  for i in $(seq 5); do
+    pid=$(check_pidfile "$pidfile" "$procname")
+    
+    if [ -z "$pid" ]; then
+      return
+    else
+      echo "pwait bug..."
+      sleep 1
+    fi
+  done
 }
 
 run_rc_command "$1"

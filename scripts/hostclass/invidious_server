@@ -11,18 +11,20 @@
 : ${invidious_fqdn:="$fqdn"}
 : ${invidious_repo='https://github.com/iv-org/invidious'}
 : ${invidious_branch='master'}
-: ${invidious_sighelper_repo='https://github.com/iv-org/inv_sig_helper'}
-: ${invidious_sighelper_branch='master'}
+: ${invidious_companion_repo='https://github.com/iv-org/invidious-companion'}
+: ${invidious_companion_branch='master'}
+: ${invidious_companion_port='8282'}
+: ${invidious_companion_secret_key='changeme'}
 
 invidious_dn="uid=${invidious_username},${robots_basedn}"
 invidious_local_username=$nginx_user
 invidious_home=/usr/local/invidious
 invidious_port=8080
 invidious_repo_dir="${invidious_home}/invidious.git"
-invidious_sighelper_repo_dir="${invidious_home}/inv_sig_helper.git"
+invidious_companion_repo_dir="${invidious_home}/invidious-companion.git"
+invidious_companion_cache_dir=/var/db/invidious-companion
 invidious_https_cert="${nginx_conf_dir}/invidious.crt"
 invidious_https_key="${nginx_conf_dir}/invidious.key"
-invidious_signature_sock=/var/run/invidious/inv_sig_helper.sock
 
 # Install required packages.
 pkg install -y \
@@ -33,7 +35,8 @@ pkg install -y \
   sqlite3 \
   nginx \
   postgresql${postgresql_version}-client \
-  rust
+  deno \
+  gmake
 
 # Create invidious user account.
 ldap_add "$invidious_dn" <<EOF
@@ -53,17 +56,20 @@ postgres_create_database "$invidious_dbhost" "$invidious_dbname" "$invidious_use
 # Create invidious home directory.
 install_directory -o "$invidious_local_username" -g "$invidious_local_username" -m 0775 "$invidious_home"
 
-# Clone sighelper git repo.
-[ -d "${invidious_sighelper_repo_dir}" ] || su -m "$invidious_local_username" -c \
-  "git clone ${invidious_sighelper_repo} ${invidious_sighelper_repo_dir}"
+# Clone invidious-companion git repo.
+[ -d "${invidious_companion_repo_dir}" ] || su -m "$invidious_local_username" -c \
+  "git clone ${invidious_companion_repo} ${invidious_companion_repo_dir}"
 
-# Update sighelper git repo.
-su -m "$invidious_local_username" -c "git -C ${invidious_sighelper_repo_dir} pull --ff-only"
-su -m "$invidious_local_username" -c "git -C ${invidious_sighelper_repo_dir} switch ${invidious_sighelper_branch}"
+# Update invidious-companion git repo.
+su -m "$invidious_local_username" -c "git -C ${invidious_companion_repo_dir} pull --ff-only"
+su -m "$invidious_local_username" -c "git -C ${invidious_companion_repo_dir} switch ${invidious_companion_branch}"
 
-# Build sighelper.
-( cd "$invidious_sighelper_repo_dir"
-  su -m "$invidious_local_username" -c "HOME=${invidious_home} cargo build --release"
+# Build invidious-companion.
+# `deno task` is busted on FreeBSD, so we must hardcode the build incantation into a custom script
+#  https://github.com/denoland/deno/issues/31087
+install_template -m 0555 /usr/local/libexec/invidious-companion-build
+( cd "$invidious_companion_repo_dir"
+  su -m "$invidious_local_username" -c /usr/local/libexec/invidious-companion-build
 )
 
 # Clone invidious git repo.
@@ -76,17 +82,17 @@ su -m "$invidious_local_username" -c "git -C ${invidious_repo_dir} switch ${invi
 
 # Build invidious.
 ( cd "$invidious_repo_dir"
-  su -m "$invidious_local_username" -c "HOME=${invidious_home} shards install --production"
-  su -m "$invidious_local_username" -c "HOME=${invidious_home} crystal build src/invidious.cr --release"
+  su -m "$invidious_local_username" -c "HOME=${invidious_home} SSL_CERT_DIR=/etc/ssl/certs gmake"
 )
 
 # Copy invidious configuration.
 install_template -o "$invidious_local_username" -g "$invidious_local_username" -m 0600 "${invidious_repo_dir}/config/config.yml"
+install_template -o "$invidious_local_username" -g "$invidious_local_username" -m 0600 "${invidious_companion_repo_dir}/config/config.toml"
 
 # Copy invidious rc script.
 install_file -m 0555 \
   /usr/local/etc/rc.d/invidious \
-  /usr/local/etc/rc.d/inv_sig_helper
+  /usr/local/etc/rc.d/invidious_companion
 
 # Copy TLS certificate for nginx.
 install_certificate     invidious "$invidious_https_cert"
@@ -100,15 +106,16 @@ install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
 
 # Start daemons.
 sysrc -v \
-  inv_sig_helper_enable=YES \
+  invidious_companion_enable=YES \
   invidious_enable=YES \
+  invidious_env="SSL_CERT_DIR=/etc/ssl/certs" \
   nginx_enable=YES
-service inv_sig_helper restart
+service invidious_companion restart
 service invidious restart
 service nginx restart
 
 # Copy invidous auto-update script.
 install_file -m 0555 \
   /usr/local/libexec/invidious-update \
-  /usr/local/libexec/invidious-sighelper-update
+  /usr/local/libexec/invidious-companion-update
 install_template -m 0644 /etc/cron.d/invidious

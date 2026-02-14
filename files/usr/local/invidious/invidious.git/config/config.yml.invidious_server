@@ -14,9 +14,10 @@ popular_enabled: false
 captcha_enabled: false
 check_tables: true
 cache_annotations: true
-po_token: ${invidious_po_token}
-visitor_data: ${invidious_visitor_data}
-signature_server: ${invidious_signature_sock}
+invidious_companion:
+  - private_url: "http://127.0.0.1:${invidious_companion_port}/companion"
+  - public_url: "https://${invidious_fqdn}/companion"
+invidious_companion_key: ${invidious_companion_secret_key}
 
 default_user_preferences:
   dark_mode: auto

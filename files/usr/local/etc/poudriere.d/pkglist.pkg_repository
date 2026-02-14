@@ -175,6 +175,7 @@ textproc/py-markdown
 textproc/py-pygments
 www/authelia
 www/chromium
+www/deno
 www/element-web
 www/fcgiwrap
 www/firefox

@@ -1,0 +1,9 @@
+[server]
+port = ${invidious_companion_port}
+host = "127.0.0.1"
+base_path = "/companion"
+secret_key = "${invidious_companion_secret_key}"
+ 
+[cache]
+enabled = true
+directory = "${invidious_companion_cache_dir}"

@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# PROVIDE: invidious_companion
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=invidious_companion
+rcvar=invidious_companion_enable
+
+load_rc_config "$name"
+
+: ${invidious_companion_enable:='NO'}
+: ${invidious_companion_dir:='/usr/local/invidious/invidious-companion.git'}
+: ${invidious_companion_user='www'}
+: ${invidious_companion_syslog_priority:='info'}
+: ${invidious_companion_syslog_facility:='daemon'}
+: ${invidious_companion_cache_dir:='/var/db/invidious-companion'}
+
+invidious_companion_syslog_tag=invidious_companion
+
+invidious_companion_chdir=$invidious_companion_dir
+pidfile=/var/run/invidious-companion/invidious_companion.pid
+command=/usr/sbin/daemon
+
+command_args="-f \
+-s ${invidious_companion_syslog_priority} \
+-l ${invidious_companion_syslog_facility} \
+-T ${invidious_companion_syslog_tag} \
+-p ${pidfile} \
+-t invidious_companion \
+${invidious_companion_dir}/invidious_companion"
+
+procname="${invidious_companion_dir}/invidious_companion"
+start_precmd=invidious_companion_prestart
+stop_postcmd=invidious_companion_poststop
+
+invidious_companion_prestart(){
+  install -d -m 0755 -o ${invidious_companion_user} /var/run/invidious-companion
+  install -d -m 0755 -o ${invidious_companion_user} "$invidious_companion_cache_dir"
+}
+
+invidious_companion_poststop(){
+  # This should not be necessary, but there appears to be a bug in pwait (?!)
+  # When restarting this daemon, pwait returns even though the companion PID is
+  # still running, causing the start job to fail.
+  # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293182
+  for i in $(seq 5); do
+    pid=$(check_pidfile "$pidfile" "$procname")
+    
+    if [ -z "$pid" ]; then
+      return
+    else
+      echo "pwait bug..."
+      sleep 1
+    fi
+  done
+}
+
+run_rc_command "$1"
