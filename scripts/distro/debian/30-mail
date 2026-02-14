@@ -1,0 +1,12 @@
+#!/bin/sh
+
+install_package postfix
+
+install_template \
+  /etc/postfix/main.cf \
+  /etc/aliases
+
+newaliases
+
+systemctl enable postfix
+systemctl restart postfix

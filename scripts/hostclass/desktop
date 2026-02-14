@@ -1,15 +1,12 @@
 #!/bin/sh
 
 : ${desktop_access_gid:='40000'}
-: ${sddm_min_uid:='10000'}
-: ${sddm_max_uid:='19999'}
 : ${cups_host:='cups'}
 : ${ublock_whitelist:=''}
 : ${chrome_flags:=''}
 : ${digikam_db_users:=''}
 : ${digikam_db_host:="$mysql_host"}
 
-sddm_user=sddm
 cups_conf_dir=/usr/local/etc/cups
 
 if [ "${enable_idm:-}" = false ]; then
@@ -68,26 +65,14 @@ service webcamd status || service webcamd start
 install_file -m 0644 /usr/local/etc/xdg/autostart/nss-trust-root-ca.desktop
 install_file -m 0555 /usr/local/libexec/nss-trust-root-ca
 
-# Add sddm user to drm access group.
-pw groupmod "$desktop_access_role" -m "$sddm_user"
-
 # Install gajim desktop file.
 install_file -m 0644 /usr/local/share/applications/gajim.desktop
 
 # Configure pam services.
-install_file -m 0644 \
-  /etc/pam.d/sddm \
-  /etc/pam.d/kde
-
-# Copy SDDM config file.
-install_template -m 0644 /usr/local/etc/sddm.conf
-install_file -m 0644 /usr/local/share/sddm/theme.conf.user
+install_file -m 0644 /etc/pam.d/kde
 
 # Create profile script for KDE environment variables.
 install_file -m 0644 /etc/profile.d/kde.sh
-
-# Create SDDM local homedir.
-install_directory -o sddm -g sddm -m 0700 /usr/local/home/sddm
 
 # Create shutdown script to cleanup lingering processes.
 install_directory -m 0755 \
@@ -105,8 +90,13 @@ install_file -m 0644 /usr/local/etc/xdg/baloofilerc
 # VT switch causes loss of graphics acceleration: https://github.com/freebsd/drm-kmod/issues/175
 install_file -m 0644 /usr/local/etc/xdg/kdeglobals
 
-# Enable sddm.
-sysrc -v sddm_enable=YES
+# Configure ly console login manager.
+sysrc -v sddm_enable=NO
+install_file -m 0644 \
+  /etc/gettytab \
+  /etc/ttys \
+  /usr/local/etc/ly/config.ini \
+  /etc/pam.d/ly
 
 # Tune sysctls for desktop usage.
 set_sysctl \
@@ -181,9 +171,6 @@ set_sysctl kern.vt.suspendswitch="${vt_suspendswitch:-1}"
 
 # Generate mpv configuration.
 install_template -m 0644 /usr/local/etc/mpv/mpv.conf
-
-# Start login manager.
-service sddm status || service sddm start > /dev/null 2>&1 < /dev/null || die 'failed to start sddm'
 
 # Create users for digikam db.
 for user in $digikam_db_users; do

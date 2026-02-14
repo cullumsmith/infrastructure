@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if [ "$BOXCONF_HOSTCLASS" = nfs_server ] || \
+   [ "${enable_idm:-}" = false ] || \
+   [ "${enable_autofs:-}" = false ]; then
+  return 0
+fi
+
+install_package \
+  autofs \
+  autofs-ldap
+
+install_template -m 0644 \
+  /etc/auto_master \
+  /etc/autofs_ldap_auth.conf \
+  /etc/autofs.conf
+install_template -m 0600 \
+  /etc/autofs_ldap_auth.conf
+
+systemctl enable --now autofs.service
+systemctl restart autofs.service

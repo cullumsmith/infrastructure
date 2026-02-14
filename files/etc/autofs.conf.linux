@@ -1,0 +1,20 @@
+[autofs]
+master_map_name = /etc/auto_master
+timeout = 300
+mount_verbose = yes
+browse_mode = yes
+logging = verbose
+disable_not_found_message = yes
+nount_nfs_default_protocol = 4
+
+ldap_uri = ${ldap_uri}
+search_base = ${automount_basedn}
+map_object_class = automountMap
+entry_object_class = automount
+map_attribute = automountMapName
+entry_attribute = automountKey
+value_attribute= automountInformation
+auto_conf_file = /etc/autofs_ldap_auth.conf
+
+[ amd ]
+dismount_interval = 300

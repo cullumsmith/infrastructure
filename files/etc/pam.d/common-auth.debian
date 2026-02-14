@@ -1,0 +1,4 @@
+auth [success=2 default=ignore] pam_krb5.so
+auth [success=1 default=ignore] pam_unix.so try_first_pass nullok
+auth requisite pam_deny.so
+auth required  pam_permit.so

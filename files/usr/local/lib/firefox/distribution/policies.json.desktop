@@ -219,10 +219,6 @@
       "browser.newtabpage.activity-stream.feeds.section.topstories": {
         "Value": false,
         "Status": "locked"
-      },
-      "media.cubeb.backend": {
-        "Value": "oss",
-        "Status": "locked"
       }
     }
   }

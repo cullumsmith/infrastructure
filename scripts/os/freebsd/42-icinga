@@ -4,7 +4,7 @@ if [ "$BOXCONF_HOSTCLASS" = icinga_server ]; then
   return 0
 fi
 
-pkg install -y monitoring-plugins
+install_package monitoring-plugins
 
 add_user \
   -c 'Icinga pseudo-user' \

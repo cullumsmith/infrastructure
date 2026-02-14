@@ -1,6 +1,6 @@
 #!/bin/sh
 
-nfs_mount_opts='-nfsv4,gssname=host,sec=krb5p'
+nfs_mount_opts='-nfsv4,gssname=host,sec=sys,vers=4,port=2049,proto=tcp'
 
 # /home: auto_home
 ldap_add "automountKey=/home,automountMapName=auto_master,${automount_basedn}" <<EOF

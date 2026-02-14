@@ -1,0 +1,4 @@
+#!/bin/sh
+
+install_ca_certificate "$site_cacert_path"
+update-ca-certificates

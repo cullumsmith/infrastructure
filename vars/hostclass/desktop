@@ -18,9 +18,6 @@ enable_serial_console=false
 # UID/GID hiding breaks consolekit and KDE screen locker.
 see_other_uids=1
 
-# Chromium seems to need this to enable VAAPI video decoding on intel.
-chrome_flags='--enable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan'
-
 # Default mpv configs
 mpv_vo=gpu-next
 mpv_direct_rendering=yes
@@ -36,13 +33,14 @@ gsound"
 # kwalletd requires socat?
 desktop_packages="
 ${gajim_packages}
-android-file-transfer-qt5
+android-file-transfer
 android-tools
 bind-tools
 ca_root_nss
 cantarell-fonts
 chromium
 digikam
+dino
 droid-fonts-ttf
 eclipse
 elisa
@@ -56,6 +54,7 @@ git
 gnupg
 gtksourceview4
 handbrake
+haruna
 hs-pandoc
 inconsolata-ttf
 jq
@@ -80,13 +79,13 @@ password-store
 pdftk
 pim-sieve-editor
 phonon-mpv
+plasma6-breeze-gtk
 postgresql${postgresql_version}-client
 pulseaudio
 py${python_version}-pip
 python
 roboto-fonts-ttf
 rsync
-sddm
 signal-desktop
 sndio
 socat
@@ -99,7 +98,6 @@ tree
 ubuntu-font
 v4l-utils
 v4l_compat
-vlc
 vdpauinfo
 webcamd
 webfonts 

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+old_md5=$(md5sum /etc/default/grub)
+
+install_template -m 0644 /etc/default/grub
+new_md5=$(md5sum /etc/default/grub)
+
+update-grub
+
+if [ "$old_md5" != "$new_md5" ]; then
+  BOXCONF_NEED_REBOOT=true
+fi

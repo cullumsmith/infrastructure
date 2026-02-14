@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<autofs_ldap_sasl_conf
+        usetls="no"
+        tlsrequired="no"
+        authrequired="yes"
+        authtype="GSSAPI"
+        clientprinc="host/${fqdn}@${realm}"
+/>

@@ -1,0 +1,12 @@
++:root:ALL
++:${icinga_local_user}:ALL
+$(if [ -n "${login_access_groups:-}" ] || [ -n "${login_access_users:-}" ]; then
+  printf -- '-:ALL EXCEPT '
+if [ -n "${login_access_groups:-}" ]; then
+  printf    '(%s) ' ${login_access_groups}
+fi
+if [ -n "${login_access_users:-}" ]; then
+  printf    '%s ' ${login_access_users}
+fi
+  printf    ':ALL\n'
+fi)

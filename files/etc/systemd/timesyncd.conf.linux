@@ -1,0 +1,3 @@
+[Time]
+NTP=${ntp_servers:-} ${ntp_pools:-}
+FallbackNTP=

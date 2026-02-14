@@ -1,0 +1,3 @@
+#!/bin/sh
+
+timedatectl set-timezone "$timezone"

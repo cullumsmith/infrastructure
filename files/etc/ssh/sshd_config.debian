@@ -1,0 +1,17 @@
+Include /etc/ssh/sshd_config.d/*.conf
+
+AcceptEnv LANG LC_*
+PermitRootLogin prohibit-password
+AuthorizedKeysFile .ssh/authorized_keys
+AuthorizedKeysCommand /usr/local/libexec/idm-ssh-authorized-keys %u
+AuthorizedKeysCommandUser ${ssh_authzkeys_username}
+
+KbdInteractiveAuthentication no
+PasswordAuthentication yes
+
+GSSAPIAuthentication yes
+GSSAPICleanupCredentials yes
+UsePAM yes
+UseDNS no
+
+Subsystem	sftp	/usr/lib/openssh/sftp-server

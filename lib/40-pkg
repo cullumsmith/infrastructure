@@ -1,0 +1,19 @@
+#!/bin/sh
+
+install_package(){
+  case $BOXCONF_DISTRO in
+    freebsd)
+      pkg install -y "$@"
+      ;;
+    debian)
+      [ -f /var/cache/apt/pkgcache.bin ] || apt-get update -y
+      DEBIAN_FRONTEND=noninteractive apt-get -y \
+        -o APT::Install-Recommends=false \
+        -o APT::Install-Suggests=false \
+        install "$@"
+    ;;
+    *)
+      die "install_package unimplemented for ${BOXCONF_OS}"
+      ;;
+  esac
+}

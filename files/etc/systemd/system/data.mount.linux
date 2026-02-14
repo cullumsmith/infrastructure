@@ -1,0 +1,12 @@
+[Unit]
+Description=Boxconf data mount
+
+[Mount]
+What=/dev/disk/by-uuid/$(blkid "$data_partition" -s UUID -o value)
+Where=${data_mountpoint}
+Type=ext4
+Options=defaults,rw,relatime,discard
+TimeoutSec=10
+
+[Install]
+WantedBy=multi-user.target

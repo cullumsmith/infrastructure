@@ -1,0 +1,16 @@
+auth optional pam_faildelay.so delay=3000000
+auth requisite pam_nologin.so
+@include common-auth
+auth optional pam_group.so
+account required pam_access.so nodefgroup
+@include common-account
+session [success=ok ignore=ignore module_unknown=ignore default_bad] pam_selinux.so close
+session required pam_loginuid.so
+session [success=ok ignore=ignore module_unknown=ignore default_bad] pam_selinux.so open
+session required pam_env.so readenv=1
+session required pam_env.so readenv=1 envfile=/etc/default/locale
+session required pam_limits.so
+session optional pam_keyinit.so force revoke
+@include common-session
+session optional pam_exec.so /usr/local/libexec/pam-create-local-homedir
+@include common-password

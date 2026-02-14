@@ -1,0 +1,23 @@
+debug-level 0
+paranoia no
+
+enable-cache           passwd     yes
+positive-time-to-live  passwd     ${nscd_ttl}
+negative-time-to-live  passwd     ${nscd_negative_ttl}
+suggested-size         passwd     211
+max-db-size            passwd     33554432
+
+enable-cache           group      yes
+positive-time-to-live  group      ${nscd_ttl}
+negative-time-to-live  group      ${nscd_negative_ttl}
+suggested-size         group      211
+max-db-size            group      33554432
+
+enable-cache           services   yes
+positive-time-to-live  services   ${nscd_ttl}
+negative-time-to-live  services   ${nscd_negative_ttl}
+suggested-size         services   211
+max-db-size            services   33554432
+
+enable-cache           netgroup   no
+enable-cache           hosts      no

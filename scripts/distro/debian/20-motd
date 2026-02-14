@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Disable motd.
+rm -f /etc/motd

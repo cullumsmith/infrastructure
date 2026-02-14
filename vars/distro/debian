@@ -1,0 +1,8 @@
+#!/bin/sh
+
+data_mountpoint=/data
+nslcd_user=nslcd
+site_cacert_path=/usr/local/share/ca-certificates/ca.crt
+keytab_dir="${data_mountpoint}/keytabs"
+ssh_host_key_dir="${data_mountpoint}/ssh"
+grub_cmdline="ipv6.disable=1 console=tty0 console=ttyS0,115200 earlyprintk=ttyS0,115200 consoleblank=0"

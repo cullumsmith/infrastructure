@@ -1,0 +1,10 @@
+biff = no
+mydestination =
+relayhost = [${smtp_host}]
+mynetworks_style = host
+inet_interfaces = loopback-only
+smtp_tls_CAfile = ${site_cacert_path}
+smtp_tls_security_level = may
+virtual_alias_maps = hash:/etc/aliases
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+inet_protocols = ipv4

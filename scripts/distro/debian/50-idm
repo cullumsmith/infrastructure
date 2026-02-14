@@ -1,0 +1,139 @@
+#!/bin/sh
+
+if [ "${idm_bootstrap:-}" = true ] || [ "${enable_idm:-}" = false ]; then
+  return 0
+fi
+
+install_package \
+  krb5-user \
+  ldap-utils \
+  libldap-common \
+  libnss-ldapd \
+  libpam-krb5 \
+  libsasl2-modules-gssapi-mit \
+  nscd \
+  nslcd \
+  libnet-ldap-perl \
+  libauthen-sasl-perl \
+  libgssapi-perl \
+  sudo-ldap
+
+install_template -m 0644 \
+  /etc/krb5.conf \
+  /etc/nscd.conf \
+  /etc/nslcd.conf \
+  /etc/ldap/ldap.conf \
+  /etc/security/access.conf
+
+install_file -m 0644 \
+  /etc/nsswitch.conf \
+  /etc/pam.d/common-auth \
+  /etc/pam.d/common-account \
+  /etc/pam.d/common-session \
+  /etc/pam.d/common-session-noninteractive \
+  /etc/pam.d/common-password \
+  /etc/pam.d/login \
+  /etc/pam.d/sshd
+
+install_directory -m 0755 /usr/local/etc/openldap
+ln -snfv /etc/ldap/ldap.conf /etc/sudo-ldap.conf
+ln -snfv /etc/ldap/ldap.conf /usr/local/etc/openldap/ldap.conf
+
+install_directory -m 0755 "$keytab_dir"
+
+# Script to create /usr/local/home/${USER} on login.
+install_directory -m 0755 "${data_mountpoint}/home"
+ln -snfv "${data_mountpoint}/home" /usr/local/home
+install_file -m 0555 /usr/local/libexec/pam-create-local-homedir
+
+# Create host object (if it doesn't exist).
+ldap_add "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+objectClass: device
+objectClass: domainRelatedObject
+objectClass: ldapPublicKey
+cn: ${BOXCONF_HOSTNAME}
+associatedDomain: ${fqdn}
+$(cat /etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+description: Debian ${BOXCONF_OS_VERSION} ${BOXCONF_HOSTCLASS}
+EOF
+
+# Create A record.
+ldap_add "dc=${BOXCONF_HOSTNAME},dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${BOXCONF_HOSTNAME}
+aRecord: ${BOXCONF_DEFAULT_IPV4}
+associatedDomain: ${fqdn}
+EOF
+
+# Create PTR record.
+rdns=$(ip2rdns "$BOXCONF_DEFAULT_IPV4")
+ldap_add "dc=${rdns%%.*},dc=${rdns#*.},${dns_basedn}" <<EOF
+objectClass: dNSDomain2
+objectClass: domainRelatedObject
+dc: ${rdns%%.*}
+pTRRecord: ${fqdn}
+associatedDomain: ${rdns}
+EOF
+
+# Create CNAME records.
+for cname in ${cnames:-}; do
+  ldap_add "dc=${cname},dc=${domain},${dns_basedn}" <<EOF
+objectClass: dNSDomain
+objectClass: domainRelatedObject
+dc: ${cname}
+cNAMERecord: ${fqdn}
+associatedDomain: ${cname}.${domain}
+EOF
+done
+
+# Update attributes that may have changed.
+ldap_modify "cn=${BOXCONF_HOSTNAME},${hosts_basedn}" <<EOF
+replace: sshPublicKey
+$(cat /etc/ssh/ssh_host_*_key.pub | cut -d' ' -f-2 | sed 's/^/sshPublicKey: /')
+-
+replace: description
+description: Debian ${BOXCONF_OS_VERSION} ${BOXCONF_HOSTCLASS}
+EOF
+
+# Create host principal and keytab.
+add_principal -nokey -x "dn=cn=${BOXCONF_HOSTNAME},${hosts_basedn}" "host/${fqdn}"
+ktadd -k "${keytab_dir}/host.keytab" "host/${fqdn}"
+ln -snfv "${keytab_dir}/host.keytab" /etc/krb5.keytab
+
+# Create local group for host keytab access.
+add_group -g "$host_keytab_gid" "$host_keytab_groupname"
+chgrp "$host_keytab_groupname" "${keytab_dir}/host.keytab"
+chmod 640 "${keytab_dir}/host.keytab"
+usermod -a -G "$host_keytab_groupname" "$nslcd_user"
+
+# Create symlinks so host keytab can be used to aquire a TGT on-the-fly.
+nslcd_uid=$(id -u "$nslcd_user")
+install_directory -m 0755 \
+  /var/lib/krb5 \
+  /var/lib/krb5/user
+
+install_directory -o "$nslcd_user" -m 0700 "/var/krb5/user/${nslcd_uid}"
+ln -snfv "${keytab_dir}/host.keytab" "/var/krb5/user/${nslcd_uid}/client.keytab"
+
+install_directory -o "$ssh_authzkeys_uid" -m 0700 "/var/krb5/user/${ssh_authzkeys_uid}"
+ln -snfv "${keytab_dir}/host.keytab" "/var/krb5/user/${ssh_authzkeys_uid}/client.keytab"
+
+install_directory -o root -m 0700 /var/krb5/user/0
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/keytab
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/client.keytab
+
+# Copy IDM helper scripts for SSH.
+install_file -m 0555 \
+  /usr/local/libexec/idm-ssh-known-hosts \
+  /usr/local/libexec/idm-ssh-authorized-keys
+
+# Create user for running SSH AuthorizedKeysCommand.
+add_user \
+  -u "$ssh_authzkeys_uid" \
+  -g "$host_keytab_groupname" \
+  -d /nonexistent \
+  "$ssh_authzkeys_username"
+
+systemctl enable  nscd.service nslcd.service
+systemctl restart nscd.service nslcd.service

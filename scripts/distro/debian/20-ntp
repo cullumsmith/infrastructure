@@ -1,0 +1,7 @@
+#!/bin/sh
+
+install_template -m 0644 /etc/systemd/timesyncd.conf
+
+timedatectl set-local-rtc false
+timedatectl set-ntp true
+systemctl restart systemd-timesyncd

@@ -21,7 +21,9 @@ sysrc -v \
   nfs_client_enable=YES \
   nfscbd_enable=NO \
   nfscbd_flags="-p ${nfscbd_port} -P host" \
-  autofs_enable=YES
+  autofs_enable=YES \
+  automount_env="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin" \
+  automountd_env="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin" \
 
 install_file -m 0644 /etc/auto_master
 install_file -m 0555 /usr/local/libexec/idm-autofs-map

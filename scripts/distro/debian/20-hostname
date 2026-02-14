@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Set the fully qualified hostname.
+hostnamectl hostname "${BOXCONF_HOSTNAME}.${domain}"
+install_template -m 0644 /etc/hosts

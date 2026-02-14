@@ -1,0 +1,25 @@
+#!/bin/sh
+
+install_directory -m 0755 "$ssh_host_key_dir"
+
+for key in  \
+  ssh_host_ecdsa_key \
+  ssh_host_ed25519_key \
+  ssh_host_rsa_key
+do
+  [ -f "${ssh_host_key_dir}/${key}" ] || \
+    mv -v "/etc/ssh/${key}" "/etc/ssh/${key}.pub" "$ssh_host_key_dir"
+
+  ln -snvf "${ssh_host_key_dir}/${key}"     "/etc/ssh/${key}"
+  ln -snvf "${ssh_host_key_dir}/${key}.pub" "/etc/ssh/${key}.pub"
+done
+
+# Copy SSH configs.
+install_template -m 0644 \
+  /etc/ssh/sshd_config \
+  /etc/ssh/ssh_config
+
+rm -f /etc/ssh/sshd_config.d/50-cloud-init.conf
+
+systemctl enable --now ssh
+systemctl restart ssh

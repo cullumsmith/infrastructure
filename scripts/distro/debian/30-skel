@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm -f \
+  /etc/skel/.bash_logout \
+  /etc/skel/.bashrc \
+  /etc/skel/.profile

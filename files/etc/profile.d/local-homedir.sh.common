@@ -9,6 +9,8 @@ fi
 
 LOCAL_HOME="/usr/local/home/${USER}"
 
+ln -snf "$LOCAL_HOME" "${HOME}/localdisk"
+
 export PYTHONUSERBASE="${LOCAL_HOME}/.local"
 export npm_config_cache="${LOCAL_HOME}/.npm"
 export CARGO_HOME="${LOCAL_HOME}/.cargo"

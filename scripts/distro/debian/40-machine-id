@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Make sure a machine id exists.
+dbus-uuidgen --ensure=/etc/machine-id
+old_machine_id=$(cat /etc/machine-id)
+
+# Persist the machine id to the data partition.
+if ! [ -f "${data_mountpoint}/machine-id" ]; then
+  cp -pv /etc/machine-id "${data_mountpoint}/machine-id"
+fi
+
+# Copy the stored machine id to the live location.
+cp -pv "${data_mountpoint}/machine-id" /etc/machine-id
+new_machine_id=$(cat /etc/machine-id)
+
+# If the machine id was changed, reboot.
+if [ "$old_machine_id" != "$new_machine_id" ]; then
+  BOXCONF_NEED_REBOOT=true
+fi

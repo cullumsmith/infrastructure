@@ -1,0 +1,22 @@
+#!/bin/sh
+
+data_mountpoint=/data
+mountpoint "$data_mountpoint" && return 0
+
+_partdev(){
+  case $1 in
+    /dev/nvme*) echo "${1}p${2}" ;;
+             *) echo "${1}${2}"  ;;
+  esac
+}
+
+data_disk=$(lsblk --noheading --nodeps  --output path,type,pttype | awk '$2 == "disk" && $3 == "" { print $1; exit}')
+[ -n "$data_disk" ] || die "cannot find suitable disk for ${data_mountpoint}"
+
+sgdisk "$data_disk" --new=0:0:0 --change-name=0:boxconf-data --typecode=0:8e00
+data_partition=$(_partdev "$data_disk" 1)
+mkfs.ext4 -F "$data_partition"
+
+install_directory -m 0755 "$data_mountpoint"
+install_template -m 0644 /etc/systemd/system/data.mount
+systemctl enable --now data.mount

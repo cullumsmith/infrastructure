@@ -75,8 +75,32 @@ add_user(){
         ${_bcau_grouplist:+-G ${_bcau_grouplist}} \
         ${_bcau_pgroup:+-g ${_bcau_pgroup}} \
         ${_bcau_uid:+-u ${_bcau_uid}}
+      ;;
+    linux)
+      if getent passwd "$_bcau_username" > /dev/null 2>&1; then
+        log "local user ${_bcau_username} already exists"
+        return 0
+      fi
 
-        log "added local user ${_bcau_username}"
+      if [ -z "${_bcau_pgroup:-}" ] && [ -n "${_bcau_uid:-}" ]; then
+        getent group "$_bcau_username" > /dev/null 2>&1 \
+          || groupadd -g "$_bcau_uid" "$_bcau_username"
+        _bcau_pgroup=$_bcau_username
+      fi
+
+      useradd \
+        -c "$_bcau_comment" \
+        -s "$_bcau_shell" \
+        -d "$_bcau_homedir" \
+        ${_bcau_create_homedir:+-m} \
+        ${_bcau_grouplist:+-G ${_bcau_grouplist}} \
+        ${_bcau_pgroup:+-g ${_bcau_pgroup}} \
+        ${_bcau_uid:+-u ${_bcau_uid}} \
+        "$_bcau_username"
+
+      if [ "${_bcau_create_homedir:-}" = true ]; then
+        chmod "$_bcau_homedir_mode" "$(getent passwd cullum | cut -d: -f6)"
+      fi
       ;;
     *)
       die "add_user unimplemented for ${BOXCONF_OS}"
@@ -86,6 +110,8 @@ add_user(){
   if [ -n "${_bcau_password}" ]; then
     set_password "$_bcau_user" "$_bcau_password"
   fi
+
+  log "added local user ${_bcau_username}"
 }
 
 add_group(){
@@ -111,10 +137,19 @@ add_group(){
       fi
 
       pw groupadd -n "$_bcag_groupname" ${_bcag_gid:+-g ${_bcag_gid}}
-      log "added local group ${_bcag_groupname}"
+      ;;
+    linux)
+      if getent group "$_bcag_groupname" > /dev/null 2>&1; then
+        log "local group ${_bcag_groupname} already exists"
+        return 0
+      fi
+
+      groupadd ${_bcag_gid:+-g ${_bcag_gid}} "$_bcag_groupname"
       ;;
     *)
       die "add_group unimplemented for ${BOXCONF_OS}"
       ;;
   esac
+
+  log "added local group ${_bcag_groupname}"
 }
