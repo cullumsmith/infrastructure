@@ -1,6 +1,5 @@
 auth      sufficient  pam_self.so no_warn
 auth      required    pam_unix.so try_first_pass
-auth      optional    pam_kwallet5.so
 
 account   requisite   pam_securetty.so
 account   required    pam_nologin.so
@@ -10,6 +9,5 @@ account   required    pam_unix.so
 session   required    pam_lastlog.so no_fail
 session   required    pam_xdg.so no_fail
 session   optional    /usr/local/lib/pam_mkhomedir.so mode=0700
-session   optional    pam_kwallet5.so auto_start
 
 password  required    pam_unix.so no_warn try_first_pass
