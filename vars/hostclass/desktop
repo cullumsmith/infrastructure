@@ -44,6 +44,8 @@ dino
 droid-fonts-ttf
 eclipse
 elisa
+emacs-wayland
+en-aspell
 en-hunspell
 p5-Image-ExifTool
 ffmpeg
@@ -80,6 +82,7 @@ password-store
 pdftk
 pim-sieve-editor
 phonon-mpv
+pipewire
 plasma6-breeze-gtk
 postgresql${postgresql_version}-client
 pulseaudio
@@ -101,7 +104,7 @@ v4l-utils
 v4l_compat
 vdpauinfo
 webcamd
-webfonts 
+webfonts
 wine
 wireguard-tools
-xorg"
+wireplumber"

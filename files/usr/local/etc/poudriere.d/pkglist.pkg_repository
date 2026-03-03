@@ -41,7 +41,7 @@ dns/bind-tools
 dns/nsd
 dns/powerdns
 dns/unbound
-editors/emacs
+editors/emacs@wayland
 editors/libreoffice
 editors/vim@console
 editors/vim@tiny
@@ -92,6 +92,7 @@ multimedia/v4l-utils
 multimedia/v4l_compat
 multimedia/vdpauinfo
 multimedia/webcamd
+multimedia/wireplumber
 net-im/dino
 net-im/farstream
 net-im/gajim
@@ -161,6 +162,7 @@ sysutils/pwgen
 sysutils/stow
 sysutils/tmux
 sysutils/tree
+textproc/en-aspell
 textproc/en-hunspell
 textproc/hs-pandoc
 textproc/jq
@@ -173,6 +175,7 @@ textproc/php${php_version}-xmlwriter
 textproc/py-docutils
 textproc/py-markdown
 textproc/py-pygments
+textproc/ripgrep
 www/authelia
 www/chromium
 www/deno

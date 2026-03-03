@@ -1,0 +1,9 @@
+[Desktop Entry]
+Comment=Pipewire wayland audio thing
+Exec=/usr/local/bin/pipewire -v
+Name=pipewire
+StartupNotify=false
+Terminal=false
+Type=Application
+X-KDE-AutostartScript=true
+X-KDE-SubstituteUID=false
