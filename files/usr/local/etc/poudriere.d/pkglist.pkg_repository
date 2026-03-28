@@ -37,6 +37,8 @@ devel/php${php_version}-pcntl
 devel/php${php_version}-tokenizer
 devel/py-pip
 devel/shards
+devel/hs-ShellCheck
+devel/shfmt
 dns/bind-tools
 dns/nsd
 dns/powerdns
@@ -203,5 +205,6 @@ x11-toolkits/gtksourceview4
 x11/kde
 x11/ly
 x11/sddm
+x11/xdg-desktop-portal-gtk
 x11/xev
 x11/xorg

@@ -58,6 +58,7 @@ gtksourceview4
 handbrake
 haruna
 hs-pandoc
+hs-ShellCheck
 inconsolata-ttf
 jq
 k3b
@@ -76,6 +77,8 @@ linux-widevine-cdm
 ly
 mpv
 neofetch
+node${node_version}
+npm-node${node_version}
 noto-basic
 noto-emoji
 password-store
@@ -88,8 +91,10 @@ postgresql${postgresql_version}-client
 pulseaudio
 py${python_version}-pip
 python
+ripgrep
 roboto-fonts-ttf
 rsync
+shfmt
 signal-desktop
 sndio
 socat

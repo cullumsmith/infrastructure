@@ -13,6 +13,7 @@ ln -snf "$LOCAL_HOME" "${HOME}/localdisk"
 
 export PYTHONUSERBASE="${LOCAL_HOME}/.local"
 export npm_config_cache="${LOCAL_HOME}/.npm"
+export npm_config_prefix="${LOCAL_HOME}/npm"
 export CARGO_HOME="${LOCAL_HOME}/.cargo"
 export GOPATH="${LOCAL_HOME}/go"
 export WINEPREFIX="${LOCAL_HOME}/.wine"

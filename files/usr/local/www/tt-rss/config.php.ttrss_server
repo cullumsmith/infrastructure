@@ -26,3 +26,5 @@ putenv('TTRSS_AUTH_IDM_BASEDN=${users_basedn}');
 putenv('TTRSS_AUTH_IDM_SCOPE=sub');
 putenv('TTRSS_AUTH_IDM_FILTER=(memberOf=cn=${ttrss_access_role},${roles_basedn})');
 putenv('TTRSS_AUTH_IDM_ADMIN_FILTER=(memberOf=cn=${ttrss_admin_role},${roles_basedn})');
+
+putenv('TTRSS_MAX_DOWNLOAD_FILE_SIZE=67108864');

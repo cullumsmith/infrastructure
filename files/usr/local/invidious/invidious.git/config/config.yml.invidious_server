@@ -26,7 +26,7 @@ default_user_preferences:
   continue_autoplay: false
   local: true
   quality: dash
-  quality_dash: 1080p
+  quality_dash: auto
   locale: en-US
   region: US
   related_videos: true
