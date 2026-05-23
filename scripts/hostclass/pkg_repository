@@ -1,7 +1,7 @@
 #!/bin/sh
 
 : ${poudriere_versions:='15.0-RELEASE'}
-: ${poudriere_idm_versions:='14.3-RELEASE'}
+: ${poudriere_idm_versions:='14.4-RELEASE'}
 : ${poudriere_jobs:="$nproc"}
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='4'}
@@ -87,8 +87,8 @@ for version in $poudriere_versions; do
   [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
 
   poudriere jail -u  -j "$jail"
-  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest
-  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest -y
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest ||:
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest -y ||:
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
   ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
@@ -101,8 +101,8 @@ for version in $poudriere_idm_versions; do
   [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
 
   poudriere jail -u  -j "$jail"
-  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm
-  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm ||:
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y ||:
 
   install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
   ln -snfv "../${jail}-latest-idm" "${poudriere_data_dir}/data/packages/${abi}/latest-idm"

@@ -53,8 +53,8 @@ ${solr_java_home}/bin/java \
 -XX:+CrashOnOutOfMemoryError \
 -Djava.awt.headless=true \
 -Dlog4j.configurationFile=${solr_log4j_config_file} \
--Djetty.host=${solr_host} \
--Djetty.port=${solr_port} \
+-Dsolr.host.bind=${solr_host} \
+-Dsolr.port.listen=${solr_port} \
 -Djetty.home=${solr_install_dir}/server \
 -Dsolr.autoSoftCommit.maxTime=${solr_softcommit_ms} \
 -Dsolr.solr.home=${solr_data_dir} \

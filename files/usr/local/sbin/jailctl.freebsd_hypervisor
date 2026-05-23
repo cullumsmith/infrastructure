@@ -539,7 +539,7 @@ cmd::exec(){
 
   jail::exists "$jail" || die "no such jail: ${jail}"
 
-  jail::exec "$jail" "$@"
+  jexec "$jail" "$@"
 }
 
 cmd::list(){
@@ -840,7 +840,7 @@ cmd::shell(){
   jail::exists "$jail"  || die "no such jail: ${jail}"
   jail::running "$jail" || die "jail not running: ${jail}"
 
-  jail::exec "$jail" /bin/sh
+  jexec -l "$jail" /bin/sh
 }
 
 cmd::show(){
@@ -1025,11 +1025,6 @@ interface::epair::derive_name(){
   fi
 }
 
-jail::exec() {
-  local jail=$1; shift
-  jexec -l "$jail" "$@"
-}
-
 jail::exists(){
   test -f "${JAIL_HOME}/${1}/jail.conf"
 }
@@ -1082,9 +1077,11 @@ template::release2name(){
 
 template::update_release(){
   # Run freebsd-update within a the given template and take a fresh snapshot.
-  local template=$1 snapshot
+  local template=$1 snapshot release
 
-  PAGER=/bin/cat freebsd-update -b "${JAIL_HOME}/templates/${template}" --not-running-from-cron fetch install
+  release=$("${JAIL_HOME}/templates/${template}/bin/freebsd-version" -u | sed 's/-p[0-9]*$//')
+
+  PAGER=/bin/cat freebsd-update -b "${JAIL_HOME}/templates/${template}" --not-running-from-cron --currently-running "$release" fetch install
 
   snapshot=$("${JAIL_HOME}/templates/${template}/bin/freebsd-version")
   template::exists "${template}@${snapshot}" || zfs snapshot "${JAIL_DATASET}/templates/${template}@${snapshot}"

@@ -81,7 +81,7 @@ git -C "$ttrss_repo_dir" pull --ff-only
 git -C "$ttrss_repo_dir" switch "$ttrss_branch"
 
 # Fix permissions on writable directories.
-for dir in lock cache feed-icons ; do
+for dir in lock cache plugins.local templates.local themes.local; do
   chmod 755 "${ttrss_repo_dir}/${dir}"
   chown -R "${nginx_user}:${nginx_user}" "${ttrss_repo_dir}/${dir}"
 done

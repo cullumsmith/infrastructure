@@ -58,6 +58,8 @@ if ! icinga_psql -c 'SELECT 1 FROM icingadb_schema'; then
   icinga_psql -f /usr/local/share/examples/icingadb/schema/pgsql/schema.sql
 fi
 
+icinga_psql -c "CREATE EXTENSION IF NOT EXISTS citext;"
+
 # Generate icinga database configuration.
 install_template -g "${icinga_local_user}" -m 0640 "${icingadb_conf_dir}/config.yml"
 

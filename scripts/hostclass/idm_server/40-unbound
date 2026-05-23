@@ -19,7 +19,7 @@ unbound_whitelist_file="${unbound_conf_dir}/whitelist"
 : ${unbound_threads:="$nproc"}
 
 # Install unbound recursive resolver.
-pkg install -y unbound
+pkg install -y unbound ca_root_nss
 
 # Generate unbound configuration.
 install_directory -m 0755 -o "$unbound_user" "$unbound_blocklist_dir"

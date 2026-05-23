@@ -49,6 +49,28 @@ x
   rm -f /boot/loader.conf.bak
 }
 
+set_device_hint(){
+  [ "$BOXCONF_OS" = freebsd ] || bug 'set_device_hint can only be used on FreeBSD'
+
+  while [ $# -gt 0 ]; do
+    grep -qxF "${1%%=*}=\"${1#*=}\"" /boot/device.hints || BOXCONF_NEED_REBOOT=true
+    sed -i.bak "/^${1%%=*}=/{
+h
+s|=.*|=\"${1#*=}\"|
+}
+\${
+x
+/^\$/{
+s||${1%%=*}=\"${1#*=}\"|
+H
+}
+x
+}" /boot/device.hints
+    shift
+  done
+  rm -f /boot/device.hints.bak
+}
+
 load_kernel_module(){
   # Ensure the given kernel modules are loaded.
   # $1..$N = module names
