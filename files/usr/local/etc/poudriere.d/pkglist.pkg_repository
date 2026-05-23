@@ -136,6 +136,7 @@ print/pdftk
 print/texlive-full
 security/acme.sh
 security/bitwarden-cli
+security/ca_root_nss
 security/cyrus-sasl2-saslauthd
 security/krb5@default
 security/krb5@ldap

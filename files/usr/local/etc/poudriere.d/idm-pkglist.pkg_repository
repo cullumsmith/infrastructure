@@ -12,6 +12,7 @@ net/openldap26-server
 net/p5-perl-ldap
 net/py-python-ldap
 net/rsync
+security/ca_root_nss
 security/cyrus-sasl2-saslauthd
 security/krb5
 security/openssh-portable

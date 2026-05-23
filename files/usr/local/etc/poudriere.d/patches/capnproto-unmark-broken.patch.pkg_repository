@@ -1,0 +1,12 @@
+--- devel/capnproto/Makefile	2026-04-12 00:00:12.194315000 -0400
++++ devel/capnproto/Makefile	2026-05-01 06:32:25.868358000 -0400
+@@ -12,9 +12,6 @@
+ LICENSE=	MIT
+ LICENSE_FILE=	${WRKSRC}/LICENSE.txt
+ 
+-BROKEN_FreeBSD_15=	kqueue regression
+-BROKEN_FreeBSD_16=	kqueue regression
+-
+ USES=		cmake:testing compiler:c++14-lang cpe pathfix ssl
+ USE_LDCONFIG=	yes
+ 
