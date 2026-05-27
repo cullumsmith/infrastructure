@@ -1,3 +1,9 @@
 #!/bin/sh
 
-cnames=turn
+enable_mail=false
+enable_idm=false
+enable_onprem_pkg=false
+enable_zfs=false
+resolvers='108.61.10.10'
+domain=sacredheartsc.com
+ntp_servers='1.time.constant.com 2.time.constant.com 3.time.constant.com'

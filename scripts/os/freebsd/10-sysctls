@@ -33,7 +33,7 @@ set_sysctl \
   net.inet.tcp.minmss=536 \
   net.inet.tcp.msl=2500 \
   net.inet.tcp.mssdflt=1448 \
-  net.inet.tcp.msl_local=1 \
+  net.inet.tcp.msl_local=10 \
   net.inet.tcp.path_mtu_discovery=1 \
   net.inet.tcp.recvbuf_max="$tcp_buffer_size" \
   net.inet.tcp.recvspace=65536 \

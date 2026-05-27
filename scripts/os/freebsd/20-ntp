@@ -11,4 +11,5 @@ sysrc -v \
   ntpd_enable=YES \
   ntpd_sync_on_start=YES
 
+chown ntpd /var/db/ntp/ntpd.pid
 service ntpd restart

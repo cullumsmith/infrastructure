@@ -7,16 +7,18 @@ case $BOXCONF_HOSTCLASS in
   freebsd_hypervisor)
     ;; # Keep default FreeBSD pkg repository.
   *)
-    # Configure on-prem pkg repository.
-    install_directory -m 0755 \
-      /usr/local/etc/pkg \
-      /usr/local/etc/pkg/repos
+    if [ "${enable_onprem_pkg:-}" != false ]; then
+      # Configure on-prem pkg repository.
+      install_directory -m 0755 \
+        /usr/local/etc/pkg \
+        /usr/local/etc/pkg/repos
 
-    install_file -m 0644 \
-      /usr/local/etc/pkg/repos/repo.crt \
-      /usr/local/etc/pkg/repos/FreeBSD.conf
+      install_file -m 0644 \
+        /usr/local/etc/pkg/repos/repo.crt \
+        /usr/local/etc/pkg/repos/FreeBSD.conf
 
-    install_template -m 0644 /usr/local/etc/pkg/repos/onprem.conf
+      install_template -m 0644 /usr/local/etc/pkg/repos/onprem.conf
+    fi
     ;;
 esac
 

@@ -2,7 +2,7 @@
 
 # Don't run autosnapshot within jails. Otherwise we will create duplicate
 # snapshots with the host system.
-if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ]; then
+if [ "$BOXCONF_VIRTUALIZATION_TYPE" = jail ] || [ "${enable_zfs:-}" = false ]; then
   return 0
 fi
 

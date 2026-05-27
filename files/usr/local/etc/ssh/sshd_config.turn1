@@ -1,0 +1,26 @@
+AuthorizedKeysFile      .ssh/authorized_keys
+
+KbdInteractiveAuthentication no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+PubkeyAuthentication yes
+
+PermitRootLogin prohibit-password
+PermitUserEnvironment no
+AllowAgentForwarding no
+AllowTcpForwarding no
+AllowStreamLocalForwarding no
+DisableForwarding yes
+GatewayPorts no
+PermitTunnel no
+X11Forwarding no
+ChallengeResponseAuthentication no
+MaxAuthTries 3
+PermitEmptyPasswords no
+IgnoreRhosts yes
+Protocol 2
+
+UsePAM yes
+UseDNS no
+
+Subsystem       sftp    /usr/local/libexec/sftp-server

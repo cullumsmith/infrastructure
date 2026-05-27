@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ "${enable_zfs:-}" = false ]; then
+  return 0
+fi
+
 # Every host should have a "state" dataset, which is a ZFS dataset which
 # persists across OS rebuilds.
 [ -n "${state_dataset:-}" ] || die 'state_dataset not defined!'

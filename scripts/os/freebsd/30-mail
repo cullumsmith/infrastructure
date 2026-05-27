@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$BOXCONF_HOSTCLASS" = smtp_server ]; then
+if [ "$BOXCONF_HOSTCLASS" = smtp_server ] || [ "${enable_mail:-}" = false ]; then
   return
 fi
 
