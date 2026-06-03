@@ -1,17 +1,5 @@
 #!/bin/sh
 
-case $BOXCONF_OS_VERSION in
-  13.*)
-    set_sysctl \
-      net.inet.ip.check_interface=1 \
-      net.inet.tcp.rfc6675_pipe=1
-    ;;
-  *)
-    set_sysctl \
-      net.inet.ip.rfc1122_strong_es=1
-    ;;
-esac
-
 load_kernel_module cc_htcp
 
 set_sysctl \
@@ -19,6 +7,7 @@ set_sysctl \
   net.inet.ip.process_options=0 \
   net.inet.ip.random_id=1 \
   net.inet.ip.redirect=0 \
+  net.inet.ip.rfc1122_strong_es=1 \
   net.inet.tcp.abc_l_var=44 \
   net.inet.tcp.always_keepalive=0 \
   net.inet.tcp.cc.abe=1 \

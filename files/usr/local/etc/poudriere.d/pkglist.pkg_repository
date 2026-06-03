@@ -29,6 +29,7 @@ deskutils/py-vdirsyncer
 devel/android-tools
 devel/ccache
 devel/cgit
+devel/gdb
 devel/git@lite
 devel/gitolite
 devel/php${php_version}-gettext
@@ -54,7 +55,6 @@ finance/gnucash
 ftp/php${php_version}-curl
 graphics/ImageMagick7
 graphics/digikam
-graphics/drm-kmod
 graphics/gimp
 graphics/kdegraphics
 graphics/p5-Image-ExifTool
@@ -126,10 +126,10 @@ net/rsync
 net/socat
 net/syncthing
 net/turnserver
-net/wifi-firmware-iwlwifi-kmod@all
 net/wireguard-tools
 ports-mgmt/pkg
 ports-mgmt/poudriere
+ports-mgmt/poudriere-devel
 print/cups
 print/cups-filters
 print/pdftk

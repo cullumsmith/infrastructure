@@ -61,11 +61,14 @@ are also set with this command.
       -e allow.raw_sockets=true \
       -e allow.socket_af=true \
       -e allow.mlock=true \
+      -e allow.chflags=true \
       -e sysvmsg=new \
       -e sysvsem=new \
       -e sysvshm=new \
       -e children.max=1000 \
       pkg1 freebsd14.1
+
+Edit the jail config file to set the devfs ruleset to 1001 so you can use filemon.
 
 Now you are ready to build all the packages and create the repository. `boxconf`
 assumes that any host named `pkg[0-1]` has the `pkg_repository` hostclass.

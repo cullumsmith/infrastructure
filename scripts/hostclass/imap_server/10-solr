@@ -79,4 +79,6 @@ install_file -m 0644 -o "$solr_user" -g "$solr_user" \
 rm -f "${solr_data_dir}/dovecot/conf/managed-schema.xml"
 
 # Restart solr.
-service solr restart
+service solr stop
+sleep 1
+service solr start

@@ -106,7 +106,7 @@ install_file -m 0644 \
 set_sysctl \
   net.local.stream.recvspace=65536 \
   net.local.stream.sendspace=65536 \
-  kern.sched.preempt_thresh=224 \
+  kern.sched.ule.preempt_thresh=224 \
   vfs.usermount=1
 
 set_loader_conf \

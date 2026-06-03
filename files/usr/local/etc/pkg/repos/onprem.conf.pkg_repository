@@ -1,5 +1,17 @@
-${site}: {
+${site}-ports: {
   enabled: yes,
-  url: "file://${poudriere_data_dir}/data/packages/\${ABI}/latest",
+  url: "file://${poudriere_webroot}/\${ABI}/latest",
+  signature_type: "none",
+}
+
+${site}-kmods: {
+  enabled: yes,
+  url: "file://${poudriere_webroot}/\${ABI}/kmods_latest_\${VERSION_MINOR}",
+  signature_type: "none",
+}
+
+${site}-base: {
+  enabled: yes,
+  url: "file://${poudriere_webroot}/\${ABI}/base_release_\${VERSION_MINOR}",
   signature_type: "none",
 }

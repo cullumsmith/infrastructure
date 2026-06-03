@@ -2,3 +2,7 @@
 [devfsrules_jail_vnet_bpf=${hypervisor_jail_bpf_ruleset}]
 add include \$devfsrules_jail_vnet
 add path 'bpf*' unhide
+
+[devfsrules_jail_vnet_filemon=${hypervisor_jail_filemon_ruleset}]
+add include \$devfsrules_jail_vnet
+add path 'filemon' unhide

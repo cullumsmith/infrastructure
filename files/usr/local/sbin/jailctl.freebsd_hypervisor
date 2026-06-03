@@ -755,6 +755,12 @@ cmd::reprovision(){
     jail::stop "$jail"
   fi
 
+  # umount all jailed filesystems
+  zfs list -Ho mountpoint,mounted -r "${JAIL_DATASET}/${jail}/data" \
+    | awk '$2 == "yes" {print $1}' \
+    | sort -r \
+    | xargs -t -n1 -I{} umount "${JAIL_HOME}/${jail}/os{}"
+
   local snapshot old_quota old_ifconfig old_defaultrouter old_hostname old_resolvconf
 
   # Get the latest snapshot for the template (if not specified).
@@ -892,7 +898,7 @@ cmd::status(){
     | rs -c= -C' ' -T \
     | column -t
   printf -- '\n----------------------------- PROCESSES ------------------------------\n'
-  ps -auxdr -J "$jail"
+  ps -uxdr -J "$jail"
 }
 
 cmd::update_release(){
@@ -1052,18 +1058,59 @@ template::exists(){
 
 template::download_release(){
   # Download a given FreeBSD release and create a template jail.
-  local release=$1 arch base_tarball template
+  local release=$1 arch major minor key repo_url repo_name pkg_config template
 
   arch=$(uname -p)
-  base_tarball="https://download.freebsd.org/releases/${arch}/${release}/base.txz"
+  major=${release%.*}
+  minor=${release#*.}
+  repo_name="FreeBSD-base-release-${minor}"
+  repo_url="https://pkg.freebsd.org/FreeBSD:${major}:${arch}/base_release_${minor}"
+
+  repo_dir=$(mktemp -d /tmp/repoctl-pkg.XXXXXX)
+  chmod 755 "$repo_dir"
+  mkdir "${repo_dir}/trusted"
+
+  fetch -o "${repo_dir}/trusted" "https://cgit.freebsd.org/src/plain/share/keys/pkgbase-${major}/trusted/awskms-${major}"
+  fetch -o "${repo_dir}/trusted" "https://cgit.freebsd.org/src/plain/share/keys/pkgbase-${major}/trusted/backup-signing-${major}"
+
+  cat <<EOF > "${repo_dir}/FreeBSD-base.conf"
+${repo_name}: {
+  url: "pkg+https://pkg.FreeBSD.org/FreeBSD:${major}:${arch}/base_release_${minor}",
+  mirror_type: "srv",
+  signature_type: "fingerprints",
+  fingerprints: "/usr/share/keys/pkgbase-${major}",
+  enabled: yes
+}
+EOF
 
   template::release2name template "$release"
 
   zfs create -v -p $ZFS_OPTS "${JAIL_DATASET}/templates/${template}"
+  mkdir -p "${JAIL_HOME}/templates/${template}/usr/share/keys/pkgbase-${major}"
+  cp -a "${repo_dir}/trusted" "${JAIL_HOME}/templates/${template}/usr/share/keys/pkgbase-${major}"
 
-  if ! fetch "$base_tarball" -o - | tar xzf - -C "${JAIL_HOME}/templates/${template}"; then
+  if ! pkg --rootdir "${JAIL_HOME}/templates/${template}" \
+         --repo-conf-dir="$repo_dir" \
+         -o IGNORE_OSVERSION=yes \
+         -o ASSUME_ALWAYS_YES=yes \
+         update -r "$repo_name"
+  then
     zfs destroy -v "${JAIL_DATASET}/templates/${template}"
-    die "failed to extract base tarball for ${release}"
+    rm -rf "$repo_dir"
+    die "failed to update pkgbase repo for ${release}"
+  fi
+
+  if ! pkg --rootdir "${JAIL_HOME}/templates/${template}" \
+         --repo-conf-dir="$repo_dir" \
+         -o IGNORE_OSVERSION=yes \
+         -o ASSUME_ALWAYS_YES=yes \
+         install \
+         -r "$repo_name" \
+         FreeBSD-set-base-jail
+  then
+    zfs destroy -v "${JAIL_DATASET}/templates/${template}"
+    rm -rf "$repo_dir"
+    die "failed to bootstrap pkgbase for ${release}"
   fi
 
   template::update_release "$template"
@@ -1071,17 +1118,37 @@ template::download_release(){
 
 template::release2name(){
   # Convert a FreeBSD release version to a template name.
-  # e.g. for "13.2-RELEASE", return "freebsd13.2".
-  setvar "$1" "freebsd${2%-*}"
+  # e.g. for "13.2", return "freebsd13.2".
+  setvar "$1" "freebsd${2}"
 }
 
 template::update_release(){
   # Run freebsd-update within a the given template and take a fresh snapshot.
-  local template=$1 snapshot release
+  local template=$1 snapshot release major minor arch abi
 
-  release=$("${JAIL_HOME}/templates/${template}/bin/freebsd-version" -u | sed 's/-p[0-9]*$//')
+  arch=$(uname -p)
+  release=${template#freebsd}
+  major=${release%.*}
+  minor=${release#*.}
+  abi="FreeBSD:${major}:${arch}"
 
-  PAGER=/bin/cat freebsd-update -b "${JAIL_HOME}/templates/${template}" --not-running-from-cron --currently-running "$release" fetch install
+  pkg --rootdir "${JAIL_HOME}/templates/${template}" \
+    --repo-conf-dir="${JAIL_HOME}/templates/${template}/etc/pkg" \
+    -o IGNORE_OSVERSION=yes \
+    -o ASSUME_ALWAYS_YES=yes \
+    -o VERSION_MAJOR="$major" \
+    -o VERSION_MINOR="$minor" \
+    -o ABI="$abi" \
+    update -r FreeBSD-base
+
+  pkg --rootdir "${JAIL_HOME}/templates/${template}" \
+    --repo-conf-dir="${JAIL_HOME}/templates/${template}/etc/pkg" \
+    -o IGNORE_OSVERSION=yes \
+    -o ASSUME_ALWAYS_YES=yes \
+    -o VERSION_MAJOR="$major" \
+    -o VERSION_MINOR="$minor" \
+    -o ABI="$abi" \
+    upgrade -r FreeBSD-base
 
   snapshot=$("${JAIL_HOME}/templates/${template}/bin/freebsd-version")
   template::exists "${template}@${snapshot}" || zfs snapshot "${JAIL_DATASET}/templates/${template}@${snapshot}"

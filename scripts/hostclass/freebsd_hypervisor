@@ -20,12 +20,13 @@
 : ${hypervisor_jail_default_zfs_opts:='-o compress=lz4'}
 
 hypervisor_jail_bpf_ruleset=1000
+hypervisor_jail_filemon_ruleset=1001
 
 # Required for vnet jails.
 set_sysctl net.link.tap.up_on_open=1
 
 # Required to for kerberized NFS within jails.
-sysrc -v kld_list+='kgssapi kgssapi_krb5'
+sysrc -v kld_list+='kgssapi kgssapi_krb5 filemon'
 
 # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=262189
 set_sysctl vfs.zfs.vol.mode=2

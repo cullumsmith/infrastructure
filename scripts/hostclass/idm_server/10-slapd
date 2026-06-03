@@ -1,15 +1,5 @@
 #!/bin/sh
 
-case $BOXCONF_OS_VERSION in
-  14.*)
-    : # ok
-    ;;
-  *)
-    # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=291828
-    die "Only FreeBSD versions < 15 are supported for hostclass idm_server!"
-    ;;
-esac
-
 : ${slapd_root_dn:='cn=admin'}
 : ${slapd_replicator_dn:="cn=replicator,${basedn}"}
 : ${slapd_result_size_limit:='10000'}
@@ -51,17 +41,6 @@ zfs set \
   com.sun:auto-snapshot:daily=true \
   com.sun:auto-snapshot:weekly=true \
   "${state_dataset}/openldap-data"
-
-# To prevent a circular dependency in poudriere, we have to make a special "set"
-# of packages for the IDM hosts in which cyrus-sasl-gssapi is built with the
-# Heimdal libraries in base, rather than MIT.
-#
-# Heimdal does not support the KRB5_KTNAME environment variable with slapd.
-# However, you *can* specify a keytab by creating a ~/.krb5/config file in
-# the slapd user's home directory.
-pw user mod "$slapd_user" -d "$slapd_conf_dir"
-install_directory -m 0755 "${slapd_conf_dir}/.krb5"
-install_template -m 0644 "${slapd_conf_dir}/.krb5/config"
 
 # Copy TLS certificate for LDAP server.
 install_certificate     -o "$slapd_user" -g "$slapd_user" slapd "$slapd_tls_cert"

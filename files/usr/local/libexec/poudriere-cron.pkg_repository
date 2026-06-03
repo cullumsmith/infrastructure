@@ -14,22 +14,37 @@ for patch in /usr/local/etc/poudriere.d/patches/*.patch; do
   patch -s -d /usr/local/poudriere/ports/latest -u < "$patch"
 done
 
-idm=false
-for jail in "$@"; do
-  if [ "$jail" = idm ]; then
-    idm=true
-    continue
-  fi
+target='?'
+for arg in "$@"; do
+  case $arg in
+    base|ports) target=$arg ; continue ;;
+    *) version=$arg ;;
+  esac
 
-  poudriere jail -u  -j "$jail" > /dev/null
+  jail=$(echo "$version" | tr /. _)
 
-  if [ "$idm" = true ]; then
-    poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/idm-pkglist   -p "$ports_tree" -z idm
-    poudriere pkgclean -j "$jail"        -f /usr/local/etc/poudriere.d/idm-pkglist   -p "$ports_tree" -z idm -y > /dev/null 2>&1
-  else
-    poudriere bulk     -j "$jail"        -f /usr/local/etc/poudriere.d/pkglist       -p "$ports_tree"
-    poudriere pkgclean -j "$jail"        -f /usr/local/etc/poudriere.d/pkglist       -p "$ports_tree" -y        > /dev/null 2>&1
-  fi
+  case $target in
+    base)
+      srcdir="/usr/local/poudriere/jails/${jail}/usr/src"
+      git -C "$srcdir" fetch
+      local_rev=$(git -C "$srcdir" rev-parse HEAD)
+      upstream_rev=$(git -C "$srcdir" rev-parse '@{u}')
+
+      if [ "$localrev" != "$upstream_rev" ]; then
+        poudriere jail -u -j "$jail"
+      fi
+
+      poudriere bulk     -j "$jail" -f /usr/local/etc/poudriere.d/kmods-pkglist -p latest -z kmods
+      poudriere pkgclean -j "$jail" -f /usr/local/etc/poudriere.d/kmods-pkglist -p latest -z kmods -y > /dev/null 2>&1
+      ;;
+    ports)
+      poudriere bulk     -j "$jail" -f /usr/local/etc/poudriere.d/pkglist -p latest
+      poudriere pkgclean -j "$jail" -f /usr/local/etc/poudriere.d/pkglist -p latest -y > /dev/null 2>&1
+
+      poudriere bulk     -j "$jail" -f /usr/local/etc/poudriere.d/idm-pkglist -p latest -z idm
+      poudriere pkgclean -j "$jail" -f /usr/local/etc/poudriere.d/idm-pkglist -p latest -z idm -y > /dev/null 2>&1
+      ;;
+  esac
 done
 
 poudriere distclean -p "$ports_tree" -a -y > /dev/null

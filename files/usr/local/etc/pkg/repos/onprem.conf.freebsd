@@ -1,6 +1,20 @@
-${site}: {
+${site}-ports: {
   enabled: yes,
   url: "http://${pkg_host}/\${ABI}/latest",
+  signature_type: "pubkey",
+  pubkey: "/usr/local/etc/pkg/repos/repo.crt"
+}
+
+${site}-kmods: {
+  enabled: yes,
+  url: "http://${pkg_host}/\${ABI}/kmods_latest_\${VERSION_MINOR}",
+  signature_type: "pubkey",
+  pubkey: "/usr/local/etc/pkg/repos/repo.crt"
+}
+
+${site}-base: {
+  enabled: yes,
+  url: "http://${pkg_host}/\${ABI}/base_release_\${VERSION_MINOR}",
   signature_type: "pubkey",
   pubkey: "/usr/local/etc/pkg/repos/repo.crt"
 }

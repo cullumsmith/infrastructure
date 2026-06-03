@@ -50,13 +50,26 @@ EOF
 # Create state dataset to persist keytabs across OS rebuilds.
 create_dataset -o "mountpoint=${keytab_dir}" "${state_dataset}/keytabs"
 
+install_directory -m 0755 \
+  /var/krb5 \
+  /var/krb5/user
+
 # Export host keytab.
 [ -f "${keytab_dir}/host.keytab" ] || /usr/local/sbin/kadmin.local ktadd -k "${keytab_dir}/host.keytab" -q "host/${fqdn}"
 ln -snfv "${keytab_dir}/host.keytab" /etc/krb5.keytab
 
+install_directory -o root -m 0700 /var/krb5/user/0
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/keytab
+ln -snfv "${keytab_dir}/host.keytab" /var/krb5/user/0/client.keytab
+
 # Export slapd keytab.
 [ -f "$slapd_keytab" ] || /usr/local/sbin/kadmin.local ktadd -k "$slapd_keytab" -q "ldap/${fqdn}"
-chown "$slapd_user" "$slapd_keytab"
+chgrp "$slapd_user" "$slapd_keytab"
+chmod 640 "$slapd_keytab"
+
+slapd_uid=$(id -u "$slapd_user")
+install_directory -o "$slapd_user" -m 0700 "/var/krb5/user/${slapd_uid}"
+ln -snfv "$slapd_keytab" "/var/krb5/user/${slapd_uid}/keytab"
 
 # Install PAM/NSS integration packages.
 pkg install -y \

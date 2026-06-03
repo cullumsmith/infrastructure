@@ -1,7 +1,7 @@
 #!/bin/sh
 
-: ${poudriere_versions:='15.0-RELEASE'}
-: ${poudriere_idm_versions:='14.4-RELEASE'}
+: ${poudriere_base_versions:='releng/15.1'}
+: ${poudriere_port_versions:='releng/15.1'}
 : ${poudriere_jobs:="$nproc"}
 : ${poudriere_dataset:="${state_dataset:-zroot}"}
 : ${poudriere_make_jobs_number:='4'}
@@ -15,6 +15,7 @@ poudriere_https_key="${nginx_conf_dir}/poudriere.key"
 poudriere_data_dir=/usr/local/poudriere
 poudriere_conf_dir=/usr/local/etc/poudriere.d
 poudriere_patch_dir="${poudriere_conf_dir}/patches"
+poudriere_webroot=/usr/local/www/packages
 
 # Create poudriere datasets.
 create_dataset -o "mountpoint=${poudriere_data_dir}" "${state_dataset}/poudriere"
@@ -31,7 +32,7 @@ zfs set sync=disabled "${poudriere_dataset}/poudriere"
 # These packages are needed to bootstrap poudriere. On the first run, they'll
 # be installed from the public FreeBSD repos.
 pkg install -y \
-  poudriere \
+  poudriere-devel \
   git-lite \
   nginx \
   ccache
@@ -40,13 +41,17 @@ pkg install -y \
 install_template -m 0644 \
   /usr/local/etc/poudriere.conf \
  "${poudriere_conf_dir}/make.conf" \
+ "${poudriere_conf_dir}/src.conf" \
+ "${poudriere_conf_dir}/src-env.conf" \
  "${poudriere_conf_dir}/idm-make.conf" \
  "${poudriere_conf_dir}/pkglist" \
+ "${poudriere_conf_dir}/kmods-pkglist" \
  "${poudriere_conf_dir}/idm-pkglist"
-install_file -m 0400 /usr/local/etc/ssl/repo.key
+install_file -m 0400 "${poudriere_conf_dir}/repo.key"
 install_directory -m 0755 /usr/ports/distfiles
 install_directory -m 0755 -o nobody -g nobody "${poudriere_data_dir}/ccache"
 install_template -m 0644 -o nobody -g nobody "${poudriere_data_dir}/ccache/ccache.conf"
+install_directory -m 0755 "$poudriere_webroot"
 
 # Copy TLS certificate for nginx.
 install_certificate     nginx "$poudriere_https_cert"
@@ -79,33 +84,60 @@ for patch in "${poudriere_patch_dir}/"*.patch; do
   patch -d "${poudriere_data_dir}/ports/latest" -u < "$patch"
 done
 
-# For each specified FreeBSD version, build all packages.
-for version in $poudriere_versions; do
-  jail=$(echo "$version" | tr . _)
-  abi="FreeBSD:${version%%.*}:$(uname -p)"
+for version in $poudriere_base_versions; do
+  jail=$(echo "$version" | tr /. _)
+  branch=${version%/*}
+  major=${version#*/}
+  major=${major%.*}
+  minor=${version##*.}
+  abi="FreeBSD:${major}:amd64"
 
-  [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
+  if [ -d "${poudriere_data_dir}/jails/${jail}" ]; then
+    srcdir="${poudriere_data_dir}/jails/${jail}/usr/src"
+    git -C "$srcdir" fetch
+    local_rev=$(git -C "$srcdir" rev-parse HEAD)
+    upstream_rev=$(git -C "$srcdir" rev-parse '@{u}')
 
-  poudriere jail -u  -j "$jail"
-  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest ||:
-  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist"     -p latest -y ||:
+    if [ "$local_rev" = "$upstream_rev" ]; then
+      log "pkgbase jail ${jail} is already up to date"
+    else
+      log "updating pkgbase jail ${jail}"
+      poudriere jail -u -j "$jail"
+    fi
+  else
+    poudriere jail -c -b -B -j "$jail" -v "$version" -m git+https -K GENERIC
+  fi
 
-  install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
-  ln -snfv "../${jail}-latest" "${poudriere_data_dir}/data/packages/${abi}/latest"
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/kmods-pkglist" -p latest -z kmods ||:
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/kmods-pkglist" -p latest -z kmods -y ||:
+
+  install_directory -m 0755 "${poudriere_webroot}/${abi}"
+  if [ "$branch" = releng ]; then
+    ln -snfv "${poudriere_data_dir}/data/images/${jail}-repo/${abi}/latest" "${poudriere_webroot}/${abi}/base_release_${minor}"
+    ln -snfv "${poudriere_data_dir}/data/packages/${jail}-latest-kmods"     "${poudriere_webroot}/${abi}/kmods_latest_${minor}"
+  elif [ "$branch" = stable ]; then
+    ln -snfv "${poudriere_data_dir}/data/images/${jail}-repo/${abi}/latest" "${poudriere_webroot}/${abi}/base_latest"
+    ln -snfv "${poudriere_data_dir}/data/packages/${jail}-latest-kmods"     "${poudriere_webroot}/${abi}/kmods_latest"
+  fi
 done
 
-for version in $poudriere_idm_versions; do
-  jail=$(echo "$version" | tr . _)
-  abi="FreeBSD:${version%%.*}:$(uname -p)"
+# For each specified FreeBSD version, build all packages.
+for version in $poudriere_port_versions; do
+  jail=$(echo "$version" | tr /. _)
+  branch=${version%/*}
+  major=${version#*/}
+  major=${major%.*}
+  minor=${version##*.}
+  abi="FreeBSD:${major}:amd64"
 
-  [ -d "${poudriere_data_dir}/jails/${jail}" ] || poudriere jail -c -j "$jail" -v "$version"
+  poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/pkglist" -p latest ||:
+  poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/pkglist" -p latest -y ||:
 
-  poudriere jail -u  -j "$jail"
   poudriere bulk -v  -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm ||:
   poudriere pkgclean -j "$jail" -f "${poudriere_conf_dir}/idm-pkglist" -p latest -z idm -y ||:
 
-  install_directory -m 0755 "${poudriere_data_dir}/data/packages/${abi}"
-  ln -snfv "../${jail}-latest-idm" "${poudriere_data_dir}/data/packages/${abi}/latest-idm"
+  ln -snfv "${poudriere_data_dir}/data/packages/${jail}-latest"      "${poudriere_webroot}/${abi}/latest"
+  ln -snfv "${poudriere_data_dir}/data/packages/${jail}-latest-idm"  "${poudriere_webroot}/${abi}/idm_latest"
 done
 
 # Clean stale distfiles and logs.
@@ -118,7 +150,7 @@ install_directory -m 0555 "${poudriere_data_dir}/data/packages/poudriere"
 
 # Create cron job to update packages automatically.
 install_file -m 0555 /usr/local/libexec/poudriere-cron
-install_template -m 0644 /etc/cron.d/poudriere
+install_file -m 0644 /etc/cron.d/poudriere
 
 # Now that we have a valid repo, switch the pkg repo to the local filesystem.
 install_directory -m 0755 \

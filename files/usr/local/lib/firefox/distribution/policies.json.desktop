@@ -125,6 +125,12 @@
       "SponsoredPocket": false,
       "Snippets": false
     },
+    "AIControls": {
+      "Default": {
+        "Value": "blocked",
+        "Locked": true
+      }
+    },
     "ManagedBookmarks": [
       {
         "toplevel_name": "Intranet"
@@ -218,6 +224,34 @@
       },
       "browser.newtabpage.activity-stream.feeds.section.topstories": {
         "Value": false,
+        "Status": "locked"
+      },
+      "browser.newtabpage.activity-stream.showSponsoredCheckboxes": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.newtabpage.activity-stream.widgets.system.weather.enabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "browser.urlbar.suggest.quicksuggest.all": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.tabs.groups.smart.userEnabled": {
+        "Value": false,
+        "Status": "default"
+      },
+      "signon.management.page.breach-alerts.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "privacy.fingerprintingProtection.pbmode": {
+        "Value": false,
+        "Status": "default"
+      },
+      "signon.firefoxRelay.feature": {
+        "Value": "disabled",
         "Status": "locked"
       }
     }
