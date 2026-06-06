@@ -1,4 +1,5 @@
 #!/bin/sh
 
 cnames=git
-cgit_clone_urls="https://git.${domain} ssh://git@git.${domain}"}
+cgit_clone_urls="https://git.${domain} ssh://git@git.${domain}"
+cgit_root_desc="Benedictum Nomen Sanctum ejus."

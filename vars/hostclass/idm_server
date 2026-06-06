@@ -2,7 +2,7 @@
 
 BOXCONF_LDAP_SASL=true
 
-allowed_tcp_ports='ssh ldap ldaps domain kerberos-sec kerberos-adm'
+allowed_tcp_ports='ssh ldap ldaps domain kerberos-sec kerberos-adm http https'
 allowed_udp_ports='domain kerberos-sec kpasswd'
 
 enable_idm=false

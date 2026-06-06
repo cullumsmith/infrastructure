@@ -1,0 +1,93 @@
+#!/bin/sh
+
+: ${phpldapadmin_repo:='https://github.com/leenooks/phpLDAPadmin.git'}
+: ${phpldapadmin_tag:='2.3.11'}
+: ${phpldapadmin_username:='s-phpldapadmin'}
+: ${phpldapadmin_password:='changeme'}
+: ${phpldapadmin_app_key:='changeme'} # 'php artisan key:generate' from the repo
+
+phpldapadmin_home_dir=/usr/local/phpldapadmin
+phpldapadmin_repo_dir="${phpldapadmin_home_dir}/phpldapadmin.git"
+phpldapadmin_webroot="${phpldapadmin_repo_dir}/public"
+phpldapadmin_fpm_socket=/var/run/fpm-phpldapadmin.sock
+phpldapadmin_user=$nginx_user
+phpldapadmin_https_cert="${nginx_conf_dir}/phpldapadmin.crt"
+phpldapadmin_https_key="${nginx_conf_dir}/phpldapadmin.key"
+phpldapadmin_dn="uid=${phpldapadmin_username},${robots_basedn}"
+
+pkg install -y \
+  git-lite \
+  npm-node${node_version} \
+  nginx \
+  php${php_version} \
+  php${php_version}-composer \
+  php${php_version}-dom \
+  php${php_version}-fileinfo \
+  php${php_version}-gettext \
+  php${php_version}-iconv \
+  php${php_version}-ldap \
+  php${php_version}-opcache \
+  php${php_version}-session \
+  php${php_version}-tokenizer \
+  php${php_version}-xml
+
+# Copy TLS certificate for nginx.
+install_certificate     nginx "$phpldapadmin_https_cert"
+install_certificate_key nginx "$phpldapadmin_https_key"
+
+# Create phpldapadmin user account.
+ldap_add "$phpldapadmin_dn" <<EOF
+objectClass: account
+objectClass: simpleSecurityObject
+uid: ${phpldapadmin_username}
+userPassword: {SSHA-512}
+EOF
+
+# Set LDAP password for phpldapadmin user.
+ldap_passwd "$phpldapadmin_dn" "$phpldapadmin_password"
+
+install_directory -o "$phpldapadmin_user" -g "$phpldapadmin_user" -m 0755 "$phpldapadmin_home_dir"
+
+# Install phpldapadmin from git.
+[ -d "$phpldapadmin_repo_dir" ] || su -m "$phpldapadmin_user" -c \
+  "git clone ${phpldapadmin_repo} ${phpldapadmin_repo_dir}"
+
+# Update git repo.
+su -m "$phpldapadmin_user" -c "git -C ${phpldapadmin_repo_dir} fetch"
+su -m "$phpldapadmin_user" -c "git -C ${phpldapadmin_repo_dir} switch --detach ${phpldapadmin_tag}"
+
+# Install npm dependencies
+( cd "$phpldapadmin_repo_dir"
+  su -m "$phpldapadmin_user" -c "HOME=${phpldapadmin_home_dir} npm install --omit=dev"
+  su -m "$phpldapadmin_user" -c "HOME=${phpldapadmin_home_dir} npm run prod"
+  su -m "$phpldapadmin_user" -c "HOME=${phpldapadmin_home_dir} composer install --no-dev"
+)
+
+# Lock down permissions
+chmod 700 "${phpldapadmin_repo_dir}/storage"
+
+# Copy phpldapadmin configs
+install_template -o "$phpldapadmin_user" -g "$phpldapadmin_user" -m 0600 "${phpldapadmin_repo_dir}/.env"
+
+# Generate nginx configuration.
+install_file -m 0644 "${nginx_conf_dir}/fastcgi_params"
+install_template -m 0644 \
+  "${nginx_conf_dir}/nginx.conf" \
+  "${nginx_conf_dir}/vhosts.conf"
+install_file -m 0644 /etc/newsyslog.conf.d/nginx.conf
+
+# Generate php-fpm configuration.
+install_file -m 0644 \
+  /usr/local/etc/php.ini \
+  /usr/local/etc/php-fpm.conf
+install_template -m 0644 \
+  /usr/local/etc/php-fpm.d/phpldapadmin.conf
+> /usr/local/etc/php-fpm.d/www.conf
+
+
+# Enable and start daemons.
+sysrc -v \
+  nginx_enable=YES \
+  php_fpm_enable=YES
+service nginx restart
+service php_fpm restart

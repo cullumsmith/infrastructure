@@ -23,16 +23,9 @@ mpv_vo=gpu-next
 mpv_direct_rendering=yes
 mpv_audio_channels=stereo
 
-gajim_packages="
-gajim
-py${python_version}-omemo-dr
-farstream
-gsound"
-
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
 # kwalletd requires socat?
 desktop_packages="
-${gajim_packages}
 android-file-transfer
 android-tools
 bind-tools

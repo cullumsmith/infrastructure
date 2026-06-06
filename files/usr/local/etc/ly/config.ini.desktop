@@ -85,3 +85,4 @@ x_cmd = /usr/local/bin/X
 xauth_cmd = /usr/local/bin/xauth
 xinitrc = null
 xsessions = null
+shell = false

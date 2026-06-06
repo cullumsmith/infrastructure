@@ -1,7 +1,7 @@
 # The "-idm" set is a special poudriere build for the IDM servers that builds
 # openldap26-server with GSSAPI_BASE. This workaround is necessary to avoid a
 # circular dependency with krb5 and cyrus-sasl2-gssapi.
-${site}-ports: {
+${site}-ports-idm: {
   enabled: yes,
   url: "http://${pkg_host}/\${ABI}/idm_latest",
   signature_type: "pubkey",

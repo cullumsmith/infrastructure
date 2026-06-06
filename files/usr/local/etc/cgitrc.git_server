@@ -17,6 +17,13 @@ robots=index, nofollow
 
 cache-root=${cgit_cache_dir}
 cache-size=${cgit_cache_size}
+cache-about-ttl=${cgit_cache_about_ttl}
+cache-dynamic-ttl=${cgit_cache_dynamic_ttl}
+cache-repo-ttl=${cgit_cache_repo_ttl}
+cache-root-ttl=${cgit_cache_root_ttl}
+cache-scanrc-ttl=${cgit_cache_scanrc_ttl}
+cache-snapshot-ttl=${cgit_cache_snapshot_ttl}
+cache-static-ttl=${cgit_cache_static_ttl}
 
 source-filter=/usr/local/lib/cgit/filters/syntax-highlighting-custom.py
 about-filter=/usr/local/lib/cgit/filters/about-formatting.sh

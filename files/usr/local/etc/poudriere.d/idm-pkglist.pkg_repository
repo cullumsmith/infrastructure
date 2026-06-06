@@ -1,4 +1,8 @@
+converters/php${php_version}-iconv
 devel/git@lite
+devel/php${php_version}-gettext
+devel/php${php_version}-tokenizer
+devel/php-composer
 dns/bind-tools
 dns/powerdns
 dns/unbound
@@ -10,6 +14,7 @@ net/nss-pam-ldapd-sasl
 net/openldap26-client
 net/openldap26-server
 net/p5-perl-ldap
+net/php${php_version}-ldap
 net/py-python-ldap
 net/rsync
 security/ca_root_nss
@@ -22,7 +27,14 @@ security/sudo
 sysutils/htop
 sysutils/lsof
 sysutils/p5-Sys-Syslog
+sysutils/php${php_version}-fileinfo
 sysutils/pwgen
 sysutils/tmux
 sysutils/tree
+textproc/php${php_version}-dom
+textproc/php${php_version}-xml
 www/nginx
+www/nginx
+www/npm
+www/php${php_version}-opcache
+www/php${php_version}-session

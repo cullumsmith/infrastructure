@@ -1,2 +1,2 @@
-graphics/drm-kmod
+graphics/drm-${drm_kmod_version}-kmod
 net/wifi-firmware-iwlwifi-kmod@all

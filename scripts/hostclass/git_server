@@ -6,10 +6,17 @@
 : ${gitolite_access_role:='gitolite-access'}
 : ${gitolite_admin_role:='gitolite-admin'}
 : ${cgit_clone_urls:="https://${fqdn} ssh://git@${fqdn}"}
-: ${cgit_root_title:="${site} Git Repo"}
+: ${cgit_root_title:="Git Repositories"}
 : ${cgit_root_desc:="Source code for various ${site} projects."}
 : ${cgit_pygments_style:='default'}
 : ${cgit_cache_size:='16000'}
+: ${cgit_cache_about_ttl:='0'}
+: ${cgit_cache_dynamic_ttl:='0'}
+: ${cgit_cache_repo_ttl:='0'}
+: ${cgit_cache_root_ttl:='0'}
+: ${cgit_cache_scanrc_ttl:='1'}
+: ${cgit_cache_snapshot_ttl:='5'}
+: ${cgit_cache_static_ttl:='-1'}
 
 gitolite_dn="uid=${gitolite_username},${robots_basedn}"
 git_keytab="${keytab_dir}/nginx.keytab"

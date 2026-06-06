@@ -7,7 +7,6 @@ audio/audacity
 audio/elisa
 audio/fooyin
 audio/freedesktop-sound-theme
-audio/gsound
 audio/kid3@kf6
 audio/musescore
 audio/pulseaudio
@@ -32,13 +31,14 @@ devel/cgit
 devel/gdb
 devel/git@lite
 devel/gitolite
+devel/hs-ShellCheck
 devel/php${php_version}-gettext
 devel/php${php_version}-intl
 devel/php${php_version}-pcntl
 devel/php${php_version}-tokenizer
+devel/php-composer
 devel/py-pip
 devel/shards
-devel/hs-ShellCheck
 devel/shfmt
 dns/bind-tools
 dns/nsd
@@ -63,7 +63,6 @@ graphics/php${php_version}-gd
 irc/konversation
 irc/znc
 irc/znc-clientbuffer
-java/eclipse
 java/openjdk21
 lang/crystal
 lang/php${php_version}
@@ -96,8 +95,6 @@ multimedia/vdpauinfo
 multimedia/webcamd
 multimedia/wireplumber
 net-im/dino
-net-im/farstream
-net-im/gajim
 net-im/prosody
 net-im/prosody-modules
 net-im/py-matrix-synapse
@@ -145,7 +142,6 @@ security/openssh-portable
 security/pam_krb5@mit
 security/pam_mkhomedir
 security/php${php_version}-filter
-security/py-omemo-dr
 security/sshpass
 security/sudo
 security/vaultwarden
