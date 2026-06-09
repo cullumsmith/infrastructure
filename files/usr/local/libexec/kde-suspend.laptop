@@ -1,0 +1,15 @@
+#!/bin/sh
+
+/usr/local/bin/qdbus6 --literal --system \
+  org.freedesktop.ConsoleKit \
+  /org/freedesktop/ConsoleKit/Manager \
+  org.freedesktop.ConsoleKit.Manager.GetSessions \
+  | /usr/bin/sed 's/^.*\(Session[0-9]*\).*$/\1/' \
+  | /usr/bin/xargs -rtn1 -I%  \
+    /usr/local/bin/qdbus6 --system \
+      org.freedesktop.ConsoleKit \
+      /org/freedesktop/ConsoleKit/% \
+      org.freedesktop.ConsoleKit.Session.Lock
+
+/bin/sleep 0.5
+/usr/sbin/acpiconf -s3

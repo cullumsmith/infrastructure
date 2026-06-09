@@ -1,1 +1,1 @@
-@weekly root lockf -t 0 /tmp/poudriere-cron.lock /usr/local/libexec/poudriere-cron base ${poudriere_base_versions} ports ${poudriere_port_versions}"
+@weekly root lockf -t 0 /tmp/poudriere-cron.lock /usr/local/libexec/poudriere-cron base ${poudriere_base_versions} ports ${poudriere_port_versions}

@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# PROVIDE: iwlwifi_fix
+# KEYWORD: suspend resume
+
+. /etc/rc.subr
+
+name="iwlwifi_fix"
+extra_commands="suspend resume"
+suspend_cmd="iwlwifi_fix_suspend"
+resume_cmd="iwlwifi_fix_resume"
+
+iwlwifi_fix_suspend(){
+  /usr/sbin/service netif stop wlan0
+}
+
+iwlwifi_fix_resume(){
+  /usr/sbin/service netif start wlan0
+}
+
+load_rc_config "$name"
+run_rc_command "$1"
