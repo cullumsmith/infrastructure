@@ -3,5 +3,5 @@
 # Various processes seem to hang around after logging out of KDE sessions.
 # Clean them up here.
 
-pkill signal-desktop chrome baloo_file dirmngr
+pkill signal-desktop chrome baloo_file dirmngr wireplumber pipewire plasma_waitforname
 pkill -f /usr/local/libexec/geoclue-2.0/demos/agent

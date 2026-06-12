@@ -26,7 +26,6 @@ mpv_audio_channels=stereo
 # signal-desktop requires pulseaudio for audio/video chat. SAD!
 # kwalletd requires socat?
 desktop_packages="
-android-file-transfer
 android-tools
 bind-tools
 ca_root_nss

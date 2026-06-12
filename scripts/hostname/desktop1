@@ -24,4 +24,3 @@ set_loader_conf "hint.pcm.${recording_device}.mic=${microphone_gain}"
 set_loader_conf "hint.pcm.${playback_device}.pcm=100"
 
 set_loader_conf "exec=copy_staging enable"
-
